@@ -13,8 +13,8 @@ class Home extends Controller
         $detail = $this->home_model->getDetail(1);
        
         //renderview
-        $this->data['product'] = $data;
-        $this->data['detail'] = $detail;
+        $this->data['sub_content']['product'] = $data;
+        $this->data['sub_content']['detail'] = $detail;
         $this->data['content'] ='Home/index';
         $this->render('__layouts/client_layout',$this->data);
     }

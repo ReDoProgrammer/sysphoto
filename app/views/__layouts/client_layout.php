@@ -9,7 +9,7 @@
 <body>
     <?php
         $this->render('__Layouts/blocks/header');
-        $this->render($content);
+        $this->render($content,$sub_content);
         $this->render('__Layouts/blocks/footer');
     ?>
     <script src="<?php echo _WEB_ROOT;?>/public/assets/js/script.js"></script>
