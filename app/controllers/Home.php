@@ -17,7 +17,9 @@ class Home extends Controller
         // echo '</pre>';
 
         //renderview
-        $this->render('Home/index');
+        $this->data['product'] = $data;
+        $this->data['detail'] = $detail;
+        $this->render('Home/index',$this->data);
     }
 
     public function detail($id = '', $slug = '')
