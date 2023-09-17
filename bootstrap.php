@@ -14,7 +14,18 @@
     $web_root .=$folder;
     define('_WEB_ROOT',$web_root);// đường dẫn project
 
-    require_once 'configs/routes.php';
+    /**
+     * tự động load configs
+     */
+    $configs_dir = scandir('configs');
+    if(!empty($configs_dir)){
+        foreach($configs_dir as $cf){
+            if($cf !='.' && $cf !='..' && file_exists('configs/'.$cf)){
+                require_once 'configs/'.$cf;
+            }
+        }
+    }
+    
     require_once 'core/Route.php';
     require_once 'app/App.php';
     require_once 'core/Controller.php';// load basecontroller
