@@ -1,15 +1,30 @@
 <?php
-    class Home{
-        public function index(){
-            echo 'home index';
-        }
-
-        public function detail($id='',$slug=''){
-            echo $id.'---'.$slug;
-        }
-
-        public function search(){
-            $keyword = $_GET['keyword'];
-            echo 'tu khoa can tim: '.$keyword;
-        }
+class Home extends Controller
+{
+    public $home_model;
+    function __construct()
+    {       
+       $this->home_model = $this->model('HomeModel');
     }
+    public function index()
+    {
+        
+        $data = $this->home_model->getProductList();
+        $detail = $this->home_model->getDetail(1);
+        echo '<pre>';
+        print_r($data);
+        print_r($detail);
+        echo '</pre>';
+    }
+
+    public function detail($id = '', $slug = '')
+    {
+        echo $id . '---' . $slug;
+    }
+
+    public function search()
+    {
+        $keyword = $_GET['keyword'];
+        echo 'tu khoa can tim: ' . $keyword;
+    }
+}
