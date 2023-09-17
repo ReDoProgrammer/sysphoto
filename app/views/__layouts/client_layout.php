@@ -9,10 +9,7 @@
 <body>
     <?php
         $this->render('__Layouts/blocks/header');
-    ?>
-    <h1>noi dung trang chu nguoi dung</h1>
-    
-    <?php
+        $this->render($content);
         $this->render('__Layouts/blocks/footer');
     ?>
     <script src="<?php echo _WEB_ROOT;?>/public/assets/js/script.js"></script>
