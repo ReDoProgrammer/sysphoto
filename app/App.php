@@ -1,7 +1,7 @@
 <?php
 class App
 {
-    private $__controller, $__action, $__params,$__routes;
+    private $__controller, $__action, $__params, $__routes;
     function __construct()
     {
         // thiet lap mac dinh cho cac bien
@@ -32,11 +32,44 @@ class App
     {
         $url = $this->getUrl();
 
-       $url = $this->__routes->handleRoute($url);
-        
-        
+        $url = $this->__routes->handleRoute($url);
+
+
         $urlArr = array_filter(explode('/', $url)); // tach chuoi tu duong dan
         $urlArr = array_values($urlArr); // dua ve dung chi so mang bat dau tu 0
+
+
+        //xử lý các khu vực khác nhau: ví dụ: admin/home/index
+        $urlCheck = '';
+        if (!empty($urlArr)) {
+            foreach ($urlArr as $key => $item) {
+                $urlCheck .= $item . '/';
+                $fileCheck = rtrim($urlCheck, '/');
+                $fileArr = explode('/', $fileCheck);
+
+                $fileArr[count($fileArr) - 1] = ucfirst($fileArr[count($fileArr) - 1]);
+
+                $fileCheck = implode('/', $fileArr);
+                if (!empty($urlArr[$key - 1])) {
+                    unset($urlArr[$key - 1]);
+                }
+                if (file_exists('app/controllers/' . $fileCheck . '.php')) {
+                    $urlCheck = $fileCheck;
+                    break;
+                }
+            }
+            $urlArr = array_values($urlArr);
+        }
+
+
+     
+
+
+        // echo '<pre>';
+        // print_r($urlArr);
+        // print_r($urlCheck);
+        // echo '</pre>';
+
 
         // xử lý controller
         if (!empty($urlArr[0])) {
@@ -45,14 +78,19 @@ class App
             $this->__controller = ucfirst($this->__controller);
         }
 
-        if (file_exists('app/controllers/' . $this->__controller . '.php')) {
-            require_once 'controllers/' . $this->__controller . '.php';
+        //xử lý khi $urlCheck rỗng
+        if(empty($urlCheck)){
+            $urlCheck = $this->__controller;
+        }
+
+        if (file_exists('app/controllers/' . $urlCheck . '.php')) {
+            require_once 'controllers/' . $urlCheck . '.php';
 
             //kiểm tra tồn tại của class $this->__controller
             if (class_exists($this->__controller)) {
                 $this->__controller = new $this->__controller(); // khoi tao class
                 unset($urlArr[0]);
-            }else{
+            } else {
                 $this->loadError();
             }
 
