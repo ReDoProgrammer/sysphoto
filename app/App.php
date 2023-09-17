@@ -1,11 +1,13 @@
 <?php
 class App
 {
-    private $__controller, $__action, $__params;
+    private $__controller, $__action, $__params,$__routes;
     function __construct()
     {
         // thiet lap mac dinh cho cac bien
         global $routes; // goi bien toan cuc $routes trong file configs/routes.php
+
+        $this->__routes = new Route();
         if (!empty($routes['default_controller'])) {
             $this->__controller = $routes['default_controller'];
         }
@@ -29,6 +31,10 @@ class App
     public function handleUrl()
     {
         $url = $this->getUrl();
+
+       $url = $this->__routes->handleRoute($url);
+        
+        
         $urlArr = array_filter(explode('/', $url)); // tach chuoi tu duong dan
         $urlArr = array_values($urlArr); // dua ve dung chi so mang bat dau tu 0
 
