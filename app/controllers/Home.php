@@ -11,10 +11,13 @@ class Home extends Controller
         
         $data = $this->home_model->getProductList();
         $detail = $this->home_model->getDetail(1);
-        echo '<pre>';
-        print_r($data);
-        print_r($detail);
-        echo '</pre>';
+        // echo '<pre>';
+        // print_r($data);
+        // print_r($detail);
+        // echo '</pre>';
+
+        //renderview
+        $this->render('Home/index');
     }
 
     public function detail($id = '', $slug = '')

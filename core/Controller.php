@@ -16,4 +16,12 @@ class Controller
         return false;
 
     }
+
+    public function render($view,$data=[]){
+        if (file_exists(__DIR_ROOT . '/app/views/' . $view . '.php')) {
+            require_once __DIR_ROOT . '/app/views/' . $view . '.php';
+        }     else{
+            echo $view.'not found';
+        }   
+    }
 }
