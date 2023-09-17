@@ -13,6 +13,7 @@ class Home extends Controller
         $detail = $this->home_model->getDetail(1);
        
         //renderview
+        $this->data['title'] = 'Danh sách sản phẩm';
         $this->data['sub_content']['product'] = $data;
         $this->data['sub_content']['detail'] = $detail;
         $this->data['content'] ='Home/index';

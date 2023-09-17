@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>
+        <?php
+            echo (!empty($title)?$title:'Trang chủ khách hàng');
+        ?>
+    </title>
     <link rel="stylesheet" href="<?php echo _WEB_ROOT;?>/public/assets/css/style.css">
 </head>
 <body>
