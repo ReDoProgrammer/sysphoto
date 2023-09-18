@@ -3,6 +3,9 @@
  * Base model
  * 
  */
-class Model{
-
+class Model extends Database{
+    protected $__db;
+    function __construct(){
+        $this->__db = new Database();
+    }
 }
