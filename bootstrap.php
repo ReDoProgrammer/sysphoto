@@ -28,4 +28,18 @@
     
     require_once 'core/Route.php';
     require_once 'app/App.php';
+
+
+    if(!empty($config['database'])){
+        $db_config = $config['database'];
+        require_once 'core/Connection.php';
+        require_once 'core/Database.php';
+        $db = new Database();
+        $data = $db->select('project_list');
+
+        echo '<pre>';
+        print_r($data);
+        echo '</pre>';
+    }
+
     require_once 'core/Controller.php';// load basecontroller
