@@ -19,6 +19,16 @@ class Home extends Controller
         $this->render('__layouts/client_layout',$this->data);
     }
 
+    public function get_request(){
+        $request = new Request();
+        echo $request->getMethod();
+        $this->render('home/form');
+    }
+    public function post_request(){
+        $request = new Request();
+        echo $request->getMethod();
+    }
+
     public function detail($id = '', $slug = '')
     {
         echo $id . '---' . $slug;

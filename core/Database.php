@@ -3,8 +3,7 @@
         private $__conn;
         public function __construct(){
             global $db_config;
-            $this->__conn = Connection::getInstance($db_config);
-            var_dump($this->__conn);
+            $this->__conn = Connection::getInstance($db_config);           
         }
 
         public function select($table, $columns = '*', $where = '', $params = []) {

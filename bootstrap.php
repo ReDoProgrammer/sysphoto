@@ -38,3 +38,4 @@
     }
     require_once 'core/Model.php';//load basemodel
     require_once 'core/Controller.php';// load basecontroller
+    require_once 'core/Request.php';// load Request
