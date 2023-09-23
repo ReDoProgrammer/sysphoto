@@ -6,8 +6,11 @@
             $this->__conn = Connection::getInstance($db_config);           
         }
 
-        public function select($table, $columns = '*', $where = '', $params = []) {
+        public function select($table, $columns = '*',$join ='', $where = '',$params=[],$page = 1,$limit = 0,$orderby='',$groupby='',) {
             $sql = "SELECT $columns FROM $table";
+            if(!empty($join)){
+                $sql .=$join;
+            }
             if (!empty($where)) {
                 $sql .= " WHERE $where";
             }
