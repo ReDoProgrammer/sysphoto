@@ -9,4 +9,4 @@
     $routes['nhiem-vu'] = 'task';
     $routes['trang-chu'] = 'home';
     $routes['tin-tuc/(.+)'] = 'news/category/$1';
-    $routes['tin-tuc/.+-(\d+).htmlq'] = 'news/category/$1';
+    $routes['tin-tuc/.+-(\d+).html'] = 'news/category/$1';

@@ -1,0 +1,28 @@
+.input-group>.form-control:focus, .input-group>.form-floating:focus-within, .input-group>.form-select:focus {
+    z-index: 3;
+}
+.input-group>.form-control:focus, .input-group>.form-select:focus {
+    z-index: 2;
+}
+.btn:hover {
+    border-color: #cccccc;
+}
+.btn:first-child:active, :not(.btn-check)+.btn:active {
+    border-color: #cccccc;
+}
+.btn.show, :not(.btn-check)+.btn:active {
+    border-color: #cccccc;
+}
+.page-item.disabled .page-link {
+    background: #fff;
+}
+.form-control[readonly] {
+    background-color: #e9ecef;
+    opacity: 1;
+}
+.form-control:focus {
+    border-color: $__primarycolor;
+}
+.select2-selection__rendered:-webkit-direct-focus {
+    outline: $__none;
+}
