@@ -19,7 +19,9 @@
 <!-- Custom Select 2 -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/select2.min.js"></script>
 
-
+<!-- Datetime picker -->
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/moment.min.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/bootstrap-datetimepicker.min.js"></script>
 
 <!-- Custom JS -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/app.js"></script>

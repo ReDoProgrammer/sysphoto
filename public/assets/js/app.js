@@ -5,9 +5,7 @@ Version      : 3.6
 */
 
 $(document).ready(function() {
-	console.log(1234);
-	
-	// Variables declarations
+		// Variables declarations
 	
 	var $wrapper = $('.main-wrapper');
 	var $pageWrapper = $('.page-wrapper');
@@ -84,8 +82,7 @@ $(document).ready(function() {
 	// Select 2
 	
 	if($('.select').length > 0) {
-		$('.select').select2({
-			minimumResultsForSearch: -1,
+		$('.select').select2({			
 			width: '100%'
 		});
 	}

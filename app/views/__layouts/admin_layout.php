@@ -24,7 +24,11 @@ $this->render('__Layouts/blocks/footer');
                 <div class="row">
                     <div class="col-md-12">
                         <div class="page-head-box">
-                            <h3>Welcome Admin!</h3>
+                            <h3>
+                                <?php
+                                echo (!empty($title) ? $title : 'Welcome Admin!');
+                                ?>
+                            </h3>
                             <nav aria-label="breadcrumb">
                                 <ol class="breadcrumb">
                                     <li class="breadcrumb-item"><a href="admin-dashboard.html">Dashboard</a></li>
@@ -36,7 +40,7 @@ $this->render('__Layouts/blocks/footer');
                 </div>
                 <!-- /Page Header -->
                 <?php $this->render($content, $sub_content); ?>
-    
+
             </div>
             <!-- /Page Content -->
 
@@ -44,7 +48,7 @@ $this->render('__Layouts/blocks/footer');
         <!-- /Page Wrapper -->
 
     </div>
-    <!-- /Main Wrapper -->    
+    <!-- /Main Wrapper -->
 </body>
 
 </html>
