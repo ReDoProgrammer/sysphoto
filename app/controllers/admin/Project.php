@@ -10,16 +10,12 @@ class Project extends Controller
     public function index()
     {
         //renderview          
-        $data = $this->project_model->getList();
-
-        echo '<pre>';
-        print_r($data);
-        echo '</pre>';
+        $projects = $this->project_model->getList();       
 
 
         //renderview
         $this->data['title'] = 'Danh sách dự án';
-        $this->data['sub_content']['project'] = [];
+        $this->data['sub_content']['projects'] = $projects;
         $this->data['content'] = 'admin/project/index';
         $this->render('__layouts/admin_layout', $this->data);
     }

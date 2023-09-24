@@ -7,6 +7,10 @@ class Employee extends Controller
     {
         $this->employee_model = $this->model('EmployeeModel');
     }
+
+    function login(){
+        $this->render('__layouts/admin_layout');
+    }
     public function index()
     {
         //renderview          

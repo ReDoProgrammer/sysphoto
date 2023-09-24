@@ -5,6 +5,7 @@ Version      : 3.6
 */
 
 $(document).ready(function() {
+	console.log(1234);
 	
 	// Variables declarations
 	

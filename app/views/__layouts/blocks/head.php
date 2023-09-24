@@ -30,7 +30,8 @@
         rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
-
+    <!-- Select2-->
+    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/select2.min.css">
     <!-- Main CSS -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/style.css">
 
