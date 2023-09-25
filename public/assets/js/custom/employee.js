@@ -20,12 +20,22 @@ $('#btnLogin').click(function () {
         return;
     }
 
+
     $.ajax({
         url:'employee/authLogin',
         type:'post',
         data:{email,password},
         success:function(data){
-            console.log(data);
+            let auth = $.parseJSON(data);
+            if(auth.code ==200){
+                $(location).prop('href', 'home')
+            }else{
+                Swal.fire(
+                    'OPP..!',
+                    auth.msg,
+                    'error'
+                  )
+            }
         }
     })
 

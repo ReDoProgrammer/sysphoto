@@ -8,14 +8,17 @@ class Employee extends Controller
         $this->employee_model = $this->model('EmployeeModel');
     }
 
-    function login(){
+    function login()
+    {
         $this->render('admin/employee/login');
     }
 
-    function authLogin(){
+    function authLogin()
+    {
         $email = $_POST['email'];
-        $password = $_POST['password'];        
-        echo $this->employee_model->Login($email,$password,[1]);
+        $password = $_POST['password'];
+        echo $this->employee_model->Login($email, $password, [1]);
+
     }
     public function index()
     {
@@ -30,17 +33,18 @@ class Employee extends Controller
         $this->render('__layouts/admin_layout', $this->data);
     }
 
-    private function get_client_ip() {
-        if(!empty($_SERVER['HTTP_CLIENT_IP'])) {  
-            return 'IP address = '.$_SERVER['HTTP_CLIENT_IP'];  
-        }  
+    private function get_client_ip()
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            return 'IP address = ' . $_SERVER['HTTP_CLIENT_IP'];
+        }
         //if user is from the proxy  
-        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {  
-            return 'IP address = '.$_SERVER['HTTP_X_FORWARDED_FOR'];  
-        }  
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            return 'IP address = ' . $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
         //if user is from the remote address  
-        else{  
-            return 'IP address = '.$_SERVER['REMOTE_ADDR'];  
-        }    
+        else {
+            return 'IP address = ' . $_SERVER['REMOTE_ADDR'];
+        }
     }
 }

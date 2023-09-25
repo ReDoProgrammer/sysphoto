@@ -4,6 +4,7 @@
 $this->render('__Layouts/blocks/head');
 ?>
 <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.css">
+<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.css">
 
 <body class="account-page">
 
@@ -65,6 +66,7 @@ $this->render('__Layouts/blocks/head');
 
     <!-- Custom JS -->
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.js"></script>
+    <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/employee.js"></script>
 
 </body>

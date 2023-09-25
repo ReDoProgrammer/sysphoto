@@ -4,6 +4,11 @@
 <?php
 $this->render('__Layouts/blocks/head');
 $this->render('__Layouts/blocks/footer');
+if (isset($_SESSION['user'])) {
+    $user = unserialize($_SESSION['user']);
+    echo "Username: " . $user->username;
+    echo "Email: " . $user->email;
+}
 ?>
 
 <body>
