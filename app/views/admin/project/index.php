@@ -13,7 +13,7 @@
     </div>
     <div class="col-xxl-3">
         <select class="select" name="states[]" multiple="multiple" id="slJobStatus">
-            
+
         </select>
     </div>
     <div class="col-xxl-3">
@@ -23,7 +23,7 @@
         </div>
     </div>
     <div class="col-xxl-1">
-        <a href="#" id="btnSearch" class="btn btn-success btn-search btn-add-emp"><i class="fas fa-search me-2"></i>
+        <a href="#" id="btnSearch" class="btn btn-success btn-search"><i class="fas fa-search me-2"></i>
         </a>
     </div>
     <div class="col-xxl-1">
@@ -50,6 +50,34 @@
         </thead>
         <tbody id="tblProjects"></tbody>
     </table>
+</div>
+<div class="row mt-2">
+    <div class="col-md-2 col-xs-6">
+        <select name="" id="slPageSize" class="form-control">]
+            <option value="10">10</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+            <option value="0">All</option>
+        </select>
+    </div>
+    <div class="col-md-10 col-xs-6 text-end mt-2">
+        <nav aria-label="...">
+            <ul class="pagination" id="pagination">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item active" aria-current="page">
+                    <a class="page-link" href="#">2</a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </div>
 <?php
 include_once 'create.php';

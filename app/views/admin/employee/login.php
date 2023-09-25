@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
+if (isset($_SESSION['user'])) {
+    $user = unserialize($_SESSION['user']);
+    header('Location: home');
+    exit;
+} 
 $this->render('__Layouts/blocks/head');
 ?>
 <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.css">

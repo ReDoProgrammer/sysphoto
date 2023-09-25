@@ -30,9 +30,10 @@ class Project extends Controller
             $stt =[];
         }
         $search = $_GET['search'];
+        $page = $_GET['page'];
+        $limit = $_GET['limit'];
 
-        $projects = $this->project_model->getList($from_date,$to_date,$stt,$search);   
-        echo json_encode($projects);    
-        // echo $projects;
+        $data = $this->project_model->getList($from_date,$to_date,$stt,$search,$page,$limit);   
+        echo $data;    
     }
 }

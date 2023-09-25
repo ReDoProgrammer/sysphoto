@@ -10,7 +10,8 @@ if (isset($_SESSION['user'])) {
         exit;
     }
 } else {
-    echo '1234431412 ghsgf sdgfsd gdsfg sdfgsd gsdg';
+    header('Location: login');
+    exit;
 }
 $this->render('__Layouts/blocks/head');
 $this->render('__Layouts/blocks/footer');

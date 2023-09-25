@@ -14,6 +14,10 @@
             if (!empty($where)) {
                 $sql .= " WHERE $where";
             }
+            if($limit>0){
+                $sql .=" LIMIT ".($page-1)*$limit.",$limit";
+            }
+
             $stmt = $this->__conn->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
