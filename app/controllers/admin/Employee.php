@@ -3,6 +3,7 @@
 class Employee extends Controller
 {
     public $employee_model;
+    private $__role = [1];
     function __construct()
     {
         $this->employee_model = $this->model('EmployeeModel');
@@ -12,12 +13,15 @@ class Employee extends Controller
     {
         $this->render('admin/employee/login');
     }
+    function profile(){
+        
+    }
 
     function authLogin()
     {
         $email = $_POST['email'];
         $password = $_POST['password'];
-        echo $this->employee_model->Login($email, $password, [1]);
+        echo $this->employee_model->Login($email, $password, $this->__role);
 
     }
     public function index()

@@ -36,6 +36,7 @@
         require_once 'core/Connection.php';
         require_once 'core/Database.php';       
     }
+    require_once 'app/models/User.php';
     require_once 'core/Model.php';//load basemodel
     require_once 'core/Controller.php';// load basecontroller
     require_once 'core/Request.php';// load Request

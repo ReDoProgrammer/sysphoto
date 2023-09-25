@@ -2,13 +2,22 @@
 <html lang="en">
 
 <?php
-$this->render('__Layouts/blocks/head');
-$this->render('__Layouts/blocks/footer');
+
 if (isset($_SESSION['user'])) {
     $user = unserialize($_SESSION['user']);
-    echo "Username: " . $user->username;
-    echo "Email: " . $user->email;
+    if ($user->role != 1) {
+        header('Location: login');
+        exit;
+    }
+} else {
+    echo '1234431412 ghsgf sdgfsd gdsfg sdfgsd gsdg';
 }
+$this->render('__Layouts/blocks/head');
+$this->render('__Layouts/blocks/footer');
+
+
+
+
 ?>
 
 <body>
@@ -21,7 +30,6 @@ if (isset($_SESSION['user'])) {
         ?>
         <!-- Page Wrapper -->
         <div class="page-wrapper">
-
             <!-- Page Content -->
             <div class="content container-fluid pb-0">
 
@@ -44,6 +52,7 @@ if (isset($_SESSION['user'])) {
                     </div>
                 </div>
                 <!-- /Page Header -->
+
                 <?php $this->render($content, $sub_content); ?>
 
             </div>

@@ -17,7 +17,7 @@ class Dashboard  extends Controller
    
        
         //renderview
-        $this->data['title'] = 'Danh sách sản phẩm';
+        $this->data['title'] = 'Admin Dashboard';
         $this->data['sub_content']['product'] = $data;
          $this->data['content'] ='admin/dashboard';
         $this->render('__layouts/admin_layout',$this->data);

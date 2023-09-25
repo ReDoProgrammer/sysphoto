@@ -197,10 +197,19 @@
             <a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
                 <span class="user-img"><img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-21.jpg"
                         alt="User Image"></span>
-                <span>Admin</span>
+                <span>
+                    <?php
+                        if (isset($_SESSION['user'])) {
+                            $user = unserialize($_SESSION['user']);                             
+                            echo '<span class="fw-bold text-info">'.$user->roleName.'</span> '.$user->firstname;
+                        }else{
+                            echo 'Hello World';
+                        }
+                    ?>
+                </span>
             </a>
             <div class="dropdown-menu">
-                <a class="dropdown-item" href="profile.html">My Profile</a>
+                <a class="dropdown-item" href="employee/profile">My Profile</a>
                 <a class="dropdown-item" href="settings.html">Settings</a>
                 <a class="dropdown-item" href="index.html">Logout</a>
             </div>
@@ -222,3 +231,4 @@
 
 </div>
 <!-- /Header -->
+

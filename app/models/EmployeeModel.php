@@ -1,5 +1,5 @@
 <?php
-include_once 'User.php';
+
 class EmployeeModel extends Model
 {
     protected $__table = 'users u';
@@ -35,6 +35,7 @@ class EmployeeModel extends Model
                     $users = $this->__db->select($this->__table, $columns, $join, $where);
                     if (count($users) > 0) {
                         $user = new User($users[0]['firstname'], $users[0]['email'], $users[0]['type'], $users[0]['name_ut']);
+                       
                         $_SESSION['user'] = serialize($user);
                         $data = array(
                             'code'=>200,
