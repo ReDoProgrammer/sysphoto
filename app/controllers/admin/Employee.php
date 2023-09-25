@@ -9,7 +9,13 @@ class Employee extends Controller
     }
 
     function login(){
-        $this->render('__layouts/admin_layout');
+        $this->render('admin/employee/login');
+    }
+
+    function authLogin(){
+        $email = $_POST['email'];
+        $password = $_POST['password'];        
+        echo $this->employee_model->Login($email,$password,[1]);
     }
     public function index()
     {
@@ -22,5 +28,19 @@ class Employee extends Controller
         $this->data['sub_content']['employee'] = $data;
         $this->data['content'] = 'admin/employee/index';
         $this->render('__layouts/admin_layout', $this->data);
+    }
+
+    private function get_client_ip() {
+        if(!empty($_SERVER['HTTP_CLIENT_IP'])) {  
+            return 'IP address = '.$_SERVER['HTTP_CLIENT_IP'];  
+        }  
+        //if user is from the proxy  
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {  
+            return 'IP address = '.$_SERVER['HTTP_X_FORWARDED_FOR'];  
+        }  
+        //if user is from the remote address  
+        else{  
+            return 'IP address = '.$_SERVER['REMOTE_ADDR'];  
+        }    
     }
 }
