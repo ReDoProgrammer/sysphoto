@@ -32,6 +32,11 @@
         rel="stylesheet">
     <!-- Select2-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/select2.min.css">
+    
+    <!-- CKEditor-->
+    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/ckeditor.css">
+
+
     <!-- Main CSS -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/style.css">
 

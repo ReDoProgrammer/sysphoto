@@ -9,129 +9,95 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form>
+                <div>
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Project Name</label>
-                                <input class="form-control" type="text">
+                                <label class="col-form-label">Customer</label>
+                                <select class="select" id="slCustomers"></select>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Client</label>
-                                <select class="select">
-                                    <option>Global Technologies</option>
-                                    <option>Delta Infotech</option>
-                                </select>
+                                <label class="col-form-label">Project Name (<span class="text-danger fw-bold">*</span>)</label>
+                                <input class="form-control" type="text" id="txtProjectName">
                             </div>
                         </div>
+
                     </div>
                     <div class="row">
-                        <div class="col-sm-6">
+                        <div class="col-sm-5">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Start Date</label>
                                 <div class="cal-icon">
-                                    <input class="form-control datetimepicker" type="text">
+                                    <input type="date" id="txtBeginDate" class="form-control datepicker">
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-2">
+                            <div class="input-block mb-3">
+                                <label class="col-form-label">Duration(hour)</label>
+                                <input class="form-control" type="text" id="txtDuration" value="1"
+                                    style="text-align: right;">
+                            </div>
+                        </div>
+                        <div class="col-sm-5">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">End Date</label>
                                 <div class="cal-icon">
-                                    <input class="form-control datetimepicker" type="text">
+                                    <input type="date" id="txtEndDate" class="form-control datepicker">
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Rate</label>
-                                <input placeholder="$50" class="form-control" type="text">
-                            </div>
-                        </div>
-                        <div class="col-sm-3">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">&nbsp;</label>
-                                <select class="select">
-                                    <option>Hourly</option>
-                                    <option>Fixed</option>
-                                </select>
+                                <label class="col-form-label">Combo</label>
+                                <select class="select" id="slComboes"></select>
                             </div>
                         </div>
                         <div class="col-sm-6">
+                            <div class="input-block mb-3">
+                                <label class="col-form-label">Template</label>
+                                <select class="select" name="templates[]" multiple="multiple" id="slTemplates"></select>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-2">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Priority</label>
-                                <select class="select">
-                                    <option>High</option>
-                                    <option>Medium</option>
-                                    <option>Low</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Add Project Leader</label>
-                                <input class="form-control" type="text">
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Team Leader</label>
-                                <div class="project-members">
-                                    <a href="#" data-bs-toggle="tooltip" title="Jeffery Lalor" class="avatar">
-                                        <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-16.jpg" alt="User Image">
-                                    </a>
+                                <div class="checkbox">
+                                    <label class="col-form-label">
+                                        <input type="checkbox" name="checkbox" id="ckbPriority"> Urgent
+                                    </label>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-6">
+                        <div class="col-sm-12">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Add Team</label>
-                                <input class="form-control" type="text">
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Team Members</label>
-                                <div class="project-members">
-                                    <a href="#" data-bs-toggle="tooltip" title="John Doe" class="avatar">
-                                        <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-16.jpg" alt="User Image">
-                                    </a>
-                                    <a href="#" data-bs-toggle="tooltip" title="Richard Miles" class="avatar">
-                                        <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-09.jpg" alt="User Image">
-                                    </a>
-                                    <a href="#" data-bs-toggle="tooltip" title="John Smith" class="avatar">
-                                        <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-10.jpg" alt="User Image">
-                                    </a>
-                                    <a href="#" data-bs-toggle="tooltip" title="Mike Litorus" class="avatar">
-                                        <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-05.jpg" alt="User Image">
-                                    </a>
-                                    <span class="all-team">+2</span>
-                                </div>
+                                <label class="col-form-label">Project's description</label>
+                                <div class="editor" id="divDescription"></div>
                             </div>
                         </div>
                     </div>
-                    <div class="input-block mb-3">
-                        <label class="col-form-label">Description</label>
-                        <div id="editor"></div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="input-block mb-3">
+                                <label class="col-form-label">Intruction for Editor</label>
+                                <textarea name="" id="txaIntruction" rows="3" class="form-control"></textarea>
+                            </div>
+                        </div>
                     </div>
-                    <div class="input-block mb-3">
-                        <label class="col-form-label">Upload Files</label>
-                        <input class="form-control" type="file">
-                    </div>
+
                     <div class="submit-section">
                         <button class="btn btn-primary cancel-btn" data-bs-dismiss="modal"
                             aria-label="Close">Cancel</button>
-                        <button class="btn btn-primary submit-btn">Submit</button>
+                        <button class="btn btn-primary submit-btn" id="btnSubmit">Submit</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>

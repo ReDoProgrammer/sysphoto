@@ -2,15 +2,29 @@ var page;
 $(document).ready(function () {
     LoadJobStatus();
 
+    LoadComboes();
+    LoadTemplates();
+    LoadCustomers();
+
     $('#txtFromDate').datetimepicker({
-        format: 'YYY-MM-DD'
+        format: 'YYYY-MM-DD'
     });
     $('#txtFromDate').data("DateTimePicker").date(moment(new Date()));
 
     $('#txtToDate').datetimepicker({
-        format: 'YYY-MM-DD'
+        format: 'YYYY-MM-DD'
     });
     $('#txtToDate').data("DateTimePicker").date(moment(new Date()));
+
+    $('#txtBeginDate').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#txtBeginDate').data("DateTimePicker").date(moment(new Date()));
+
+    $('#txtEndDate').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#txtEndDate').data("DateTimePicker").date(moment(new Date()));
 
 
     page = 1;
@@ -26,7 +40,49 @@ $('#slPageSize').on('change', function () {
     fetch();
 });
 
+function LoadCustomers(){
+    $.ajax({
+        url:'customer/getlist',
+        type:'get',
+        success:function(data){
+            let content = $.parseJSON(data);
+            if(content.code == 200){
+                content.customers.forEach(c=>{
+                    $('#slCustomers').append(`<option value="${c.id}">${c.name_ct}</option>`)
+                })
+            }
+        }
+    })
+}
 
+function LoadComboes(){
+    $.ajax({
+        url:'combo/getlist',
+        type:'get',
+        success:function(data){
+            let content  = $.parseJSON(data);
+            if(content.code == 200){
+                content.comboes.forEach(c=>{
+                    $('#slComboes').append(`<option value="${c.id}">${c.ten_combo}</option>`);
+                })
+            }
+        }
+    })
+}
+function LoadTemplates(){
+    $.ajax({
+        url:'level/getList',
+        type:'get',
+        success:function(data){
+            let content = $.parseJSON(data);
+            if(content.code == 200){
+                content.levels.forEach(l=>{
+                    $('#slTemplates').append(`<option value="${l.id}">${l.name}</option>`);
+                })
+            }
+        }
+    })
+}
 
 $(document).on("click", "#pagination li a.page-link", function (e) {
     e.preventDefault();

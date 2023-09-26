@@ -215,9 +215,9 @@ $(document).ready(function () {
 
 	// CK Editor
 
-	if ($('#editor').length > 0) {
+	if ($('.editor').length > 0) {
 		ClassicEditor
-			.create(document.querySelector('#editor'), {
+			.create(document.querySelector('.editor'), {
 				toolbar: {
 					items: [
 						'heading', '|',
