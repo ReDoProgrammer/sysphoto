@@ -3,10 +3,10 @@
     <div class="col-xxl-4">
         <div class="row">
             <div class="col-sm-6 col-md-6">
-                <input type="date" id="txtFromDate" class="form-control datepicker" value="2023-09-24">
+                <input type="date" id="txtFromDate" class="form-control datepicker" >
             </div>
             <div class="col-sm-6 col-md-6">
-                <input type="date" id="txtToDate" class="form-control datepicker" value="2023-09-24">
+                <input type="date" id="txtToDate" class="form-control datepicker">
 
             </div>
         </div>

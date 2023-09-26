@@ -2,6 +2,17 @@ var page;
 $(document).ready(function () {
     LoadJobStatus();
 
+    $('#txtFromDate').datetimepicker({
+        format: 'YYY-MM-DD'
+    });
+    $('#txtFromDate').data("DateTimePicker").date(moment(new Date()));
+
+    $('#txtToDate').datetimepicker({
+        format: 'YYY-MM-DD'
+    });
+    $('#txtToDate').data("DateTimePicker").date(moment(new Date()));
+
+
     page = 1;
     $('#btnSearch').click();
 })
