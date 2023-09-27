@@ -31,13 +31,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <!-- Select2-->
-    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/select2.min.css">
+    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/select2/select2.min.css">
     
     <!-- CKEditor-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/ckeditor.css">
-
+    
+    <!--datetimepicker-->
+    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/flatpicker/flatpickr.min.css">
 
     <!-- Main CSS -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/style.css">
+
+
 
 </head>

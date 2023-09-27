@@ -17,14 +17,14 @@
 <!-- Apex Charts -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/apexcharts/apexcharts.min.js"></script>
 <!-- Custom Select 2 -->
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/select2.min.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/select2/select2.min.js"></script>
 
 <!-- CKEditor -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/ckeditor.js"></script>
 
 <!-- Datetime picker -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/moment.min.js"></script>
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/bootstrap-datetimepicker.min.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/flatpicker/flatpickr.min.js"></script>
 
 <!-- Custom JS -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/app.js"></script>

@@ -6,25 +6,12 @@ $(document).ready(function () {
     LoadTemplates();
     LoadCustomers();
 
-    $('#txtFromDate').datetimepicker({
-        format: 'YYYY-MM-DD'
-    });
-    $('#txtFromDate').data("DateTimePicker").date(moment(new Date()));
 
-    $('#txtToDate').datetimepicker({
-        format: 'YYYY-MM-DD'
-    });
-    $('#txtToDate').data("DateTimePicker").date(moment(new Date()));
-
-    $('#txtBeginDate').datetimepicker({
-        format: 'YYYY-MM-DD'
-    });
-    $('#txtBeginDate').data("DateTimePicker").date(moment(new Date()));
-
-    $('#txtEndDate').datetimepicker({
-        format: 'YYYY-MM-DD'
-    });
-    $('#txtEndDate').data("DateTimePicker").date(moment(new Date()));
+    let dateNow = new Date();
+    // $('#txtFromDate').datetimepicker({
+    //     defaultDate:dateNow,
+    //     format: 'DD/MM/YYYY'
+    // });
 
 
     page = 1;
@@ -40,14 +27,14 @@ $('#slPageSize').on('change', function () {
     fetch();
 });
 
-function LoadCustomers(){
+function LoadCustomers() {
     $.ajax({
-        url:'customer/getlist',
-        type:'get',
-        success:function(data){
+        url: 'customer/getlist',
+        type: 'get',
+        success: function (data) {
             let content = $.parseJSON(data);
-            if(content.code == 200){
-                content.customers.forEach(c=>{
+            if (content.code == 200) {
+                content.customers.forEach(c => {
                     $('#slCustomers').append(`<option value="${c.id}">${c.name_ct}</option>`)
                 })
             }
@@ -55,28 +42,28 @@ function LoadCustomers(){
     })
 }
 
-function LoadComboes(){
+function LoadComboes() {
     $.ajax({
-        url:'combo/getlist',
-        type:'get',
-        success:function(data){
-            let content  = $.parseJSON(data);
-            if(content.code == 200){
-                content.comboes.forEach(c=>{
+        url: 'combo/getlist',
+        type: 'get',
+        success: function (data) {
+            let content = $.parseJSON(data);
+            if (content.code == 200) {
+                content.comboes.forEach(c => {
                     $('#slComboes').append(`<option value="${c.id}">${c.ten_combo}</option>`);
                 })
             }
         }
     })
 }
-function LoadTemplates(){
+function LoadTemplates() {
     $.ajax({
-        url:'level/getList',
-        type:'get',
-        success:function(data){
+        url: 'level/getList',
+        type: 'get',
+        success: function (data) {
             let content = $.parseJSON(data);
-            if(content.code == 200){
-                content.levels.forEach(l=>{
+            if (content.code == 200) {
+                content.levels.forEach(l => {
                     $('#slTemplates').append(`<option value="${l.id}">${l.name}</option>`);
                 })
             }
@@ -165,6 +152,19 @@ function LoadJobStatus() {
         }
     })
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

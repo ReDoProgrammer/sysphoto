@@ -30,7 +30,7 @@
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Start Date</label>
                                 <div class="cal-icon">
-                                    <input type="date" id="txtBeginDate" class="form-control datepicker">
+                                    <input type="date" id="txtBeginDate" class="form-control datetimepicker">
                                 </div>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
                             <div class="input-block mb-3">
                                 <label class="col-form-label">End Date</label>
                                 <div class="cal-icon">
-                                    <input type="date" id="txtEndDate" class="form-control datepicker">
+                                    <input type="date" id="txtEndDate" class="form-control datetimepicker">
                                 </div>
                             </div>
                         </div>

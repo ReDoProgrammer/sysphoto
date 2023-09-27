@@ -143,29 +143,59 @@ $(document).ready(function () {
 
 	// Date Time Picker
 
-	if ($('.datetimepicker').length > 0) {
-		$('.datetimepicker').datetimepicker({
-			format: 'DD/MM/YYYY',
-			icons: {
-				up: "fa fa-angle-up",
-				down: "fa fa-angle-down",
-				next: 'fa fa-angle-right',
-				previous: 'fa fa-angle-left'
-			}
-		});
-	}
+	flatpickr(".datepicker", {
+		dateFormat: "d/m/Y",
+		defaultDate: "today",
+		allowInput: true, // Cho phép nhập ngày thủ công,
+		onChange: function(selectedDates, dateStr, instance) {
+			// Lắng nghe sự kiện onChange và ghi đè giá trị của input
+			document.getElementsByClassName("datetimepicker").value = dateStr;
+		}
+	});
+	flatpickr(".datetimepicker", {
+		dateFormat: "d/m/Y H:i",
+		enableTime: true,
+		defaultDate: "today",
+		time_24hr: true,
+		allowInput: true // Cho phép nhập ngày thủ công
+	});
 
-	if ($('.timepicker').length > 0) {
-		$('.timepicker').datetimepicker({
-			format: "hh:mm:ss",
-			icons: {
-				up: "fa fa-angle-up",
-				down: "fa fa-angle-down",
-				next: 'fa fa-angle-right',
-				previous: 'fa fa-angle-left'
-			}
-		});
-	}
+
+	// if ($('.datetimepicker').length > 0) {
+	// 	$('.datetimepicker').datetimepicker({
+	// 		format: 'DD/MM/YYYY HH:mm',
+	// 		icons: {
+	// 			up: "fa fa-angle-up",
+	// 			down: "fa fa-angle-down",
+	// 			next: 'fa fa-angle-right',
+	// 			previous: 'fa fa-angle-left'
+	// 		}
+	// 	});
+	// }
+
+	// if ($('.datepicker').length > 0) {
+	// 	$('.datepicker').datetimepicker({
+	// 		format: 'DD/MM/YYYY',
+	// 		icons: {
+	// 			up: "fa fa-angle-up",
+	// 			down: "fa fa-angle-down",
+	// 			next: 'fa fa-angle-right',
+	// 			previous: 'fa fa-angle-left'
+	// 		}
+	// 	});
+	// }
+
+	// if ($('.timepicker').length > 0) {
+	// 	$('.timepicker').datetimepicker({
+	// 		format: "hh:mm:ss",
+	// 		icons: {
+	// 			up: "fa fa-angle-up",
+	// 			down: "fa fa-angle-down",
+	// 			next: 'fa fa-angle-right',
+	// 			previous: 'fa fa-angle-left'
+	// 		}
+	// 	});
+	// }
 
 	// Datatable
 
@@ -720,6 +750,12 @@ function isEmail(email) {
 	var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
 	return regex.test(email);
 }
+
+document.getElementsByClassName("modal").click(function(event) {
+	if (event.target === this) {
+		event.stopPropagation();
+	}
+});
 
 
 
