@@ -45,6 +45,7 @@
                 <th>Start</th>
                 <th>Deadline</th>
                 <th>Status</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="tblProjects"></tbody>

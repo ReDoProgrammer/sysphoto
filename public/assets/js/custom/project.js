@@ -124,7 +124,24 @@ function fetch() {
                         <td>${p.name}</td>
                         <td>${p.start_date}</td>
                         <td>${p.end_date}</td>
-                        <td><div class="${p.color_sttj}">${p.stt_job_name}</div></td>
+                        <td class="text-center">
+                      
+                                    <span class="badge ${p.color_sttj}">${p.stt_job_name}</span>
+                        </td>                       
+                        <td class="text-center">
+                            <div class="dropdown action-label">
+                                <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-cog"></i>								</a>	
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
+                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-plus-circle"></i>  Add a task</a>
+                                    <a class="dropdown-item" href="javascript:void(0)"><i class="far fa-closed-captioning"></i>  Add a CC</a>
+                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-pencil-alt"></i>  Update</a>
+                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-trash-alt"></i>  Destroy</a>
+                                    
+                                </div> 
+                            </div>
+                        </td>
                     </tr>
                 `);
                 })
