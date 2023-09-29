@@ -268,6 +268,7 @@ $(document).ready(function () {
 			})
 			.then(editor => {
 				window.editor = editor;
+				console.log(editor);
 			})
 			.catch(err => {
 				console.error(err.stack);

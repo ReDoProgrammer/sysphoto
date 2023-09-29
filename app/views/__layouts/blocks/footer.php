@@ -26,6 +26,13 @@
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/moment.min.js"></script>
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/flatpicker/flatpickr.min.js"></script>
 
+<!-- selectize plugin -->
+
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/selectize/selectize.min.js"></script>
+
+
+
+
 <!-- Custom JS -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/app.js"></script>
 

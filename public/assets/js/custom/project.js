@@ -7,15 +7,31 @@ $(document).ready(function () {
     LoadCustomers();
 
 
-    let dateNow = new Date();
-    // $('#txtFromDate').datetimepicker({
-    //     defaultDate:dateNow,
-    //     format: 'DD/MM/YYYY'
-    // });
-
-
     page = 1;
     $('#btnSearch').click();
+})
+
+$('#btnSubmitJob').click(function () {
+    let customer = $('#slCustomers option:selected').val();
+    let name = $('#txtProjectName').val();
+    let start_date = $('#txtBeginDate').val();
+    let duration = $('#txtDuration').val();
+    let end_date = $('#txtEndDate').val();
+    let combo = $('#slComboes option:selected').val();
+    let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
+        return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
+    }) : [];
+
+    let urgent = $('#ckbPriority').is(':checked');
+    let description = $('#divDescription').html();
+    let intruction = $('#txaIntruction').val();
+
+
+    console.log({description});
+
+    // console.log({ customer, name, start_date, duration, end_date, combo, templates, urgent, intruction });
+
+
 })
 $('#btnSearch').click(function (e) {
     e.preventDefault();
@@ -28,6 +44,12 @@ $('#slPageSize').on('change', function () {
 });
 
 function LoadCustomers() {
+    var $selectizeInput = $('#slCustomers');
+    $selectizeInput.selectize({
+        sortField: 'text' // Sắp xếp mục theo văn bản
+    });
+    var selectize = $selectizeInput[0].selectize;
+
     $.ajax({
         url: 'customer/getlist',
         type: 'get',
@@ -35,7 +57,7 @@ function LoadCustomers() {
             let content = $.parseJSON(data);
             if (content.code == 200) {
                 content.customers.forEach(c => {
-                    $('#slCustomers').append(`<option value="${c.id}">${c.name_ct}</option>`)
+                    selectize.addOption({ value: `${c.id}`, text: `${c.name_ct}` });
                 })
             }
         }
@@ -43,6 +65,11 @@ function LoadCustomers() {
 }
 
 function LoadComboes() {
+    var $selectizeInput = $('#slComboes');
+    $selectizeInput.selectize({
+        sortField: 'text' // Sắp xếp mục theo văn bản
+    });
+    var selectize = $selectizeInput[0].selectize;
     $.ajax({
         url: 'combo/getlist',
         type: 'get',
@@ -50,7 +77,7 @@ function LoadComboes() {
             let content = $.parseJSON(data);
             if (content.code == 200) {
                 content.comboes.forEach(c => {
-                    $('#slComboes').append(`<option value="${c.id}">${c.ten_combo}</option>`);
+                    selectize.addOption({ value: `${c.id}`, text: `${c.ten_combo}` });
                 })
             }
         }

@@ -33,6 +33,9 @@
     <!-- Select2-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/select2/select2.min.css">
     
+    <!-- Selectize -->
+    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/selectize/selectize.min.css">
+    
     <!-- CKEditor-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/ckeditor.css">
     

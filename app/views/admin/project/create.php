@@ -13,13 +13,14 @@
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Customer</label>
-                                <select class="select" id="slCustomers"></select>
+                                <label class="col-form-label">Customer</label>                                
+                                <select id="slCustomers"></select>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Project Name (<span class="text-danger fw-bold">*</span>)</label>
+                                <label class="col-form-label">Project Name (<span
+                                        class="text-danger fw-bold">*</span>)</label>
                                 <input class="form-control" type="text" id="txtProjectName">
                             </div>
                         </div>
@@ -53,8 +54,8 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Combo</label>
-                                <select class="select" id="slComboes"></select>
+                                <label class="col-form-label">Combo</label>                               
+                                <select id="slComboes"></select>
                             </div>
                         </div>
                         <div class="col-sm-6">
@@ -95,7 +96,7 @@
                     <div class="submit-section">
                         <button class="btn btn-primary cancel-btn" data-bs-dismiss="modal"
                             aria-label="Close">Cancel</button>
-                        <button class="btn btn-primary submit-btn" id="btnSubmit">Submit</button>
+                        <button class="btn btn-primary submit-btn" id="btnSubmitJob">Submit</button>
                     </div>
                 </div>
             </div>
@@ -103,3 +104,4 @@
     </div>
 </div>
 <!-- /Create Project Modal -->
+

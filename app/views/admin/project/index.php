@@ -79,10 +79,14 @@
         </nav>
     </div>
 </div>
+
+
 <?php
 include_once 'create.php';
 include_once 'edit.php';
 include_once 'delete.php';
 ?>
 
+
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project.js"></script>
+
