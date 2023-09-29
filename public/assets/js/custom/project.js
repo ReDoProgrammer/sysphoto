@@ -101,7 +101,6 @@ function fetch() {
             limit
         },
         success: function (data) {
-
             let content = $.parseJSON(data);
             if (content.code == 200) {
 

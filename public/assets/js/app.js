@@ -751,11 +751,7 @@ function isEmail(email) {
 	return regex.test(email);
 }
 
-document.getElementsByClassName("modal").click(function(event) {
-	if (event.target === this) {
-		event.stopPropagation();
-	}
-});
+
 
 
 
