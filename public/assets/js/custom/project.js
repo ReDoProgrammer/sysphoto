@@ -39,15 +39,15 @@ $(document).ready(function () {
     $('#btnSearch').click();
 })
 
-$('#txtDuration').keyup(function () { 
+$('#txtDuration').keyup(function () {
     if ($(this).val().length != 0) {
         let sd = strToDateTime($('#txtBeginDate').val());
         let durationHours = parseInt($(this).val()); // Chuyển đổi giá trị nhập thành số nguyên
-        
+
         if (!isNaN(durationHours)) { // Kiểm tra nếu giá trị nhập là một số
-             let td = new Date(sd); // Tạo một bản sao của ngày bắt đầu
-             td.setHours(sd.getHours() + durationHours); // Thêm giờ vào ngày bắt đầu
-             $('#txtEndDate').val(moment(td).format('DD/MM/YYYY HH:mm'));
+            let td = new Date(sd); // Tạo một bản sao của ngày bắt đầu
+            td.setHours(sd.getHours() + durationHours); // Thêm giờ vào ngày bắt đầu
+            $('#txtEndDate').val(moment(td).format('DD/MM/YYYY HH:mm'));
         } else {
             console.log("Giá trị nhập không phải là số.");
         }
@@ -56,6 +56,10 @@ $('#txtDuration').keyup(function () {
 
 $('#btnSubmitJob').click(function () {
     let customer = $('#slCustomers option:selected').val();
+
+
+
+
     let name = $('#txtProjectName').val();
     let start_date = $('#txtBeginDate').val();
     let end_date = $('#txtEndDate').val();
@@ -68,18 +72,56 @@ $('#btnSubmitJob').click(function () {
     let description = qDescription.getText();
     let instruction = qInstruction.getText();
 
+    // validate inputs
+    if ($.trim(customer) === "") {
+        $.toast({
+            heading: `Customer can not be null`,
+            text: `Please choose a customer from list`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+    if ($.trim(name) === "") {
+        $.toast({
+            heading: `Project name can not be null`,
+            text: `Please enter project name`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+
+    let sd = strToDateTime($('#txtBeginDate').val());
+    let td = strToDateTime($('#txtEndDate').val());
+    if (td < sd) {
+        $.toast({
+            heading: `End date can not be less than start date!`,
+            text: `Please choose another value`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+    // end validating inputs
+
+
+
 
     $.ajax({
-        url:'project/create',
-        type:'post',
-        data:{
-            customer,name,start_date,end_date,status,
-            combo,templates,urgent,
-            description,instruction
+        url: 'project/create',
+        type: 'post',
+        data: {
+            customer, name, start_date, end_date, status,
+            combo, templates, urgent,
+            description, instruction
         },
-        success:function(data){
+        success: function (data) {
             content = $.parseJSON(data);
-            if(content.code == 201){
+            if (content.code == 201) {
                 $.toast({
                     heading: content.heading,
                     text: content.msg,
@@ -249,7 +291,7 @@ function LoadJobStatus() {
     $.ajax({
         url: 'JobStatus/list',
         type: 'get',
-        success: function (data) {           
+        success: function (data) {
             var stt = $.parseJSON(data);
             stt.forEach(s => {
                 $('#slStatuses').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
