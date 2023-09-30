@@ -1,4 +1,35 @@
 var page;
+var qDescription = new Quill('#divDescription', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter project's description here...",
+    // Đặt chiều cao cho trình soạn thảo
+    // Ví dụ: Chiều cao 300px
+    height: '300px'
+    // Hoặc chiều cao 5 dòng
+    // height: '10em'
+});
+var qIntruction = new Quill('#divIntruction', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter intruction for Editor here...",
+});
+
+
 $(document).ready(function () {
     LoadJobStatus();
 
@@ -9,6 +40,9 @@ $(document).ready(function () {
 
     page = 1;
     $('#btnSearch').click();
+
+
+
 })
 
 $('#btnSubmitJob').click(function () {
@@ -21,15 +55,11 @@ $('#btnSubmitJob').click(function () {
     let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
-
     let urgent = $('#ckbPriority').is(':checked');
-    let description = $('#divDescription').html();
-    let intruction = $('#txaIntruction').val();
+    let description = qDescription.getText();
+    let intruction = qIntruction.getText();
 
 
-    console.log({description});
-
-    // console.log({ customer, name, start_date, duration, end_date, combo, templates, urgent, intruction });
 
 
 })

@@ -35,9 +35,7 @@
     
     <!-- Selectize -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/selectize/selectize.min.css">
-    
-    <!-- CKEditor-->
-    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/ckeditor.css">
+       
     
     <!--datetimepicker-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/flatpicker/flatpickr.min.css">

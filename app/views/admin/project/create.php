@@ -13,7 +13,7 @@
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Customer</label>                                
+                                <label class="col-form-label">Customer</label>
                                 <select id="slCustomers"></select>
                             </div>
                         </div>
@@ -54,7 +54,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Combo</label>                               
+                                <label class="col-form-label">Combo</label>
                                 <select id="slComboes"></select>
                             </div>
                         </div>
@@ -80,7 +80,7 @@
                         <div class="col-sm-12">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Project's description</label>
-                                <div class="editor" id="divDescription"></div>
+                                <div id="divDescription" style="min-height: 100px;"></div>
                             </div>
                         </div>
                     </div>
@@ -88,7 +88,7 @@
                         <div class="col-sm-12">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Intruction for Editor</label>
-                                <textarea name="" id="txaIntruction" rows="3" class="form-control"></textarea>
+                                <div id="divIntruction" style="min-height: 50px;"></div>
                             </div>
                         </div>
                     </div>

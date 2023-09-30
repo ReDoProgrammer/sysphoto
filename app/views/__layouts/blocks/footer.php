@@ -19,9 +19,6 @@
 <!-- Custom Select 2 -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/select2/select2.min.js"></script>
 
-<!-- CKEditor -->
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/ckeditor.js"></script>
-
 <!-- Datetime picker -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/moment.min.js"></script>
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/flatpicker/flatpickr.min.js"></script>
