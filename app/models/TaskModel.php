@@ -8,4 +8,8 @@
             $data = $this->__db->select($this->__table,$columns,$join);
             return $data;
         }
+
+        public function getTasksByProject($prjId){
+            
+        }
     }

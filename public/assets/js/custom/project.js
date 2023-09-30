@@ -1,4 +1,4 @@
-var page;
+var page,limit;
 var pId = 0;
 var qDescription = new Quill('#divDescription', {
     theme: 'snow', // Chọn giao diện "snow"
@@ -37,6 +37,7 @@ $(document).ready(function () {
     LoadTemplates();
     LoadCustomers();
     page = 1;
+    limit = $('#slPageSize option:selected').val();
     $('#btnSearch').click();
     setInterval( fetch,10000);// gọi hàm load lại dữ liệu sau mỗi 10s
 })
@@ -225,7 +226,7 @@ function fetch() {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
     let search = $('#txtSearch').val();
-    let limit = $('#slPageSize option:selected').val();
+    limit = $('#slPageSize option:selected').val();
     $('#tblProjects').empty();
     $('#pagination').empty();
     $.ajax({
@@ -272,8 +273,8 @@ function fetch() {
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
-                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-plus-circle"></i>  Add a task</a>
+                                    <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
+                                    <a class="dropdown-item" href="../admin/project/add-task?id=${p.id}"><i class="fas fa-plus-circle"></i>  Add a task</a>
                                     <a class="dropdown-item" href="javascript:void(0)"><i class="far fa-closed-captioning"></i>  Add a CC</a>
                                     <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-pencil-alt"></i>  Update</a>
                                     <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-trash-alt"></i>  Destroy</a>
@@ -303,6 +304,7 @@ function LoadJobStatus() {
             var stt = $.parseJSON(data);
             stt.forEach(s => {
                 $('#slStatuses').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
+                $('#slJobStatus').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
             })
         }
     })

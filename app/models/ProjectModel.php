@@ -6,6 +6,23 @@
             return $this->__db->insert($this->__table,$data);
         }
 
+        public function detail($id){
+            //select($table, $columns = '*',$join ='', $where = '',$params=[],$page = 1,$limit = 0,$orderby='',$groupby='')
+            $columns = "p.id, p.name, p.description, count(t.id) tasks_number,st.stt_task_name, 
+                        DATE_FORMAT(p.start_date, '%d %b, %Y %H:%m') as start_date, 
+                        DATE_FORMAT(p.end_date, '%d %b, %Y %H:%m') as end_date, p.urgent,
+                        cb.ten_combo,cb.mau_sac, s.stt_job_name, s.color_sttj";
+            $join = " JOIN custom c ON p.idkh = c.id ";
+            $join .= " JOIN status_job s ON p.status = s.id ";
+            $join .= " LEFT JOIN task_list t ON t.project_id = p.id";
+            $join .= " JOIN status_task st ON t.status = st.id";
+            $join .= " LEFT JOIN combo cb ON p.idcb = cb.id";
+            $where =" p.id = $id" ;
+            // $groupby = "p.id,st.stt_task_name";
+            $groupby = "";
+            return $this->__db->select($this->__table. " p ",$columns,$join,$where,[],1,0,'',$groupby);
+        }
+
         public function getList($from_date,$to_date,$stt,$search,$page = 1,$limit = 10){
             $columns = "p.id,c.name_ct_mh,p.name,DATE_FORMAT(p.start_date, '%m/%d/%Y %H:%i') start_date, DATE_FORMAT(p.end_date, '%m/%d/%Y %H:%i') end_date, s.stt_job_name,s.color_sttj";
             $join = " JOIN custom c ON p.idkh = c.id ";

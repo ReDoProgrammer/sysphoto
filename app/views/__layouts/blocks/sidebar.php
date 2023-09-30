@@ -279,8 +279,8 @@
             <div class="tab-pane fade" id="v-pills-projects" role="tabpanel" aria-labelledby="v-pills-projects-tab">
                 <p>Project</p>
                 <ul>
-                    <li><a href="./project">Projects</a></li>
-                    <li><a href="tasks.html">Tasks</a></li>
+                    <li><a href="<?php echo _WEB_ROOT?>/admin/project">Projects</a></li>
+                    <li><a href="<?php echo _WEB_ROOT?>/admin/task">Tasks</a></li>
                     <li><a href="task-board.html">Task Board</a></li>
                 </ul>
             </div>

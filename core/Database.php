@@ -44,6 +44,12 @@
             if (!empty($where)) {
                 $sql .= " WHERE $where";
             }
+            if(!empty($orderby)){
+                $sql .= "ORDER BY $orderby ";
+            }
+            if(!empty($groupby)){
+                $sql .= " GROUP BY $groupby ";
+            }
             if($limit>0){
                 $sql .=" LIMIT ".($page-1)*$limit.",$limit";
             }

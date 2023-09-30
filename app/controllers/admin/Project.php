@@ -15,6 +15,14 @@ class Project extends Controller
         $this->data['sub_content'] = [];
         $this->render('__layouts/admin_layout', $this->data);
     }
+    public function detail(){
+       
+        $id = $_GET['id'];
+        $this->data['title'] = 'Projects detail';
+        $this->data['content'] = 'admin/project/detail';
+        $this->data['sub_content']['details'] = $this->project_model->detail($id);        
+        $this->render('__layouts/admin_layout', $this->data);
+    }
 
     public function create()
     {
