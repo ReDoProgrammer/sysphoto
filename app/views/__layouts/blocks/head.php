@@ -35,7 +35,9 @@
     
     <!-- Selectize -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/selectize/selectize.min.css">
-       
+    
+    <!-- Toast -->
+    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.css">
     
     <!--datetimepicker-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/flatpicker/flatpickr.min.css">

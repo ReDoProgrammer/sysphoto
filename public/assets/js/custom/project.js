@@ -16,7 +16,7 @@ var qDescription = new Quill('#divDescription', {
     // Hoặc chiều cao 5 dòng
     // height: '10em'
 });
-var qIntruction = new Quill('#divIntruction', {
+var qInstruction = new Quill('#divInstruction', {
     theme: 'snow', // Chọn giao diện "snow"
     modules: {
         toolbar: [
@@ -57,9 +57,31 @@ $('#btnSubmitJob').click(function () {
     }) : [];
     let urgent = $('#ckbPriority').is(':checked');
     let description = qDescription.getText();
-    let intruction = qIntruction.getText();
+    let instruction = qInstruction.getText();
 
-
+    $.ajax({
+        url:'project/create',
+        type:'post',
+        data:{
+            customer,name,start_date,duration,end_date,
+            combo,templates,urgent,
+            description,instruction
+        },
+        success:function(data){
+            content = $.parseJSON(data);
+            if(content.code == 201){
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    icon: 'success',
+                    loader: true,        // Change it to false to disable loader
+                    loaderBg: '#9EC600'  // To change the background
+                })
+                $('#create_project').modal('hide');
+                $('#btnSearch').click();
+            }
+        }
+    })
 
 
 })

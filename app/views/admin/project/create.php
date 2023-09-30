@@ -87,8 +87,8 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Intruction for Editor</label>
-                                <div id="divIntruction" style="min-height: 50px;"></div>
+                                <label class="col-form-label">Instruction for Editor</label>
+                                <div id="divInstruction" style="min-height: 50px;"></div>
                             </div>
                         </div>
                     </div>

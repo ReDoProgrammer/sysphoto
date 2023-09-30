@@ -27,7 +27,8 @@
 
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/selectize/selectize.min.js"></script>
 
-
+<!-- Toast -->
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.js"></script>
 
 
 <!-- Custom JS -->
