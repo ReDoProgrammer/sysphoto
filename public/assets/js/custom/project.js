@@ -38,6 +38,7 @@ $(document).ready(function () {
     LoadCustomers();
     page = 1;
     $('#btnSearch').click();
+    setInterval( fetch,10000);// gọi hàm load lại dữ liệu sau mỗi 10s
 })
 
 $( "#create_project" ).on('shown.bs.modal', function (e) {
