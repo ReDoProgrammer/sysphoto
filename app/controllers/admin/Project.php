@@ -21,7 +21,7 @@ class Project extends Controller
         $customer = $_POST['customer'];
         $name = $_POST['name'];
         $start_date = $_POST['start_date'];
-        $duration = $_POST['duration'];
+        $status = $_POST['status'];
         $end_date = $_POST['end_date'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
         $templates = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
@@ -35,6 +35,7 @@ class Project extends Controller
             'instruction' => $instruction,
             'start_date' => (DateTime::createFromFormat('d/m/Y H:i', $start_date))->format('Y-m-d H:i'),
             'end_date' => (DateTime::createFromFormat('d/m/Y H:i', $end_date))->format('Y-m-d H:i'),
+            'status'=>$status,
             'idlevels' => $templates,
             'urgent' => $urgent,
             'idcb' => $combo

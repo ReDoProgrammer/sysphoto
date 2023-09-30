@@ -27,7 +27,7 @@
 
                     </div>
                     <div class="row">
-                        <div class="col-sm-5">
+                        <div class="col-sm-3">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Start Date</label>
                                 <div class="cal-icon">
@@ -42,12 +42,18 @@
                                     style="text-align: right;">
                             </div>
                         </div>
-                        <div class="col-sm-5">
+                        <div class="col-sm-3">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">End Date</label>
                                 <div class="cal-icon">
                                     <input type="date" id="txtEndDate" class="form-control datetimepicker">
                                 </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="input-block mb-3">
+                                <label class="col-form-label">Status</label>
+                                <select id="slStatuses" class="form-control"></select>
                             </div>
                         </div>
                     </div>
@@ -104,4 +110,3 @@
     </div>
 </div>
 <!-- /Create Project Modal -->
-

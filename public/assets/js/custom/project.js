@@ -49,8 +49,8 @@ $('#btnSubmitJob').click(function () {
     let customer = $('#slCustomers option:selected').val();
     let name = $('#txtProjectName').val();
     let start_date = $('#txtBeginDate').val();
-    let duration = $('#txtDuration').val();
     let end_date = $('#txtEndDate').val();
+    let status = $('#slStatuses option:selected').val();
     let combo = $('#slComboes option:selected').val();
     let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
@@ -59,11 +59,12 @@ $('#btnSubmitJob').click(function () {
     let description = qDescription.getText();
     let instruction = qInstruction.getText();
 
+
     $.ajax({
         url:'project/create',
         type:'post',
         data:{
-            customer,name,start_date,duration,end_date,
+            customer,name,start_date,end_date,status,
             combo,templates,urgent,
             description,instruction
         },
@@ -239,10 +240,10 @@ function LoadJobStatus() {
     $.ajax({
         url: 'JobStatus/list',
         type: 'get',
-        success: function (data) {
+        success: function (data) {           
             var stt = $.parseJSON(data);
             stt.forEach(s => {
-                $('#slJobStatus').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
+                $('#slStatuses').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
             })
         }
     })
