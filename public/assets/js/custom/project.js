@@ -32,17 +32,26 @@ var qInstruction = new Quill('#divInstruction', {
 
 $(document).ready(function () {
     LoadJobStatus();
-
     LoadComboes();
     LoadTemplates();
     LoadCustomers();
-
-
     page = 1;
     $('#btnSearch').click();
+})
 
-
-
+$('#txtDuration').keyup(function () { 
+    if ($(this).val().length != 0) {
+        let sd = strToDateTime($('#txtBeginDate').val());
+        let durationHours = parseInt($(this).val()); // Chuyển đổi giá trị nhập thành số nguyên
+        
+        if (!isNaN(durationHours)) { // Kiểm tra nếu giá trị nhập là một số
+             let td = new Date(sd); // Tạo một bản sao của ngày bắt đầu
+             td.setHours(sd.getHours() + durationHours); // Thêm giờ vào ngày bắt đầu
+             $('#txtEndDate').val(moment(td).format('DD/MM/YYYY HH:mm'));
+        } else {
+            console.log("Giá trị nhập không phải là số.");
+        }
+    }
 })
 
 $('#btnSubmitJob').click(function () {

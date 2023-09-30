@@ -155,7 +155,7 @@ $(document).ready(function () {
 	flatpickr(".datetimepicker", {
 		dateFormat: "d/m/Y H:i",
 		enableTime: true,
-		defaultDate: "today",
+		defaultDate: moment(new Date()).format('DD/MM/YYYY HH:mm'),
 		time_24hr: true,
 		allowInput: true // Cho phép nhập ngày thủ công
 	});
@@ -751,8 +751,22 @@ function isEmail(email) {
 	var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
 	return regex.test(email);
 }
+function isNumberKey(evt) {
+	var charCode = (evt.which) ? evt.which : evt.keyCode
+	if (charCode > 31 && (charCode < 48 || charCode > 57))
+	  return false;
+	return true;
+  }
 
-
+  function strToDateTime(dtStr) {
+	if (!dtStr) return null
+	let dateParts = dtStr.split("/");
+	let timeParts = dateParts[2].split(" ")[1].split(":");
+	dateParts[2] = dateParts[2].split(" ")[0];
+	// month is 0-based, that's why we need dataParts[1] - 1
+	// return new Date(`${dateParts[2]}-${dateParts[1]-1}-${dateParts[0]}T${timeParts[0]}:$Ơ:00`);
+	return dateObject = new Date(+dateParts[2], dateParts[1] - 1, +dateParts[0], timeParts[0], timeParts[1],"00");
+  }
 
 
 

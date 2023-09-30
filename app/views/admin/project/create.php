@@ -39,7 +39,9 @@
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Duration(hour)</label>
                                 <input class="form-control" type="text" id="txtDuration" value="1"
-                                    style="text-align: right;">
+                                    style="text-align: right;"
+                                    onkeypress="return isNumberKey(event)"
+                                    >
                             </div>
                         </div>
                         <div class="col-sm-3">
