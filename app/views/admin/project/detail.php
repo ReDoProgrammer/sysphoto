@@ -171,3 +171,5 @@
         </div>
     </div>
 </div>
+
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/detail.js"></script>
