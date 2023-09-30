@@ -1,4 +1,5 @@
 var page;
+var pId = 0;
 var qDescription = new Quill('#divDescription', {
     theme: 'snow', // Chọn giao diện "snow"
     modules: {
@@ -39,6 +40,16 @@ $(document).ready(function () {
     $('#btnSearch').click();
 })
 
+$( "#create_project" ).on('shown.bs.modal', function (e) {
+    if(pId<1){
+        $('#slStatuses').attr("disabled", true);
+    }else{
+        $('#slStatuses').removeAttr('disabled');
+    }
+});
+
+
+
 $('#txtDuration').keyup(function () {
     if ($(this).val().length != 0) {
         let sd = strToDateTime($('#txtBeginDate').val());
@@ -56,10 +67,6 @@ $('#txtDuration').keyup(function () {
 
 $('#btnSubmitJob').click(function () {
     let customer = $('#slCustomers option:selected').val();
-
-
-
-
     let name = $('#txtProjectName').val();
     let start_date = $('#txtBeginDate').val();
     let end_date = $('#txtEndDate').val();
