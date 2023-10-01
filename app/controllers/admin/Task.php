@@ -25,16 +25,15 @@ class Task extends Controller
         $level = $_POST['level'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
-        $quantity = $_POST['quantity'];
-        $status = $_POST['status'];
+        $quantity = $_POST['quantity'];      
         $data = array(
             'project_id' => $prjId,
-            'description' => $description,
-            'status' => $status,
+            'description' => $description,          
             'editor' => $editor,
             'qa' => $qa,
             'soluong' => $quantity,
-            'idlevel' => $level
+            'idlevel' => $level,
+            'status'=>0
         );
         $lastId = $this->task_model->create($data);
         if ($lastId > 0) {
@@ -56,6 +55,42 @@ class Task extends Controller
         echo json_encode($data);
 
     }
+
+
+    public function update()
+    {
+        $id = $_POST['id'];
+        $description = $_POST['description'];
+        $level = $_POST['level'];
+        $editor = $_POST['editor'];
+        $qa = $_POST['qa'];
+        $quantity = $_POST['quantity'];      
+        $data = array(      
+            'description' => $description,          
+            'editor' => $editor,
+            'qa' => $qa,
+            'soluong' => $quantity,
+            'idlevel' => $level
+        );
+        $where = "id = $id";
+        if ($this->task_model->updateTask($data,$where)) {
+            $data = array(
+                'code' => 200,
+                'msg' => 'The task has been updated!',
+                'heading' => 'Successfully!',
+                'icon' => 'success'               
+            );
+        } else {
+            $data = array(
+                'code' => 204,
+                'msg' => 'Update task failed!',
+                'icon' => 'danger'
+            );
+        }
+        echo json_encode($data);
+    }
+
+
 
     public function getTaskList()
     {

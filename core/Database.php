@@ -81,16 +81,26 @@
             return $this->__conn->lastInsertId();
         }
 
-        public function update($table, $data, $where, $params = []) {
-            $set = [];
-            foreach ($data as $key => $value) {
-                $set[] = "$key = :$key";
+        public function update($table, $data, $where) {
+            try {
+                
+                // Xây dựng câu truy vấn SQL
+                $sql = "UPDATE $table SET ";
+                $values = [];
+                foreach ($data as $key => $value) {
+                    $values[] = "$key = :$key";
+                }
+                $sql .= implode(', ', $values);
+                $sql .= " WHERE $where";
+        
+                // Chuẩn bị và thực thi câu truy vấn
+                $stmt = $this->__conn->prepare($sql);
+                $stmt->execute(array_merge($data, []));        
+              
+                return true; // Cập nhật thành công
+            } catch (PDOException $e) {
+                return $e; // Lỗi khi cập nhật
             }
-            $set = implode(', ', $set);
-            $sql = "UPDATE $table SET $set WHERE $where";
-            $stmt = $this->__conn->prepare($sql);
-            $stmt->execute(array_merge($data, $params));
-            return $stmt->rowCount();
         }
     
         public function delete($table, $where, $params = []) {

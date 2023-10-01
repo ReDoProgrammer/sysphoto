@@ -7,11 +7,14 @@ class TaskModel extends Model
     {
         return $this->__db->insert($this->__table, $data);
     }
+    function updateTask($data,$where){
+        return $this->__db->update($this->__table, $data,$where);
+    }
 
     public function getDetail($id)
     {
-        $columns = "t.id, l.name as level,l.mau_sac as level_bg, t.soluong as qty,t.description note, 
-            e.viettat as editor, qa.viettat as qa, t.date_created as got_time, st.stt_task_name as status, st.color_sttt as status_bg";
+        $columns = "t.id,l.id as lId, l.name as level,l.mau_sac as level_bg, t.soluong as qty,t.description note, 
+           e.id as eId, e.viettat as editor,qa.id as qaId, qa.viettat as qa, t.date_created as got_time, st.stt_task_name as status, st.color_sttt as status_bg";
         $join = " JOIN level l ON t.idlevel = l.id ";
         $join .= "LEFT JOIN users e ON t.editor = e.id ";
         $join .= "LEFT JOIN users qa ON t.qa = qa.id ";

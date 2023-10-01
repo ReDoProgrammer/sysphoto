@@ -2,27 +2,68 @@ var taskId = 0;
 $(document).ready(function () {
     getTasksList();
     getTaskLevels();
-    getTaskStatuses();
 })
 
-function viewTask(id) {
+
+
+$("#task_modal").on('shown.bs.modal', function (e) {
+    if (taskId < 1) {
+        $('#taskModalTitle').text("Add new task");
+        $('#btnSubmitTask').text('Submit creating');
+    } else {
+        $('#taskModalTitle').text("Update task");
+        $('#btnSubmitTask').text('Save changes');
+    }
+});
+$("#task_modal").on("hidden.bs.modal", function () {
+    taskId = 0;
+});
+
+
+
+function editTask(id) {
     $.ajax({
-        url:'../task/detail',
-        type:'get',
-        data:{id},
-        success:function(data){
+        url: '../task/detail',
+        type: 'get',
+        data: { id },
+        success: function (data) {
             try {
                 let content = $.parseJSON(data);
-                console.log(content);
-                if(content.code == 200){
-                    $('#pDescription').html(content.task.note);
+                if (content.code == 200) {
+                    let t = content.task;
+                    qDescription.setText(t.note);
+                    $('#slLevels').val(t.lId);
+                    LoadEditorsByLevel(t.lId, t.eId);
+                    LoadQAsByLevel(t.lId, t.qaId);
+                    $('#txtQuantity').val(t.qty)
                 }
+                taskId = id;
+                $('#task_modal').modal('show');
             } catch (error) {
-                console.log(data,error);
+                console.log(data, error);
             }
         }
     })
-    $('#view_task_modal').modal('show');
+}
+
+function viewTask(id) {
+    $.ajax({
+        url: '../task/detail',
+        type: 'get',
+        data: { id },
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    $('#pDescription').html(content.task.note);
+                }
+                $('#view_task_modal').modal('show');
+            } catch (error) {
+                console.log(data, error);
+            }
+        }
+    })
+
 }
 
 
@@ -32,7 +73,6 @@ $('#btnSubmitTask').click(function () {
     let editor = $('#slEditors option:selected').val();
     let qa = $('#slQAs option:selected').val();
     let quantity = $('#txtQuantity').val();
-    let status = $('#slTaskStatuses option:selected').val();
 
     // validation
     if (!level) {
@@ -45,16 +85,7 @@ $('#btnSubmitTask').click(function () {
         })
         return;
     }
-    if (!level) {
-        $.toast({
-            heading: `Task level can not be null`,
-            text: `Please chose one level`,
-            icon: 'warning',
-            loader: true,        // Change it to false to disable loader
-            loaderBg: '#9EC600'  // To change the background
-        })
-        return;
-    }
+   
     if (quantity.trim().length == 0) {
         $.toast({
             heading: `Quantity is not valid`,
@@ -89,8 +120,7 @@ $('#btnSubmitTask').click(function () {
                 level,
                 editor: editor ? editor : 0,
                 qa: qa ? qa : 0,
-                quantity: parseInt(quantity),
-                status
+                quantity: parseInt(quantity)
             },
             success: function (data) {
                 try {
@@ -113,10 +143,39 @@ $('#btnSubmitTask').click(function () {
             }
         })
     } else {
+        $.ajax({
+            url: '../task/update',
+            type: 'post',
+            data: {
+                id: taskId,
+                prjId: idValue,
+                description,
+                level,
+                editor: editor ? editor : 0,
+                qa: qa ? qa : 0,
+                quantity: parseInt(quantity)
+            },
+            success: function (data) {
+                try {
+                    let content = $.parseJSON(data);
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
 
+                    if (content.code == 200) {
+                        $('#task_modal').modal('hide');
+                        getTasksList();
+                    }
+                } catch (error) {
+                    console.log(data, error);
+                }
+            }
+        })
     }
-    taskId = 0;
-
 })
 
 $('#slLevels').on('change', function () {
@@ -124,31 +183,26 @@ $('#slLevels').on('change', function () {
     LoadQAsByLevel($(this).val());
 })
 
+$('#slEditors').on('change', function() {
+    var selectedValue =  $(this).val();
 
-function getTaskStatuses() {
-    $.ajax({
-        url: '../taskstatus/list',
-        type: 'get',
-        success: function (data) {
-            try {
-                let content = $.parseJSON(data);
-
-                if (content.code == 200) {
-                    content.statuses.forEach(t => {
-                        $('#slTaskStatuses').append(`<option value="${t.id}">${t.stt_task_name}</option>`);
-                    })
-                }
-            } catch (error) {
-                console.log(data, error);
-            }
-        }
-    })
-}
+    // Kiểm tra xem giá trị đã chọn có rỗng không
+    if (selectedValue === null || selectedValue === '') {
+        selectizeQA.disable();
+        selectizeQA.setValue(null);
+        console.log('0');
+    }else{
+        console.log('1');
+        selectizeQA.enable();
+    }
+})
 
 
-function LoadEditorsByLevel(level) {
-    var selectize = $selectizeEditors[0].selectize;
-    selectize.clearOptions();
+
+
+function LoadEditorsByLevel(level, selected = null) {
+   
+    selectizeEditor.clearOptions();
     $.ajax({
         url: '../employee/getEditors',
         type: 'get',
@@ -159,8 +213,12 @@ function LoadEditorsByLevel(level) {
                 if (content.code == 200) {
 
                     content.editors.forEach(e => {
-                        selectize.addOption({ value: `${e.id}`, text: `${e.viettat}` });
+                        selectizeEditor.addOption({ value: `${e.id}`, text: `${e.viettat}` });
                     })
+
+                    if (selected != null) {
+                        selectizeEditor.setValue(selected);
+                    }
                 }
             } catch (error) {
 
@@ -169,9 +227,9 @@ function LoadEditorsByLevel(level) {
     })
 }
 
-function LoadQAsByLevel(level) {
-    var selectize = $selectizeQAs[0].selectize;
-    selectize.clearOptions();
+function LoadQAsByLevel(level, selected = null) {
+    var selectizeQA = selectizeQAs[0].selectize;
+    selectizeQA.clearOptions();
     $.ajax({
         url: '../employee/getQAs',
         type: 'get',
@@ -180,10 +238,13 @@ function LoadQAsByLevel(level) {
             try {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
-
                     content.qas.forEach(e => {
-                        selectize.addOption({ value: `${e.id}`, text: `${e.viettat}` });
+                        selectizeQA.addOption({ value: `${e.id}`, text: `${e.viettat}` });
                     })
+
+                    if (selected != null) {
+                        selectizeQA.setValue(selected);
+                    }
                 }
             } catch (error) {
                 console.log(data, error);
@@ -245,8 +306,8 @@ function getTasksList() {
                                                                     <i class="fas fa-cog"></i>								</a>	
                                                                     <div class="dropdown-menu dropdown-menu-right">
                                                                         <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> View</a>
-                                                                        <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-pencil-alt"></i>  Update</a>
-                                                                        <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-trash-alt"></i>  Delete</a>
+                                                                        <a class="dropdown-item" href="javascript:void(0)" onClick="editTask(${t.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
+                                                                        <a class="dropdown-item" href="javascript:void(0)" onClick="deleteTask(${t.id})"><i class="fas fa-trash-alt"></i>  Delete</a>
                                                                         
                                                                     </div> 
                                                                 </div>
@@ -283,17 +344,21 @@ var qDescription = new Quill('#divDescription', {
 });
 
 
-var $selectizeEditors = $('#slEditors');
-$selectizeEditors.selectize({
+var selectizeEditors = $('#slEditors');
+selectizeEditors.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản,
     placeholder: 'Vui lòng chọn editor'
 });
+var selectizeEditor = selectizeEditors[0].selectize;
 
-var $selectizeQAs = $('#slQAs');
-$selectizeQAs.selectize({
+var selectizeQAs = $('#slQAs');
+selectizeQAs.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản,
     placeholder: 'Vui lòng chọn Q.A'
 });
+var selectizeQA = selectizeQAs[0].selectize;
+
+
 
 var url = new URL(window.location.href);
 
