@@ -66,7 +66,7 @@ function editTask(id) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     let t = content.task;
-                    qDescription.setText(t.note);
+                    qDescription.setText(t.note?t.note:'');
                     $('#slLevels').val(t.lId);
                     LoadEditorsByLevel(t.lId, t.eId);
                     LoadQAsByLevel(t.lId, t.qaId);
@@ -90,7 +90,7 @@ function viewTask(id) {
             try {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
-                    $('#pDescription').html(content.task.note);
+                    $('#pDescription').html(content.task.note?content.task.note:'');
                 }
                 $('#view_task_modal').modal('show');
             } catch (error) {
