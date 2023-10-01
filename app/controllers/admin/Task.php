@@ -28,28 +28,28 @@ class Task extends Controller
         $quantity = $_POST['quantity'];
         $status = $_POST['status'];
         $data = array(
-            'project_id'=>$prjId,
-            'description'=>$description,
-            'status'=>$status,
-            'editor'=>$editor,
-            'qa'=>$qa,
-            'soluong'=>$quantity,
-            'idlevel'=>$level
+            'project_id' => $prjId,
+            'description' => $description,
+            'status' => $status,
+            'editor' => $editor,
+            'qa' => $qa,
+            'soluong' => $quantity,
+            'idlevel' => $level
         );
         $lastId = $this->task_model->create($data);
-        if($lastId>0){
+        if ($lastId > 0) {
             $data = array(
-                'code'=>201,
-                'msg'=>'New task has been created!',
-                'heading'=>'Successfully!',
-                'icon'=>'success',
-                'id'=>$lastId
+                'code' => 201,
+                'msg' => 'New task has been created!',
+                'heading' => 'Successfully!',
+                'icon' => 'success',
+                'id' => $lastId
             );
-        }else{
+        } else {
             $data = array(
-                'code'=>422,
-                'msg'=>'Insert new task failed!',
-                'icon'=>'danger'
+                'code' => 422,
+                'msg' => 'Insert new task failed!',
+                'icon' => 'danger'
             );
         }
 
@@ -63,6 +63,31 @@ class Task extends Controller
 
         echo json_encode($tasks);
     }
+
+    public function detail()
+    {
+        $id = $_GET['id'];
+        $tasks = $this->task_model->getDetail($id);
+        if (count($tasks) > 0) {
+            $data = array(
+                'code' => '200',
+                'msg' => 'Get task by id successfully!',
+                'task' => $tasks[0],
+                'icon'=>'success',
+                'heading'=>'Successfully!'
+            );
+        }else{
+            $data = array(
+                'code'=>404,
+                'msg'=>'Task not found!',
+                'icon'=>'warning',
+                'heading'=>'Valid task'
+            );
+        }
+
+        echo json_encode($data);
+    }
+
 
     public function getTasksByProject()
     {

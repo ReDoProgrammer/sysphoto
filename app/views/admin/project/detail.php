@@ -38,7 +38,7 @@
                     <div class="col-sm-4 text-end">
                         <div class="add-emp-section">
                             <a href="#" class="btn btn-success btn-add-emp" data-bs-toggle="modal"
-                                data-bs-target="#add_task_modal"><i class="fas fa-plus"></i> Add new task</a>
+                                data-bs-target="#task_modal"><i class="fas fa-plus"></i> Add new task</a>
                         </div>
                     </div>
                 </div>
@@ -52,7 +52,6 @@
                                 <th>#</th>
                                 <th>Level</th>
                                 <th>Q.ty</th>
-                                <th>Note</th>
                                 <th>Editor</th>
                                 <th>Q.A</th>
                                 <th>Got job</th>
@@ -173,9 +172,13 @@
 </div>
 
 <?php
-    include_once 'add_task.php';
+    include_once 'modal.php';
+    include_once 'view.php';
 ?>
 
 <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.snow.css">
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.js"></script>
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/detail.js"></script>
+
+<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.css">
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.js"></script>

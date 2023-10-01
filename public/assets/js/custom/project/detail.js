@@ -1,8 +1,30 @@
+var taskId = 0;
 $(document).ready(function () {
     getTasksList();
     getTaskLevels();
     getTaskStatuses();
 })
+
+function viewTask(id) {
+    $.ajax({
+        url:'../task/detail',
+        type:'get',
+        data:{id},
+        success:function(data){
+            try {
+                let content = $.parseJSON(data);
+                console.log(content);
+                if(content.code == 200){
+                    $('#pDescription').html(content.task.note);
+                }
+            } catch (error) {
+                console.log(data,error);
+            }
+        }
+    })
+    $('#view_task_modal').modal('show');
+}
+
 
 $('#btnSubmitTask').click(function () {
     let description = qDescription.getText();
@@ -57,38 +79,43 @@ $('#btnSubmitTask').click(function () {
 
     //end validation
 
-    $.ajax({
-        url: '../task/create',
-        type: 'post',
-        data: {
-            prjId:idValue,
-            description,
-            level,
-            editor:editor?editor:0,
-            qa:qa?qa:0,
-            quantity: parseInt(quantity),
-            status
-        },
-        success:function(data){
-            try {
-                let content = $.parseJSON(data);
-                $.toast({
-                    heading: content.heading,
-                    text: content.msg,
-                    icon: content.icon,
-                    loader: true,        // Change it to false to disable loader
-                    loaderBg: '#9EC600'  // To change the background
-                })
+    if (taskId < 1) {
+        $.ajax({
+            url: '../task/create',
+            type: 'post',
+            data: {
+                prjId: idValue,
+                description,
+                level,
+                editor: editor ? editor : 0,
+                qa: qa ? qa : 0,
+                quantity: parseInt(quantity),
+                status
+            },
+            success: function (data) {
+                try {
+                    let content = $.parseJSON(data);
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
 
-                if(content.code == 201){                   
-                    $('#add_task_modal').modal('hide');
-                    getTasksList();
+                    if (content.code == 201) {
+                        $('#task_modal').modal('hide');
+                        getTasksList();
+                    }
+                } catch (error) {
+                    console.log(data, error);
                 }
-            } catch (error) {
-                console.log(data,error);
             }
-        }
-    })
+        })
+    } else {
+
+    }
+    taskId = 0;
 
 })
 
@@ -208,7 +235,6 @@ function getTasksList() {
                                                             <td>${idx++}</td>
                                                             <td><span class="${t.level_bg}">${t.level}</span></td>
                                                             <td class="text-center">${t.qty}</td>
-                                                            <td>${t.note ? t.note : ''}</td>
                                                             <td>${t.editor ? t.editor : ''}</td>
                                                             <td>${t.qa ? t.qa : ''}</td>
                                                             <td>${t.got_time}</td>
@@ -218,7 +244,7 @@ function getTasksList() {
                                                                     <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                                                     <i class="fas fa-cog"></i>								</a>	
                                                                     <div class="dropdown-menu dropdown-menu-right">
-                                                                        <a class="dropdown-item" href="" ><i class="fa fa-eye" aria-hidden="true"></i> View</a>
+                                                                        <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> View</a>
                                                                         <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-pencil-alt"></i>  Update</a>
                                                                         <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-trash-alt"></i>  Delete</a>
                                                                         
