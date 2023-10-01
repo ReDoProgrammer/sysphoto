@@ -279,7 +279,7 @@ function LoadQAsByLevel(level, selected = null) {
 }
 
 
-function getTaskLevels() {
+function getTaskLevels() {   
     $('#slLevels').append(` <option value="" disabled selected>Vui lòng chọn level</option>`);
     $.ajax({
         url: '../level/getList',

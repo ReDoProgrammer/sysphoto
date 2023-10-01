@@ -13,6 +13,12 @@ $(document).ready(function () {
     setInterval( fetch,10000);// gọi hàm load lại dữ liệu sau mỗi 10s
 })
 
+function AddNewTask(id){
+    console.log({id});
+    taskId = 0;
+    $('#task_modal').modal('show');
+}
+
 $( "#create_project" ).on('shown.bs.modal', function (e) {
     if(pId<1){
         $('#slStatuses').attr("disabled", true);
@@ -245,7 +251,7 @@ function fetch() {
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
-                                    <a class="dropdown-item" href="../admin/project/add-task?id=${p.id}"><i class="fas fa-plus-circle"></i>  Add a task</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add a task</a>
                                     <a class="dropdown-item" href="javascript:void(0)"><i class="far fa-closed-captioning"></i>  Add a CC</a>
                                     <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-pencil-alt"></i>  Update</a>
                                     <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-trash-alt"></i>  Destroy</a>

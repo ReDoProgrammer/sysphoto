@@ -35,7 +35,7 @@
 </div>
 <!-- /Search Filter -->
 
-<div class="table-responsive"  style="min-height:300px;">
+<div class="table-responsive" style="min-height:400px; max-height:450px;">
     <table class="table table-hover mb-0">
         <thead>
             <tr>
@@ -86,8 +86,8 @@
 include_once 'create.php';
 include_once 'edit.php';
 include_once 'delete.php';
+$this->render('admin/task/modal');
 ?>
 
 
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/index.js"></script>
-
