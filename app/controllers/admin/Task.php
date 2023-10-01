@@ -25,15 +25,15 @@ class Task extends Controller
         $level = $_POST['level'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
-        $quantity = $_POST['quantity'];      
+        $quantity = $_POST['quantity'];
         $data = array(
             'project_id' => $prjId,
-            'description' => $description,          
+            'description' => $description,
             'editor' => $editor,
             'qa' => $qa,
             'soluong' => $quantity,
             'idlevel' => $level,
-            'status'=>0
+            'status' => 0
         );
         $lastId = $this->task_model->create($data);
         if ($lastId > 0) {
@@ -64,27 +64,49 @@ class Task extends Controller
         $level = $_POST['level'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
-        $quantity = $_POST['quantity'];      
-        $data = array(      
-            'description' => $description,          
+        $quantity = $_POST['quantity'];
+        $data = array(
+            'description' => $description,
             'editor' => $editor,
             'qa' => $qa,
             'soluong' => $quantity,
             'idlevel' => $level
         );
         $where = "id = $id";
-        if ($this->task_model->updateTask($data,$where)) {
+        if ($this->task_model->updateTask($data, $where)) {
             $data = array(
                 'code' => 200,
                 'msg' => 'The task has been updated!',
                 'heading' => 'Successfully!',
-                'icon' => 'success'               
+                'icon' => 'success'
             );
         } else {
             $data = array(
                 'code' => 204,
                 'msg' => 'Update task failed!',
                 'icon' => 'danger'
+            );
+        }
+        echo json_encode($data);
+    }
+
+    public function delete()
+    {
+        $id = $_POST['id'];
+        $rs = $this->task_model->destroy($id);
+        if ($rs) {
+            $data = array(
+                'code' => 200,
+                'msg' => 'The task has been deleted!',
+                'heading' => 'Successfully!',
+                'icon' => 'success'
+            );
+        } else {
+            $data = array(
+                'code' => 204,
+                'msg' => 'Can not delete this task',
+                'icon' => 'danger',
+                'heading' => 'OPP!!!'
             );
         }
         echo json_encode($data);
@@ -108,15 +130,15 @@ class Task extends Controller
                 'code' => '200',
                 'msg' => 'Get task by id successfully!',
                 'task' => $tasks[0],
-                'icon'=>'success',
-                'heading'=>'Successfully!'
+                'icon' => 'success',
+                'heading' => 'Successfully!'
             );
-        }else{
+        } else {
             $data = array(
-                'code'=>404,
-                'msg'=>'Task not found!',
-                'icon'=>'warning',
-                'heading'=>'Valid task'
+                'code' => 404,
+                'msg' => 'Task not found!',
+                'icon' => 'warning',
+                'heading' => 'Valid task'
             );
         }
 

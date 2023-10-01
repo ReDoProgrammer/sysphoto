@@ -19,7 +19,42 @@ $("#task_modal").on("hidden.bs.modal", function () {
     taskId = 0;
 });
 
-
+function deleteTask(id){
+    Swal.fire({
+        title: 'Are you sure want to delete this task?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajax({
+            url:'../task/delete',
+            type:'post',
+            data:{id},
+            success:function(data){
+                try {
+                    let content = $.parseJSON(data);
+                    if(content.code == 200){
+                        $.toast({
+                            heading: content.heading,
+                            text: content.msg,
+                            icon: content.icon,
+                            loader: true,        // Change it to false to disable loader
+                            loaderBg: '#9EC600'  // To change the background
+                        })
+                        getTasksList();
+                    }
+                } catch (error) {
+                    console.log(data,error);
+                }
+            }
+          })
+        }
+      })
+}
 
 function editTask(id) {
     $.ajax({
@@ -190,9 +225,7 @@ $('#slEditors').on('change', function() {
     if (selectedValue === null || selectedValue === '') {
         selectizeQA.disable();
         selectizeQA.setValue(null);
-        console.log('0');
     }else{
-        console.log('1');
         selectizeQA.enable();
     }
 })
@@ -291,6 +324,7 @@ function getTasksList() {
                     if (content.code == 200) {
                         let idx = 1;
                         content.tasks.forEach(t => {
+                            
                             $('#tblTasksList').append(`
                                                         <tr id = "${t.id}">
                                                             <td>${idx++}</td>
@@ -307,7 +341,7 @@ function getTasksList() {
                                                                     <div class="dropdown-menu dropdown-menu-right">
                                                                         <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> View</a>
                                                                         <a class="dropdown-item" href="javascript:void(0)" onClick="editTask(${t.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
-                                                                        <a class="dropdown-item" href="javascript:void(0)" onClick="deleteTask(${t.id})"><i class="fas fa-trash-alt"></i>  Delete</a>
+                                                                        ${t.tStatus == 0?'<a class="dropdown-item" href="javascript:void(0)" onClick="deleteTask('+t.id+')"><i class="fas fa-trash-alt"></i>  Delete</a>':''}
                                                                         
                                                                     </div> 
                                                                 </div>

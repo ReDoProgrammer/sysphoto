@@ -81,13 +81,13 @@
             return $this->__conn->lastInsertId();
         }
 
-        public function update($table, $data, $where) {
+        public function update($table, $where, $params = array()) {
             try {
                 
                 // Xây dựng câu truy vấn SQL
                 $sql = "UPDATE $table SET ";
                 $values = [];
-                foreach ($data as $key => $value) {
+                foreach ($params as $key => $value) {
                     $values[] = "$key = :$key";
                 }
                 $sql .= implode(', ', $values);
@@ -95,18 +95,27 @@
         
                 // Chuẩn bị và thực thi câu truy vấn
                 $stmt = $this->__conn->prepare($sql);
-                $stmt->execute(array_merge($data, []));        
+                $stmt->execute(array_merge($params, []));        
               
                 return true; // Cập nhật thành công
             } catch (PDOException $e) {
-                return $e; // Lỗi khi cập nhật
+                return $e->getMessage(); // Lỗi khi cập nhật
             }
         }
     
         public function delete($table, $where, $params = []) {
-            $sql = "DELETE FROM $table WHERE $where";
-            $stmt = $this->__conn->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->rowCount();
+            try {               
+        
+                // Xây dựng câu truy vấn SQL
+                $sql = "DELETE FROM $table WHERE $where";
+
+                // Chuẩn bị và thực thi câu truy vấn
+                $stmt = $this->__conn->prepare($sql);
+                $stmt->execute($params);  
+
+                return $stmt->rowCount() >0; // Xóa dữ liệu thành công
+            } catch (PDOException $e) {
+                return $e->getMessage(); // Lỗi khi xóa dữ liệu
+            }
         }
     }
