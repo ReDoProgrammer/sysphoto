@@ -3,6 +3,22 @@
 class EmployeeModel extends Model
 {
     protected $__table = 'users u';
+
+
+    function getEditors($level){
+        $columns = " u.viettat,u.id ";
+        $join = " JOIN group_e g ON u.groupe = g.group_id";
+        $where = " FIND_IN_SET('$level', g.levels) > 0 ";
+        return $this->__db->select($this->__table, $columns, $join,$where);
+    }
+
+    function getQAs($level){
+        $columns = " u.viettat,u.id ";
+        $join = " JOIN group_e g ON u.groupqa = g.group_id";
+        $where = " FIND_IN_SET('$level', g.levels) > 0 ";
+        return $this->__db->select($this->__table, $columns, $join,$where);
+    }
+
     public function getList()
     {
         $columns = "users.id, firstname,viettat,email,name_ut,date_created";

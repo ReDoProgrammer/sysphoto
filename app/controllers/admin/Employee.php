@@ -9,12 +9,38 @@ class Employee extends Controller
         $this->employee_model = $this->model('EmployeeModel');
     }
 
+
+    function getEditors()
+    {
+        $level = $_GET['level'];
+        $employees = $this->employee_model->getEditors($level);
+        $data = array(
+            'code' => 200,
+            'msg' => 'Get editors based on task level successfully!',
+            'editors' => $employees
+        );
+        echo json_encode($data);
+    }
+
+    function getQAs(){
+        $level = $_GET['level'];
+        $employees = $this->employee_model->getQAs($level);
+        $data = array(
+            'code' => 200,
+            'msg' => 'Get QAs based on task level successfully!',
+            'qas' => $employees
+        );
+        echo json_encode($data);
+    }
+
+
     function login()
     {
         $this->render('admin/employee/login');
     }
-    function profile(){
-        
+    function profile()
+    {
+
     }
 
     function authLogin()

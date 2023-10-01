@@ -3,13 +3,17 @@
         public $taskstatus_model;
         function __construct()
         {
-            $this->taskstatus_model = $this->model('status_task');
+            $this->taskstatus_model = $this->model('TaskStatusModel');
         }
         
 
-        public function getTaskStatusesList(){
-            $tasks = $this->taskstatus_model->getList();       
-    
-            echo json_encode($tasks);
+        public function list(){
+            $statuses = $this->taskstatus_model->getList();       
+            $data = array(
+                'code'=>200,
+                'msg'=>'Get task status list successfully!',
+                'statuses'=>$statuses
+            );
+            echo json_encode($data);          
         }
     }

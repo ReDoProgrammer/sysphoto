@@ -45,7 +45,7 @@
                 $sql .= " WHERE $where";
             }
             if(!empty($orderby)){
-                $sql .= "ORDER BY $orderby ";
+                $sql .= " ORDER BY $orderby ";
             }
             if(!empty($groupby)){
                 $sql .= " GROUP BY $groupby ";

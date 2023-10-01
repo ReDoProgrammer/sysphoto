@@ -31,13 +31,14 @@
                         <div class="col-sm-6">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Image quantity</label>
-                                <select id="slQAs"></select>
+                                <input type="text" value="1" id="txtQuantity" class="form-control text-end"
+                                    onkeypress="return isNumberKey(event)">
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class=" col-sm-6">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Status</label>
-                                <select id="slTaskStatuses"></select>
+                                <select id="slTaskStatuses" class="form-control"></select>
                             </div>
                         </div>
                     </div>
