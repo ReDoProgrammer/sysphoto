@@ -38,7 +38,7 @@
                     <div class="col-sm-4 text-end">
                         <div class="add-emp-section">
                             <a href="#" class="btn btn-success btn-add-emp" data-bs-toggle="modal"
-                                data-bs-target="#add_task"><i class="fas fa-plus"></i> Add new task</a>
+                                data-bs-target="#add_task_modal"><i class="fas fa-plus"></i> Add new task</a>
                         </div>
                     </div>
                 </div>
@@ -172,4 +172,10 @@
     </div>
 </div>
 
+<?php
+    include_once 'add_task.php';
+?>
+
+<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.snow.css">
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.js"></script>
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/detail.js"></script>

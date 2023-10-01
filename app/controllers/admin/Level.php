@@ -22,7 +22,12 @@ class Level extends Controller
 
     public function getList()
     {
-        $data = $this->level_model->getList();   
-        echo $data;    
+        $data = array(
+            'code' => 200,
+            'msg' => 'Get all task levels list successfully!',
+            'levels' => $this->level_model->getList()
+        );
+        echo json_encode($data);
+
     }
 }

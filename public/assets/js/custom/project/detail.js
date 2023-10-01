@@ -1,6 +1,53 @@
 $(document).ready(function () {
     getTasksList();
+    getTaskLevels();
 })
+
+$('#slLevels').on('change',function(){
+    LoadEditorsByLevel($(this).val());
+    LoadQAsByLevel($(this).val());
+})
+
+function LoadEditorsByLevel(level){
+    $.ajax({
+        url:'../user/getEditors',
+        type:'get',
+        data:{level},
+        success:function(data){
+            try {
+                console.log(data);
+            } catch (error) {
+                
+            }
+        }
+    })
+}
+
+function LoadQAsByLevel(level){
+
+}
+
+
+function getTaskLevels(){
+    $.ajax({
+        url:'../level/getList',
+        type:'get',
+        success:function(data){
+            try {
+                let content = $.parseJSON(data);
+                $('#slLevels').append(` <option value="" disabled selected>Vui lòng chọn option</option>`);
+                if(content.code == 200){
+                    content.levels.forEach(lv=>{
+                        $('#slLevels').append(`<option value="${lv.id}">${lv.name}</option>`)
+                    })
+                    $('#slLevels').selectedIndex(-1);
+                }
+            } catch (error) {
+                
+            }
+        }
+    })
+}
 
 function getTasksList() {
     $('#tblTasksList').empty();
@@ -54,3 +101,22 @@ function getTasksList() {
         })
     }
 }
+
+
+var qDescription = new Quill('#divDescription', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter project's description here...",
+    // Đặt chiều cao cho trình soạn thảo
+    // Ví dụ: Chiều cao 300px
+    height: '300px'
+    // Hoặc chiều cao 5 dòng
+    // height: '10em'
+});

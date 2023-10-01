@@ -35,7 +35,7 @@
 </div>
 <!-- /Search Filter -->
 
-<div class="table-responsive">
+<div class="table-responsive"  style="min-height:300px;">
     <table class="table table-hover mb-0">
         <thead>
             <tr>
