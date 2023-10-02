@@ -1,6 +1,6 @@
 <?php
     class  ComboModel extends Model{
-        protected $__table = 'combo';
+        protected $__table = 'comboes';
         public function getList(){           
             $comboes = $this->__db->select($this->__table);
             $content = array(

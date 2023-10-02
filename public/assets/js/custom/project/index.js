@@ -3,7 +3,7 @@ var pId = 0;
 
 
 $(document).ready(function () {
-    LoadJobStatus();
+    LoadProjectStatus();
     LoadComboes();
     LoadTemplates();
     LoadCustomers();
@@ -182,7 +182,8 @@ $('#btnSubmitJob').click(function () {
                 description, instruction
             },
             success: function (data) {
-                content = $.parseJSON(data);
+                try {
+                    content = $.parseJSON(data);
                 if (content.code == 201) {
                     $.toast({
                         heading: content.heading,
@@ -193,6 +194,9 @@ $('#btnSubmitJob').click(function () {
                     })
                     $('#modal_project').modal('hide');
                     $('#btnSearch').click();
+                }
+                } catch (error) {
+                    console.log(data,error);
                 }
             }
         })
@@ -249,11 +253,15 @@ function LoadCustomers() {
         url: 'customer/getlist',
         type: 'get',
         success: function (data) {
-            let content = $.parseJSON(data);
-            if (content.code == 200) {
-                content.customers.forEach(c => {
-                    selectizeCustomer.addOption({ value: `${c.id}`, text: `${c.name_ct}` });
-                })
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    content.customers.forEach(c => {
+                        selectizeCustomer.addOption({ value: `${c.id}`, text: `${c.acronym}` });
+                    })
+                }
+            } catch (error) {
+                console.log(data, error);
             }
         }
     })
@@ -264,11 +272,15 @@ function LoadComboes() {
         url: 'combo/getlist',
         type: 'get',
         success: function (data) {
-            let content = $.parseJSON(data);
-            if (content.code == 200) {
-                content.comboes.forEach(c => {
-                    selectizeCombo.addOption({ value: `${c.id}`, text: `${c.ten_combo}` });
-                })
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    content.comboes.forEach(c => {
+                        selectizeCombo.addOption({ value: `${c.id}`, text: `${c.name}` });
+                    })
+                }
+            } catch (error) {
+                console.log(data, error);
             }
         }
     })
@@ -318,26 +330,27 @@ function fetch() {
             limit
         },
         success: function (data) {
-            let content = $.parseJSON(data);
-            if (content.code == 200) {
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
 
-                for (i = 1; i <= content.pages; i++) {
-                    if (i == page) {
-                        $('#pagination').append(`<li class="page-item active" aria-current="page">
+                    for (i = 1; i <= content.pages; i++) {
+                        if (i == page) {
+                            $('#pagination').append(`<li class="page-item active" aria-current="page">
                                                     <a class="page-link" href="#">${i}</a>
                                                 </li>`);
-                    } else {
-                        $('#pagination').append(`<li class="page-item"><a class="page-link" href="#">${i}</a></li>`);
+                        } else {
+                            $('#pagination').append(`<li class="page-item"><a class="page-link" href="#">${i}</a></li>`);
+                        }
                     }
-                }
 
 
-                let idx = (page - 1) * limit;
-                content.projects.forEach(p => {
-                    $('#tblProjects').append(`
+                    let idx = (page - 1) * limit;
+                    content.projects.forEach(p => {
+                        $('#tblProjects').append(`
                     <tr id="${p.id}">
                         <td>${++idx}</td>
-                        <td class="fw-bold">${p.name_ct_mh}</td>
+                        <td class="fw-bold">${p.acronym_mh}</td>
                         <td>${p.name}</td>
                         <td>${p.start_date}</td>
                         <td>${p.end_date}</td>
@@ -361,7 +374,10 @@ function fetch() {
                         </td>
                     </tr>
                 `);
-                })
+                    })
+                }
+            } catch (error) {
+                console.log(data, error);
             }
 
 
@@ -373,16 +389,20 @@ function fetch() {
     })
 }
 
-function LoadJobStatus() {
+function LoadProjectStatus() {
     $.ajax({
-        url: 'JobStatus/list',
+        url: 'projectstatus/list',
         type: 'get',
         success: function (data) {
-            var stt = $.parseJSON(data);
-            stt.forEach(s => {
-                $('#slStatuses').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
-                $('#slJobStatus').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
-            })
+            try {
+                var stt = $.parseJSON(data);
+                stt.forEach(s => {
+                    $('#slStatuses').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
+                    $('#slJobStatus').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
+                })
+            } catch (error) {
+                console.log(data, error);
+            }
         }
     })
 }

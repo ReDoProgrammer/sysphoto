@@ -9,10 +9,6 @@ class Combo extends Controller
     }
     public function index()
     {
-        //renderview          
-
-
-
         //renderview
         $this->data['title'] = 'Comboes list';
         $this->data['content'] = 'admin/combo/index';

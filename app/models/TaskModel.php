@@ -18,7 +18,7 @@ class TaskModel extends Model
         $join = " JOIN level l ON t.idlevel = l.id ";
         $join .= "LEFT JOIN users e ON t.editor = e.id ";
         $join .= "LEFT JOIN users qa ON t.qa = qa.id ";
-        $join .= "LEFT JOIN status_task st ON t.status = st.id ";
+        $join .= "LEFT JOIN task_status st ON t.status = st.id ";
         $where = "t.id = $id";
         $data = $this->__db->select($this->__table . " t", $columns, $join, $where);
         return $data;
@@ -44,7 +44,7 @@ class TaskModel extends Model
         $join = " JOIN level l ON t.idlevel = l.id ";
         $join .= "LEFT JOIN users e ON t.editor = e.id ";
         $join .= "LEFT JOIN users qa ON t.qa = qa.id ";
-        $join .= "LEFT JOIN status_task st ON t.status = st.id ";
+        $join .= "LEFT JOIN task_status st ON t.status = st.id ";
         $where = "project_id = $prjId";
         $data = $this->__db->select($this->__table . " t", $columns, $join, $where);
         return $data;
