@@ -6,7 +6,9 @@
         content="admin, estimates, bootstrap, business, corporate, creative, management, minimal, modern, accounts, invoice, html5, responsive, CRM, Projects">
     <meta name="author" content="Dreamguys - Bootstrap Admin Template">
 
-    <title>SYSPHOTOHOME - <?php echo (!empty($title) ? $title : 'index') ?></title>
+    <title>SYSPHOTOHOME -
+        <?php echo (!empty($title) ? $title : 'index') ?>
+    </title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="<?php echo _WEB_ROOT; ?>/public/assets/img/favicon.png">
@@ -32,13 +34,17 @@
         rel="stylesheet">
     <!-- Select2-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/select2/select2.min.css">
-    
+
     <!-- Selectize -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/selectize/selectize.min.css">
-    
+
     <!-- Toast -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.css">
-    
+
+    <!-- sweet alert -->
+    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.css">
+
+
     <!--datetimepicker-->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/flatpicker/flatpickr.min.css">
 

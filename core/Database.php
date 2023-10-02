@@ -98,7 +98,7 @@ class Database
             $stmt = $this->__conn->prepare($sql);
 
             $stmt->execute(array_merge($data, $params));           
-            return $stmt->rowCount();
+            return $stmt->rowCount()>0;
         } catch (Exception $e) {
             return $e->getMessage();
         }

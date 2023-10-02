@@ -94,7 +94,7 @@ class Project extends Controller
         );
         $result = $this->project_model->updateProject($id,$data);
          
-        if($result>0){
+        if($result){
             $data = array(
                 'code'=>200,
                 'msg'=>'The project has been updated.',
@@ -113,6 +113,25 @@ class Project extends Controller
         echo json_encode($data);
     }
 
+    public function delete(){
+        $id = $_POST['id'];
+        if($this->project_model->deleteProject($id)){
+            $data = array(
+                'code'=>200,
+                'msg'=>'Project has been deleted.',
+                'icon'=>'success',
+                'heading'=>'SUCCESS!!!'
+            );
+        }else{
+            $data = array(
+                'code'=>204,
+                'msg'=>'Delete project failed.',
+                'icon'=>'warning',
+                'heading'=>'OPPP!!'
+            );
+        }
+        echo json_encode($data);
+    }
 
     public function getdetail(){
         $id = $_GET['id'];

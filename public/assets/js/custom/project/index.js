@@ -45,7 +45,41 @@ function UpdateProject(id) {
 }
 
 function DestroyProject(id) {
+    Swal.fire({
+        title: 'Are you sure want to delete this project?',
+        text: "You won't be able to revert this!",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: 'project/delete',
+                type: 'post',
+                data: { id },
+                success: function (data) {
+                    try {
+                        let content = $.parseJSON(data);
+                        $.toast({
+                            heading: content.heading,
+                            text: content.msg,
+                            icon: content.icon,
+                            loader: true,        // Change it to false to disable loader
+                            loaderBg: '#9EC600'  // To change the background
+                        })
+                        if (content.code == 200) {
 
+                            $('#btnSearch').click();
+                        }
+                    } catch (error) {
+                        console.log(data, error);
+                    }
+                }
+            })
+        }
+    })
 }
 
 function AddNewTask(id) {
@@ -96,7 +130,7 @@ $('#btnSubmitJob').click(function () {
     let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
-    let urgent = $('#ckbPriority').is(':checked')?1:0;
+    let urgent = $('#ckbPriority').is(':checked') ? 1 : 0;
     let description = qDescription.getText();
     let instruction = qInstruction.getText();
 
@@ -188,7 +222,7 @@ $('#btnSubmitJob').click(function () {
                     $('#btnSearch').click();
 
                 } catch (error) {
-                    console.log(data,error);
+                    console.log(data, error);
                 }
             }
         })
@@ -320,7 +354,7 @@ function fetch() {
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="UpdateProject(${p.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
-                                    <a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(${p.id})"><i class="fas fa-trash-alt"></i>  Destroy</a>
+                                    ${p.status == 1 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(' + p.id + ')"><i class="fas fa-trash-alt"></i>  Destroy</a>' : ''}
                                     
                                 </div> 
                             </div>

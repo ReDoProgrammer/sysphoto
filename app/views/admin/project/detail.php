@@ -176,8 +176,7 @@
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/detail.js"></script>
 
 
-<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.css">
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.js"></script>
+
 
 <?php
      $this->render('admin/task/modal');

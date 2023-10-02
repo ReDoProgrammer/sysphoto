@@ -30,6 +30,8 @@
 <!-- Toast -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.js"></script>
 
+<!-- Sweet alert  -->
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.js"></script>
 
 <!-- Custom JS -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/app.js"></script>
