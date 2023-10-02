@@ -25,7 +25,6 @@ function UpdateProject(id) {
                     pId = id;
                     $('#modal_project').modal('show');
                     let p = content.project;
-                    console.log(content);
                     $('#txtProjectName').val(p.name);
                     $('#txtBeginDate').val(convertDateTime(p.start_date));
                     $('#txtEndDate').val(convertDateTime(p.end_date));
@@ -33,9 +32,10 @@ function UpdateProject(id) {
                     qInstruction.setText(p.instruction);
                     selectizeCustomer.setValue(p.idkh);
                     selectizeCombo.setValue(p.idcb);
-                    var giaTriMang = p.idlevels.split(',');
-                    console.log(giaTriMang);
-                    $('#slTemplates').val(giaTriMang);
+                    let templates = p.idlevels.split(',');
+                    $("#slTemplates").select2("val", templates);
+                    $('#ckbPriority').prop('checked', p.urgent == 1);
+                    $('#slStatuses').val(p.status);
                 }
             } catch (error) {
                 console.log(data, error);
@@ -96,7 +96,7 @@ $('#btnSubmitJob').click(function () {
     let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
-    let urgent = $('#ckbPriority').is(':checked');
+    let urgent = $('#ckbPriority').is(':checked')?1:0;
     let description = qDescription.getText();
     let instruction = qInstruction.getText();
 
@@ -138,30 +138,65 @@ $('#btnSubmitJob').click(function () {
 
 
 
-
-    $.ajax({
-        url: 'project/create',
-        type: 'post',
-        data: {
-            customer, name, start_date, end_date, status,
-            combo, templates, urgent,
-            description, instruction
-        },
-        success: function (data) {
-            content = $.parseJSON(data);
-            if (content.code == 201) {
-                $.toast({
-                    heading: content.heading,
-                    text: content.msg,
-                    icon: 'success',
-                    loader: true,        // Change it to false to disable loader
-                    loaderBg: '#9EC600'  // To change the background
-                })
-                $('#modal_project').modal('hide');
-                $('#btnSearch').click();
+    if (pId < 1) {
+        $.ajax({
+            url: 'project/create',
+            type: 'post',
+            data: {
+                customer, name, start_date, end_date, status,
+                combo, templates, urgent,
+                description, instruction
+            },
+            success: function (data) {
+                content = $.parseJSON(data);
+                if (content.code == 201) {
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: 'success',
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+                    $('#modal_project').modal('hide');
+                    $('#btnSearch').click();
+                }
             }
-        }
-    })
+        })
+    } else {
+        $.ajax({
+            url: 'project/update',
+            type: 'post',
+            data: {
+                id: pId,
+                customer, name, start_date, end_date, status,
+                combo, templates, urgent,
+                description, instruction
+            },
+            success: function (data) {
+                try {
+                    content = $.parseJSON(data);
+                    console.log(content);
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+
+                    $('#modal_project').modal('hide');
+                    $('#btnSearch').click();
+
+                } catch (error) {
+                    console.log(data,error);
+                }
+            }
+        })
+    }
+
+
+
+
 
 
 })

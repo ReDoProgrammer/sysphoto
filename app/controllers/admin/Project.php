@@ -49,7 +49,7 @@ class Project extends Controller
             'idcb' => $combo
         );
 
-        $lastedId =  $this->project_model->create($data);
+        $lastedId =  $this->project_model->createProject($data);
         if($lastedId >= 1 && !empty($templates)){
             $params = array(
                 "p_project_id"=>$lastedId
@@ -65,6 +65,52 @@ class Project extends Controller
         );
         echo json_encode($data);
 
+    }
+
+    public function update(){
+        $id = $_POST['id'];
+
+        $customer = $_POST['customer'];
+        $name = $_POST['name'];
+        $start_date = $_POST['start_date'];
+        $status = $_POST['status'];
+        $end_date = $_POST['end_date'];
+        $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
+        $templates = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
+        $urgent = $_POST['urgent'];
+        $description = $_POST['description'];
+        $instruction = $_POST['instruction'];
+        $data = array(
+            'idkh' => $customer,
+            'name' => $name,
+            'description' => $description,
+            'instruction' => $instruction,
+            'start_date' => (DateTime::createFromFormat('d/m/Y H:i', $start_date))->format('Y-m-d H:i'),
+            'end_date' => (DateTime::createFromFormat('d/m/Y H:i', $end_date))->format('Y-m-d H:i'),
+            'status'=>$status,
+            'idlevels' => $templates,
+            'urgent' => $urgent,
+            'idcb' => $combo
+        );
+        $result = $this->project_model->updateProject($id,$data);
+         
+        if($result>0){
+            $data = array(
+                'code'=>200,
+                'msg'=>'The project has been updated.',
+                'heading'=>'Successfully!',
+                'icon'=>'success'
+            );
+        }else{
+            $data = array(
+                'code'=>204,
+                'msg'=>'Update project failed.',
+                'heading'=>'FAILED!',
+                'icon'=>'warning'
+            );
+        }
+        
+        echo json_encode($data);
     }
 
 

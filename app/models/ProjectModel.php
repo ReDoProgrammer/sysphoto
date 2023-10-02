@@ -2,13 +2,22 @@
     class ProjectModel extends Model{
         protected $__table = 'project_list';
 
-        public function create($data){
+        public function createProject($data){
+            return $this->__db->insert($this->__table,$data);
+        }
+
+        public function updateProject($id,$data){
+            $where  = " id = $id";
+            return $this->__db->update($this->__table,$data,$where);
+        }
+
+        public function deleteProject($data){
             return $this->__db->insert($this->__table,$data);
         }
 
         public function detail($id){
             //select($table, $columns = '*',$join ='', $where = '',$params=[],$page = 1,$limit = 0,$orderby='',$groupby='')
-            $columns = "p.id, p.name, p.description, p.instruction,p.idkh, count(t.id) tasks_number,st.stt_task_name, 
+            $columns = "p.id, p.name, p.description, p.instruction,p.idkh,p.status, count(t.id) tasks_number,st.stt_task_name, 
                         DATE_FORMAT(p.start_date, '%d %b, %Y %H:%m') as start_date, 
                         DATE_FORMAT(p.end_date, '%d %b, %Y %H:%m') as end_date, p.urgent,
                         p.idcb,cb.ten_combo,cb.mau_sac,p.idlevels, s.stt_job_name, s.color_sttj";

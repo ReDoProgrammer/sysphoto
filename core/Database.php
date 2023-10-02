@@ -88,15 +88,20 @@ class Database
 
     public function update($table, $data, $where, $params = [])
     {
-        $set = [];
-        foreach ($data as $key => $value) {
-            $set[] = "$key = :$key";
+        try {
+            $set = [];
+            foreach ($data as $key => $value) {
+                $set[] = "$key = :$key";
+            }
+            $set = implode(', ', $set);
+            $sql = "UPDATE $table SET $set WHERE $where";
+            $stmt = $this->__conn->prepare($sql);
+
+            $stmt->execute(array_merge($data, $params));           
+            return $stmt->rowCount();
+        } catch (Exception $e) {
+            return $e->getMessage();
         }
-        $set = implode(', ', $set);
-        $sql = "UPDATE $table SET $set WHERE $where";
-        $stmt = $this->__conn->prepare($sql);
-        $stmt->execute(array_merge($data, $params));
-        return $stmt->rowCount();
     }
     public function delete($table, $where, $params = [])
     {
