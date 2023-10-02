@@ -86,7 +86,8 @@
 include_once 'create.php';
 include_once 'edit.php';
 include_once 'delete.php';
-$this->render('admin/task/modal');
+include_once 'modal_task.php';
+
 ?>
 
 

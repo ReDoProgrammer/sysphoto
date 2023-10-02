@@ -14,8 +14,7 @@ $(document).ready(function () {
 })
 
 function AddNewTask(id){
-    console.log({id});
-    taskId = 0;
+    pId = id;
     $('#task_modal').modal('show');
 }
 
