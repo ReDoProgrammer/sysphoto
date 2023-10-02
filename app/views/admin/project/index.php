@@ -27,7 +27,7 @@
     </div>
     <div class="col-xxl-1">
         <div class="add-emp-section">
-            <a href="#" class="btn btn-success btn-add-emp" data-bs-toggle="modal" data-bs-target="#create_project"><i
+            <a href="#" class="btn btn-success btn-add-emp" data-bs-toggle="modal" data-bs-target="#modal_project"><i
                     class="fas fa-plus"></i>Add</a>
         </div>
     </div>
@@ -82,11 +82,11 @@
 
 <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.snow.css">
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.js"></script>
+
 <?php
-include_once 'create.php';
-include_once 'edit.php';
-include_once 'delete.php';
+include_once 'modal_project.php';
 include_once 'modal_task.php';
+include_once 'modal_cc.php';
 
 ?>
 

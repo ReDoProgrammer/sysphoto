@@ -67,6 +67,27 @@ class Project extends Controller
 
     }
 
+
+    public function getdetail(){
+        $id = $_GET['id'];
+        $projects = $this->project_model->detail($id);
+        if(count($projects)>0){
+            $data = array(
+                'code'=>200,
+                'msg'=>'Get project detail successfully!',
+                'project'=>$projects[0]
+            );
+        }else{
+            $data = array(
+                'code'=>404,
+                'msg'=>'Project not found!',
+                'icon'=>'success',
+                'heading'=>'NO RESULT!!'
+            );
+        }
+        
+        echo json_encode($data);
+    }
     public function getList()
     {
         $from_date = $_GET['from_date'];

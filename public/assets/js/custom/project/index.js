@@ -1,4 +1,4 @@
-var page,limit;
+var page, limit;
 var pId = 0;
 
 
@@ -10,20 +10,63 @@ $(document).ready(function () {
     page = 1;
     limit = $('#slPageSize option:selected').val();
     $('#btnSearch').click();
-    setInterval( fetch,10000);// gọi hàm load lại dữ liệu sau mỗi 10s
+    setInterval(fetch, 10000);// gọi hàm load lại dữ liệu sau mỗi 10s
 })
 
-function AddNewTask(id){
+function UpdateProject(id) {
+    $.ajax({
+        url: 'project/getdetail',
+        type: 'get',
+        data: { id },
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    pId = id;
+                    $('#modal_project').modal('show');
+                    let p = content.project;
+                    console.log(content);
+                    $('#txtProjectName').val(p.name);
+                    $('#txtBeginDate').val(convertDateTime(p.start_date));
+                    $('#txtEndDate').val(convertDateTime(p.end_date));
+                    qDescription.setText(p.description);
+                    qInstruction.setText(p.instruction);
+                    selectizeCustomer.setValue(p.idkh);
+                    selectizeCombo.setValue(p.idcb);
+                    var giaTriMang = p.idlevels.split(',');
+                    console.log(giaTriMang);
+                    $('#slTemplates').val(giaTriMang);
+                }
+            } catch (error) {
+                console.log(data, error);
+            }
+        }
+    })
+}
+
+function DestroyProject(id) {
+
+}
+
+function AddNewTask(id) {
     pId = id;
     $('#task_modal').modal('show');
 }
 
-$( "#create_project" ).on('shown.bs.modal', function (e) {
-    if(pId<1){
+$("#modal_project").on('shown.bs.modal', function (e) {
+    if (pId < 1) {
         $('#slStatuses').attr("disabled", true);
-    }else{
+        $('#modal_project_title').text('Create a new project');
+        $('#btnSubmitJob').text('Submit creating');
+    } else {
         $('#slStatuses').removeAttr('disabled');
+        $('#modal_project_title').text('Update project');
+        $('#btnSubmitJob').text('Save changes');
     }
+});
+
+$("#modal_project").on("hidden.bs.modal", function () {
+    pId = 0;
 });
 
 
@@ -114,7 +157,7 @@ $('#btnSubmitJob').click(function () {
                     loader: true,        // Change it to false to disable loader
                     loaderBg: '#9EC600'  // To change the background
                 })
-                $('#create_project').modal('hide');
+                $('#modal_project').modal('hide');
                 $('#btnSearch').click();
             }
         }
@@ -133,12 +176,6 @@ $('#slPageSize').on('change', function () {
 });
 
 function LoadCustomers() {
-    var $selectizeInput = $('#slCustomers');
-    $selectizeInput.selectize({
-        sortField: 'text' // Sắp xếp mục theo văn bản
-    });
-    var selectize = $selectizeInput[0].selectize;
-
     $.ajax({
         url: 'customer/getlist',
         type: 'get',
@@ -146,7 +183,7 @@ function LoadCustomers() {
             let content = $.parseJSON(data);
             if (content.code == 200) {
                 content.customers.forEach(c => {
-                    selectize.addOption({ value: `${c.id}`, text: `${c.name_ct}` });
+                    selectizeCustomer.addOption({ value: `${c.id}`, text: `${c.name_ct}` });
                 })
             }
         }
@@ -154,11 +191,6 @@ function LoadCustomers() {
 }
 
 function LoadComboes() {
-    var $selectizeInput = $('#slComboes');
-    $selectizeInput.selectize({
-        sortField: 'text' // Sắp xếp mục theo văn bản
-    });
-    var selectize = $selectizeInput[0].selectize;
     $.ajax({
         url: 'combo/getlist',
         type: 'get',
@@ -166,7 +198,7 @@ function LoadComboes() {
             let content = $.parseJSON(data);
             if (content.code == 200) {
                 content.comboes.forEach(c => {
-                    selectize.addOption({ value: `${c.id}`, text: `${c.ten_combo}` });
+                    selectizeCombo.addOption({ value: `${c.id}`, text: `${c.ten_combo}` });
                 })
             }
         }
@@ -250,10 +282,10 @@ function fetch() {
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
-                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add a task</a>
-                                    <a class="dropdown-item" href="javascript:void(0)"><i class="far fa-closed-captioning"></i>  Add a CC</a>
-                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-pencil-alt"></i>  Update</a>
-                                    <a class="dropdown-item" href="javascript:void(0)"><i class="fas fa-trash-alt"></i>  Destroy</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="UpdateProject(${p.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(${p.id})"><i class="fas fa-trash-alt"></i>  Destroy</a>
                                     
                                 </div> 
                             </div>
@@ -315,6 +347,19 @@ var qInstruction = new Quill('#divInstruction', {
     },
     placeholder: "Enter intruction for Editor here...",
 });
+
+var $selectizeCustomers = $('#slCustomers');
+$selectizeCustomers.selectize({
+    sortField: 'text' // Sắp xếp mục theo văn bản
+});
+var selectizeCustomer = $selectizeCustomers[0].selectize;
+
+var $selectizeComboes = $('#slComboes');
+$selectizeComboes.selectize({
+    sortField: 'text' // Sắp xếp mục theo văn bản
+});
+var selectizeCombo = $selectizeComboes[0].selectize;
+
 
 
 

@@ -700,52 +700,8 @@ $(window).on('load', function () {
 });
 
 
-// Add Edit Product 
-
-$("#addEditProduct").on('click', function (e) {
-	const tableBody = $('#table-count tbody');
-	const rowCount = tableBody.find('tr').length + 1;
-	var editAddTable = `<tr><td>${rowCount}</td>
-<td>
-	<input class="form-control" type="text" value="Vehicle Module" style="min-width:150px">
-</td>
-<td>
-	<input class="form-control" type="text" value="Create, edit delete functionlity" style="min-width:150px">
-</td>
-<td>
-	<input class="form-control" style="width:100px" type="text" value="112">
-</td>
-<td>
-	<input class="form-control" style="width:80px" type="text" value="1">
-</td>
-<td>
-	<input class="form-control" readonly style="width:120px" type="text" value="112">
-</td>
-<td>
-	<a href="javascript:void(0)" class="text-danger font-18 remove" title="Remove"><i class="fa-regular fa-trash-can"></i></a>
-</td></tr>`;
-	$('tbody.estimate-table').append(editAddTable);
-	e.preventDefault();
-});
-
-$(document).on('click', '.remove', function () {
-	$(this).parents('tr').remove();
-});
 
 
-$("#addProduct").on('click', function (e) {
-	const tableBody = $('#table-count tbody');
-	const rowCount = tableBody.find('tr').length + 1;
-	var addTable = `<tr><td>${rowCount}
-</td><td><input class="form-control" type="text" style="min-width:150px"></td>
-        <td><input class="form-control" type="text" style="min-width:150px"></td>
-        <td><input class="form-control" style="width:100px" type="text"></td>
-        <td><input class="form-control" style="width:80px" type="text"></td>
-        <td><input class="form-control" readonly style="width:120px" type="text"></td>
-        <td><a href="javascript:void(0)" class="text-danger font-18 remove" title="Remove"><i class="fa-regular fa-trash-can"></i></a></td></tr>`;
-	$('tbody.tbodyone').append(addTable);
-	e.preventDefault();
-});
 
 function isEmail(email) {
 	var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -771,3 +727,15 @@ function isNumberKey(evt) {
 
 
 
+
+
+  function convertDateTime(old_date){   
+    // chuyển 01 Oct, 2023 22:10 về dạng dd/mm/yyyy hh:mm
+            var date = new Date(old_date);
+            var dd = String(date.getDate()).padStart(2, '0');
+            var mm = String(date.getMonth() + 1).padStart(2, '0');
+            var yyyy = date.getFullYear();
+            var hh = String(date.getHours()).padStart(2, '0');
+            var min = String(date.getMinutes()).padStart(2, '0');            
+           return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + min;
+}

@@ -2,11 +2,15 @@ $(document).ready(function () {
     getTaskLevels();
 })
 
-$("#task_modal").on('shown.bs.modal', function (e) {
+$("#task_modal").on('shown.bs.modal', function () {
     $('#taskModalTitle').text("Add new task");
     $('#btnSubmitTask').text('Submit creating');
 });
 
+
+$("#task_modal").on("hidden.bs.modal", function () {
+    pId = 0;
+});
 
 
 

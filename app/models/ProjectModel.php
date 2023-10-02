@@ -8,10 +8,10 @@
 
         public function detail($id){
             //select($table, $columns = '*',$join ='', $where = '',$params=[],$page = 1,$limit = 0,$orderby='',$groupby='')
-            $columns = "p.id, p.name, p.description, count(t.id) tasks_number,st.stt_task_name, 
+            $columns = "p.id, p.name, p.description, p.instruction,p.idkh, count(t.id) tasks_number,st.stt_task_name, 
                         DATE_FORMAT(p.start_date, '%d %b, %Y %H:%m') as start_date, 
                         DATE_FORMAT(p.end_date, '%d %b, %Y %H:%m') as end_date, p.urgent,
-                        cb.ten_combo,cb.mau_sac, s.stt_job_name, s.color_sttj";
+                        p.idcb,cb.ten_combo,cb.mau_sac,p.idlevels, s.stt_job_name, s.color_sttj";
             $join = " JOIN custom c ON p.idkh = c.id ";
             $join .= " JOIN status_job s ON p.status = s.id ";
             $join .= " LEFT JOIN task_list t ON t.project_id = p.id";
