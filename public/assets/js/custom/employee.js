@@ -1,6 +1,6 @@
 $('#btnLogin').click(function () {
     let email = $('#txtEmail').val();
-    let password = $('#txtPassword').val();   
+    let password = $('#txtPassword').val();
     if (!isEmail(email)) {
         $.toast({
             heading: 'Error',
@@ -10,7 +10,7 @@ $('#btnLogin').click(function () {
         })
         return;
     }
-    if(password.trim().length == 0){
+    if (password.trim().length == 0) {
         $.toast({
             heading: 'Error',
             text: 'Password can not be empty!',
@@ -22,19 +22,23 @@ $('#btnLogin').click(function () {
 
 
     $.ajax({
-        url:'employee/authLogin',
-        type:'post',
-        data:{email,password},
-        success:function(data){
-            let auth = $.parseJSON(data);
-            if(auth.code ==200){
-                $(location).prop('href', 'home')
-            }else{
-                Swal.fire(
-                    'OPP..!',
-                    auth.msg,
-                    'error'
-                  )
+        url: 'employee/authLogin',
+        type: 'post',
+        data: { email, password },
+        success: function (data) {
+            try {
+                let auth = $.parseJSON(data);
+                if (auth.code == 200) {
+                    $(location).prop('href', 'home')
+                } else {
+                    Swal.fire(
+                        'OPP..!',
+                        auth.msg,
+                        'error'
+                    )
+                }
+            } catch (error) {
+                console.log(data, error);
             }
         }
     })

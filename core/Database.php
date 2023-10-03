@@ -9,35 +9,38 @@ class Database
     }
 
 
-    // hàm thực thi thủ tục
-    public function execute($procedureName, $params = array())
+
+    function callMySqlFunction($f, $params)
     {
+
         global $db_config;
         $this->__conn = Connection::getInstance($db_config);
+        
+        // khai báo mảng chứa các key của mảng
+        $keys = array_keys($params);
+        $values = array_values(($params));
 
-        $paramString = '';
+        $sql = "SELECT $f(";
+        foreach ($params as $key => $value) {
+           $sql.=":$key".($value == end($params)?"":",");
+        }        
 
-        foreach ($params as $paramName => $paramValue) {
-            $paramString .= ":" . $paramName . ",";
-        }
-        $paramString = rtrim($paramString, ",");
-
-        // Tạo câu lệnh gọi stored procedure
-        $sql = "CALL $procedureName($paramString)";
+        $sql .= ") AS result";
         $stmt = $this->__conn->prepare($sql);
 
-        foreach ($params as $paramName => &$paramValue) {
-            $stmt->bindParam(":" . $paramName, $paramValue, PDO::PARAM_STR);
+
+
+        $paramCount = count($params);
+        for ($i = 0; $i < $paramCount; $i++) {
+            $stmt->bindValue(":$keys[$i]", $values[$i]);
         }
 
-        // Thực hiện stored procedure
         $stmt->execute();
 
-        // Lấy kết quả nếu cần
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        return $result;
+        return $stmt->fetch(PDO::FETCH_ASSOC)['result'];
     }
+
+
 
     public function select($table, $columns = '*', $join = '', $where = '', $params = [], $page = 1, $limit = 0, $orderby = '', $groupby = '')
     {
@@ -97,8 +100,8 @@ class Database
             $sql = "UPDATE $table SET $set WHERE $where";
             $stmt = $this->__conn->prepare($sql);
 
-            $stmt->execute(array_merge($data, $params));           
-            return $stmt->rowCount()>0;
+            $stmt->execute(array_merge($data, $params));
+            return $stmt->rowCount() > 0;
         } catch (Exception $e) {
             return $e->getMessage();
         }

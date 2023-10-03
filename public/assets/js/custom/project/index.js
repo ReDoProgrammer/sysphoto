@@ -123,16 +123,18 @@ $('#txtDuration').keyup(function () {
 $('#btnSubmitJob').click(function () {
     let customer = $('#slCustomers option:selected').val();
     let name = $('#txtProjectName').val();
-    let start_date = $('#txtBeginDate').val();
-    let end_date = $('#txtEndDate').val();
+    let start_date = moment($('#txtBeginDate').val()+":00").format('DD/MM/YYYY HH:mm:ss');
+    let end_date =  moment($('#txtEndDate').val()+":00").format('DD/MM/YYYY HH:mm:ss');
     let status = $('#slStatuses option:selected').val();
     let combo = $('#slComboes option:selected').val();
     let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
-    let urgent = $('#ckbPriority').is(':checked') ? 1 : 0;
+    let priority = $('#ckbPriority').is(':checked') ? 1 : 0;
     let description = qDescription.getText();
     let instruction = qInstruction.getText();
+
+    console.log({combo});
 
     // validate inputs
     if ($.trim(customer) === "") {
@@ -178,26 +180,27 @@ $('#btnSubmitJob').click(function () {
             type: 'post',
             data: {
                 customer, name, start_date, end_date, status,
-                combo, templates, urgent,
+                combo, templates, priority,
                 description, instruction
             },
             success: function (data) {
-                try {
-                    content = $.parseJSON(data);
-                if (content.code == 201) {
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: 'success',
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-                    $('#modal_project').modal('hide');
-                    $('#btnSearch').click();
-                }
-                } catch (error) {
-                    console.log(data,error);
-                }
+                console.log(data);
+                // try {
+                //     content = $.parseJSON(data);
+                //     if (content.code == 201) {
+                //         $.toast({
+                //             heading: content.heading,
+                //             text: content.msg,
+                //             icon: 'success',
+                //             loader: true,        // Change it to false to disable loader
+                //             loaderBg: '#9EC600'  // To change the background
+                //         })
+                //         $('#modal_project').modal('hide');
+                //         $('#btnSearch').click();
+                //     }
+                // } catch (error) {
+                //     console.log(data, error);
+                // }
             }
         })
     } else {
@@ -207,7 +210,7 @@ $('#btnSubmitJob').click(function () {
             data: {
                 id: pId,
                 customer, name, start_date, end_date, status,
-                combo, templates, urgent,
+                combo, templates, priority,
                 description, instruction
             },
             success: function (data) {

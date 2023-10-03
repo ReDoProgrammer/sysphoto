@@ -30,15 +30,15 @@ class EmployeeModel extends Model
     public function Login($email, $password, $role)
     {
 
-        $columns = "u.id, u.firstname,u.viettat,u.email,u.type,ut.name_ut,u.date_created";
-        $join = " JOIN user_type ut ON u.type = ut.id";
+        $columns = "u.id, u.fullname,u.acronym,u.email,u.task_getable,u.type_id,ut.name as type_name,u.created_at";
+        $join = " JOIN user_types ut ON u.type_id = ut.id";
         $where = " email = '$email' ";
         $users = $this->__db->select($this->__table, $columns, $join, );
         if (count($users) > 0) {
             $where .= " AND password = '" . md5($password) . "'";
             $users = $this->__db->select($this->__table, $columns, $join, $where);
             if (count($users) > 0) {
-                $where .= " AND type IN (";
+                $where .= " AND type_id IN (";
 
                 foreach ($role as $r) {
                     $where .= $r == end($role) ? "$r" : "$r,";
@@ -47,10 +47,10 @@ class EmployeeModel extends Model
                 $users = $this->__db->select($this->__table, $columns, $join, $where);
                 if (count($users) > 0) {
                     $ipaddress = gethostbyname("www.google.com");
-                    $where .= " AND EXISTS (SELECT 1 FROM ip_photo WHERE dia_chi = '$ipaddress')";
+                    $where .= " AND EXISTS (SELECT 1 FROM ips WHERE address = '$ipaddress')";
                     $users = $this->__db->select($this->__table, $columns, $join, $where);
                     if (count($users) > 0) {
-                        $user = new User($users[0]['firstname'], $users[0]['email'], $users[0]['type'], $users[0]['name_ut']);
+                        $user = new User($users[0]['fullname'], $users[0]['email'], $users[0]['type_id'], $users[0]['type_name'],$users[0]['task_getable']);
                        
                         $_SESSION['user'] = serialize($user);
                         $data = array(
@@ -61,7 +61,7 @@ class EmployeeModel extends Model
                     }else{
                         $data = array(
                             'code'=>403,
-                            'msg'=>'Your IP address: '.$ipaddress.'.You are out of company!'
+                            'msg'=>'Your IP address: '.$ipaddress.' .You are out of company!'
                         );
                         return json_encode($data);
                     }
