@@ -10,7 +10,7 @@ class Database
 
 
 
-    function callMySqlFunction($f, $params)
+    function callFunction($f, $params)
     {
 
         global $db_config;
