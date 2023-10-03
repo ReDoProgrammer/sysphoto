@@ -134,7 +134,6 @@ $('#btnSubmitJob').click(function () {
     let description = qDescription.getText();
     let instruction = qInstruction.getText();
 
-    console.log({combo});
 
     // validate inputs
     if ($.trim(customer) === "") {

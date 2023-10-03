@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 03, 2023 lúc 05:49 PM
+-- Thời gian đã tạo: Th10 03, 2023 lúc 07:46 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -187,26 +187,38 @@ END$$
 --
 -- Các hàm
 --
-CREATE DEFINER=`root`@`localhost` FUNCTION `InsertEmployee` (`emp_name` VARCHAR(255), `emp_salary` DECIMAL(10,2)) RETURNS INT(11)  BEGIN
-    INSERT INTO employee (employee_name, employee_salary)
-    VALUES ( emp_name, emp_salary);
-    RETURN LAST_INSERT_ID();
-
+CREATE DEFINER=`root`@`localhost` FUNCTION `ProjectInsert` (`customer_id` INT, `name` VARCHAR(255), `start_date` DATETIME, `end_date` DATETIME, `status_id` TINYINT, `combo_id` TINYINT, `levels` VARCHAR(255), `priority` TINYINT, `description` TEXT, `created_by` INT) RETURNS BIGINT(20)  BEGIN
+	INSERT INTO projects
+    SET 
+    	customer_id = customer_id,
+        name = name,
+        start_date = start_date,
+        end_date = end_date,
+        status_id = status_id,
+        combo_id = combo_id,
+        levels =levels,
+        priority = priority,
+        description = description,
+        created_by = created_by;
+        RETURN LAST_INSERT_ID();
 END$$
 
-CREATE DEFINER=`root`@`localhost` FUNCTION `ProjectInsert` (`p_customer_id` BIGINT, `p_name` VARCHAR(255), `p_start_date` DATETIME, `p_end_date` DATETIME, `p_status_id` TINYINT(1), `p_combo_id` TINYINT(2), `p_priority` TINYINT(1), `p_description` TEXT, `p_created_by` INT(2)) RETURNS BIGINT(20)  BEGIN
-	INSERT INTO projects
-    SET	
-    	customer_id = p_customer_id,
-        name = p_name,
-        start_date = p_start_date,
-        end_date = p_end_date,
-        status_id = p_status_id,
-        priority = p_priority,
-        description = p_description,
-        combo_id = p_combo_id,
-        created_by = p_created_by;
-      RETURN LAST_INSERT_ID();        
+CREATE DEFINER=`root`@`localhost` FUNCTION `ProjectInstructionInsert` (`project_id` BIGINT, `content` TEXT, `created_by` INT) RETURNS BIGINT(20)  BEGIN
+	INSERT INTO project_instructions
+    SET 
+    	project_id = project_id,
+        content = content,
+        created_by = created_by;
+     RETURN LAST_INSERT_ID();
+END$$
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `TaskInsertAuto` (`project_id` BIGINT, `level_id` INT, `created_by` INT) RETURNS BIGINT(20)  BEGIN
+	INSERT INTO tasks
+    SET 
+    	project_id = project_id,
+        level_id = level_id,
+        created_by = created_by;
+     RETURN LAST_INSERT_ID();
 END$$
 
 DELIMITER ;
@@ -335,32 +347,6 @@ INSERT INTO `customers` (`id`, `company_id`, `name`, `acronym`, `email`, `custom
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `customers1`
---
-
-CREATE TABLE `customers1` (
-  `customer_id` int(11) NOT NULL,
-  `first_name` varchar(50) DEFAULT NULL,
-  `last_name` varchar(50) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `customers1`
---
-
-INSERT INTO `customers1` (`customer_id`, `first_name`, `last_name`, `email`) VALUES
-(1, '0', '0', '0'),
-(2, '0', '0', '0'),
-(3, '0', '0', '0'),
-(4, 'value2', 'value2', 'value2'),
-(5, 'value 2', 'value 2', 'value 2'),
-(6, '231@gmail.com', '231@gmail.com', '231@gmail.com'),
-(7, '231@gmail.com', '231@gmail.com', '231@gmail.com');
-
--- --------------------------------------------------------
-
---
 -- Cấu trúc bảng cho bảng `customer_groups`
 --
 
@@ -382,28 +368,6 @@ CREATE TABLE `customer_groups` (
 INSERT INTO `customer_groups` (`id`, `name`, `description`, `levels`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
 (1, 'Group 1', NULL, NULL, '2023-10-02 17:03:33', 0, '2023-10-02 17:03:33', 0),
 (2, 'Group 2', NULL, NULL, '2023-10-02 17:03:53', 1, '2023-10-02 17:04:07', 0);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `employee`
---
-
-CREATE TABLE `employee` (
-  `employee_id` int(11) NOT NULL,
-  `employee_name` varchar(255) DEFAULT NULL,
-  `employee_salary` decimal(10,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `employee`
---
-
-INSERT INTO `employee` (`employee_id`, `employee_name`, `employee_salary`) VALUES
-(1, 'Employee name', '12.50'),
-(2, 'Employee name', '12.50'),
-(3, 'Employee name 1', '3.50'),
-(4, 'Employee name 4', '4.50');
 
 -- --------------------------------------------------------
 
@@ -506,7 +470,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '172.217.25.4', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '142.250.204.36', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -555,6 +519,7 @@ CREATE TABLE `projects` (
   `status_id` tinyint(1) NOT NULL DEFAULT 1,
   `start_date` datetime DEFAULT NULL,
   `end_date` datetime DEFAULT NULL,
+  `levels` varchar(100) NOT NULL COMMENT 'Danh sách level khi sử dụng template',
   `invoice_id` varchar(11) NOT NULL,
   `done_link` varchar(255) DEFAULT NULL,
   `wait_note` varchar(255) DEFAULT NULL,
@@ -570,9 +535,19 @@ CREATE TABLE `projects` (
 -- Đang đổ dữ liệu cho bảng `projects`
 --
 
-INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 124, 'test full inputs', 'Description\n', 1, '2023-10-03 22:45:00', '2023-10-03 22:45:00', '', NULL, NULL, 2, 0, '2023-10-03 22:48:01', 4, NULL, 0),
-(2, 124, 'test full inputs', 'Description\n', 1, '2023-10-03 22:45:00', '2023-10-04 04:45:00', '', NULL, NULL, 2, 0, '2023-10-03 22:48:14', 4, NULL, 0);
+INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '1,3,5', '', NULL, NULL, 3, 0, '2023-10-04 00:37:45', 2, NULL, 0),
+(2, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '1,3,5', '', NULL, NULL, 3, 0, '2023-10-04 00:38:49', 2, NULL, 0),
+(3, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '1,3,5', '', NULL, NULL, 3, 0, '2023-10-04 00:39:07', 2, NULL, 0),
+(4, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '1,3,5', '', NULL, NULL, 3, 0, '2023-10-04 00:39:10', 2, NULL, 0),
+(5, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '', '', NULL, NULL, 3, 0, '2023-10-04 00:39:17', 2, NULL, 0),
+(6, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '', '', NULL, NULL, 3, 0, '2023-10-04 00:39:44', 2, NULL, 0),
+(7, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '3,5,8', '', NULL, NULL, 3, 0, '2023-10-04 00:39:54', 2, NULL, 0),
+(8, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '3,5,8', '', NULL, NULL, 3, 0, '2023-10-04 00:43:56', 2, NULL, 0),
+(9, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '3,5,8', '', NULL, NULL, 3, 0, '2023-10-04 00:43:59', 2, NULL, 0),
+(10, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '3,5,8', '', NULL, NULL, 3, 0, '2023-10-04 00:44:54', 2, NULL, 0),
+(11, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '3,5,8', '', NULL, NULL, 3, 0, '2023-10-04 00:45:15', 2, NULL, 0),
+(12, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 00:00:00', '2023-10-04 05:00:00', '3,5,8', '', NULL, NULL, 3, 0, '2023-10-04 00:45:43', 2, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -586,23 +561,42 @@ CREATE TABLE `project_instructions` (
   `content` text NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) NOT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
   `updated_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `project_instructions`
+--
+
+INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 1, 'description for this project\n', '2023-10-04 00:37:45', 2, NULL, 0),
+(2, 3, 'description for this project\n', '2023-10-04 00:39:07', 2, NULL, 0),
+(3, 4, 'description for this project\n', '2023-10-04 00:39:10', 2, NULL, 0),
+(4, 5, 'description for this project\n', '2023-10-04 00:39:17', 2, NULL, 0),
+(5, 6, 'description for this project\n', '2023-10-04 00:39:44', 2, NULL, 0),
+(6, 7, 'description for this project\n', '2023-10-04 00:39:54', 2, NULL, 0),
+(7, 8, 'description for this project\n', '2023-10-04 00:43:56', 2, NULL, 0),
+(8, 9, 'description for this project\n', '2023-10-04 00:43:59', 2, NULL, 0),
+(9, 10, 'description for this project\n', '2023-10-04 00:44:54', 2, NULL, 0),
+(10, 11, 'description for this project\n', '2023-10-04 00:45:15', 2, NULL, 0),
+(11, 12, 'description for this project\n', '2023-10-04 00:45:43', 2, NULL, 0);
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `project_levels`
+-- Cấu trúc bảng cho bảng `project_logs`
 --
 
-CREATE TABLE `project_levels` (
-  `project_id` bigint(20) NOT NULL,
-  `level_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` int(11) NOT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `updated_by` int(11) NOT NULL
+CREATE TABLE `project_logs` (
+  `id` bigint(20) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `action` varchar(50) NOT NULL,
+  `content` text NOT NULL,
+  `actioner` int(11) NOT NULL,
+  `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
+  `task_id` bigint(20) NOT NULL,
+  `ccs` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -645,11 +639,11 @@ CREATE TABLE `tasks` (
   `project_id` bigint(30) NOT NULL,
   `name` varchar(200) DEFAULT NULL,
   `description` text DEFAULT NULL,
-  `status_id` tinyint(4) NOT NULL DEFAULT 1,
+  `status_id` tinyint(4) NOT NULL DEFAULT 0,
   `editor_id` int(11) NOT NULL,
   `qa_id` int(11) NOT NULL,
   `level_id` int(30) NOT NULL,
-  `quantity` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
   `editor_view` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu Editor đã xem instruction',
   `qa_view` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu QA đã xem instruction',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
@@ -657,6 +651,15 @@ CREATE TABLE `tasks` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `updated_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `tasks`
+--
+
+INSERT INTO `tasks` (`id`, `project_id`, `name`, `description`, `status_id`, `editor_id`, `qa_id`, `level_id`, `quantity`, `editor_view`, `qa_view`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 12, NULL, NULL, 0, 0, 0, 3, 1, 0, 0, '2023-10-04 00:45:43', 2, '2023-10-03 17:45:43', 0),
+(2, 12, NULL, NULL, 0, 0, 0, 5, 1, 0, 0, '2023-10-04 00:45:43', 2, '2023-10-03 17:45:43', 0),
+(3, 12, NULL, NULL, 0, 0, 0, 8, 1, 0, 0, '2023-10-04 00:45:43', 2, '2023-10-03 17:45:43', 0);
 
 -- --------------------------------------------------------
 
@@ -708,23 +711,6 @@ CREATE TABLE `test` (
 
 INSERT INTO `test` (`id`, `name`, `description`, `level`) VALUES
 (1, '0', '0', 1);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `timelines`
---
-
-CREATE TABLE `timelines` (
-  `id` bigint(20) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `action` varchar(50) NOT NULL,
-  `content` text NOT NULL,
-  `actioner` int(11) NOT NULL,
-  `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
-  `task_id` bigint(20) NOT NULL,
-  `ccs` bigint(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -891,22 +877,10 @@ ALTER TABLE `customers`
   ADD KEY `group_id` (`group_id`);
 
 --
--- Chỉ mục cho bảng `customers1`
---
-ALTER TABLE `customers1`
-  ADD PRIMARY KEY (`customer_id`);
-
---
 -- Chỉ mục cho bảng `customer_groups`
 --
 ALTER TABLE `customer_groups`
   ADD PRIMARY KEY (`id`);
-
---
--- Chỉ mục cho bảng `employee`
---
-ALTER TABLE `employee`
-  ADD PRIMARY KEY (`employee_id`);
 
 --
 -- Chỉ mục cho bảng `employee_groups`
@@ -951,6 +925,13 @@ ALTER TABLE `projects`
 -- Chỉ mục cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `project_id` (`project_id`);
+
+--
+-- Chỉ mục cho bảng `project_logs`
+--
+ALTER TABLE `project_logs`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -978,12 +959,6 @@ ALTER TABLE `task_statuses`
 -- Chỉ mục cho bảng `test`
 --
 ALTER TABLE `test`
-  ADD PRIMARY KEY (`id`);
-
---
--- Chỉ mục cho bảng `timelines`
---
-ALTER TABLE `timelines`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -1039,22 +1014,10 @@ ALTER TABLE `customers`
   MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
 
 --
--- AUTO_INCREMENT cho bảng `customers1`
---
-ALTER TABLE `customers1`
-  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
---
 -- AUTO_INCREMENT cho bảng `customer_groups`
 --
 ALTER TABLE `customer_groups`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT cho bảng `employee`
---
-ALTER TABLE `employee`
-  MODIFY `employee_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `employee_groups`
@@ -1090,12 +1053,18 @@ ALTER TABLE `levels`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT cho bảng `project_logs`
+--
+ALTER TABLE `project_logs`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
@@ -1108,7 +1077,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=424;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`
@@ -1121,12 +1090,6 @@ ALTER TABLE `task_statuses`
 --
 ALTER TABLE `test`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT cho bảng `timelines`
---
-ALTER TABLE `timelines`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
@@ -1168,6 +1131,12 @@ ALTER TABLE `invoices`
 --
 ALTER TABLE `projects`
   ADD CONSTRAINT `projects_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`);
+
+--
+-- Các ràng buộc cho bảng `project_instructions`
+--
+ALTER TABLE `project_instructions`
+  ADD CONSTRAINT `project_instructions_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`);
 
 --
 -- Các ràng buộc cho bảng `tasks`

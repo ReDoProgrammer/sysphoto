@@ -29,31 +29,59 @@ class Project extends Controller
     {
         $customer = $_POST['customer'];
         $name = $_POST['name'];
-        $start_date = date("Y-m-d H:i:s",strtotime($_POST['start_date']));
-        $end_date = date("Y-m-d H:i:s",strtotime($_POST['end_date']));
+        $start_date = date("Y-m-d H:i:s", strtotime($_POST['start_date']));
+        $end_date = date("Y-m-d H:i:s", strtotime($_POST['end_date']));
         $status = $_POST['status'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
-        $templates = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
+        $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-       print_r($start_date);
+        $user = unserialize($_SESSION['user']);        
+        $user_id = str_replace(['<br/>', '<br>', '<br />'], '', $user->id);
+        
+        $user_id = 2;
+
         $params = array(
-            'p_customer_id' => $customer,
-            'p_name' => $name,
-            'p_start_date' => $start_date,
-            'p_end_date' => $end_date,
-            'p_status_id' => $status,
-            'p_combo_id' => $combo,
-            'p_priority' => $priority,
-            'p_description' => $description,
-            'p_created_by' => '4'        
+            'customer_id' => $customer,
+            'name' => $name,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'status_id' => $status,
+            'combo_id' => $combo,
+            'levels'=>$levels,
+            'priority' => $priority,
+            'description' => $description,
+            'created_by' => $user_id// nếu thay bằng 1 thì sẽ phát sinh lỗi.???
         );
 
-       
-        $result = $this->project_model->callMySqlFunction("ProjectInsert",$params);
-    
+
+        $pid = $this->project_model->callMySqlFunction("ProjectInsert", $params);
+        if($pid>0){
+            if(!empty(trim($instruction))){
+                $params = array(
+                    'project_id'=>$pid,
+                    'content'=>$instruction,
+                    'created_by'=>$user_id
+                );
+                $piid = $this->project_model->callMySqlFunction("ProjectInstructionInsert", $params);
+                if(!empty($_POST['templates'])){
+                    $levels = $_POST['templates'];
+                    foreach($levels as $l){
+                        $params = array(
+                            'project_id'=>$pid,
+                            'level_id'=>$l,
+                            'created_by'=>$user_id
+                        );
+                        $tid = $this->project_model->callMySqlFunction("TaskInsertAuto", $params);
+                    }
+                }
+            }
+        }else{
+            print_r(0);
+        }
+
 
     }
 
