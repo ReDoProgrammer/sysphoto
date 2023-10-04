@@ -33,7 +33,7 @@ class Project extends Controller
         $end_date = date("Y-m-d H:i:s", strtotime($_POST['end_date']));
         $status = $_POST['status'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
-        $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
+        $levels = strval(!empty($_POST['templates']) ? implode(',', $_POST['templates']) : '');
         $priority = $_POST['priority'];
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
@@ -50,7 +50,7 @@ class Project extends Controller
             'end_date' => $end_date,
             'status_id' => $status,
             'combo_id' => $combo,
-            'levels'=>$levels,
+            'levels'=> $levels,
             'priority' => $priority,
             'description' => $description,
             'created_by' => $user_id// nếu thay bằng 1 thì sẽ phát sinh lỗi.???

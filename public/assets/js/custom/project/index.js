@@ -233,12 +233,6 @@ $('#btnSubmitJob').click(function () {
             }
         })
     }
-
-
-
-
-
-
 })
 $('#btnSearch').click(function (e) {
     e.preventDefault();
@@ -352,7 +346,7 @@ function fetch() {
                         $('#tblProjects').append(`
                     <tr id="${p.id}">
                         <td>${++idx}</td>
-                        <td class="fw-bold">${p.acronym_mh}</td>
+                        <td class="fw-bold">${p.acronym}</td>
                         <td>${p.name}</td>
                         <td>${p.start_date}</td>
                         <td>${p.end_date}</td>
