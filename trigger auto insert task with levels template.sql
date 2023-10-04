@@ -13,16 +13,22 @@ BEGIN
 
     SET @start = 1;
     SET @end = LOCATE(',', v_levels);
-    WHILE @end > 0 DO
-        INSERT INTO tasks (project_id, level_id, created_by)
-        VALUES (v_project_id, SUBSTRING(v_levels, @start, @end - @start), v_created_by);
-        SET @start = @end + 1;
-        SET @end = LOCATE(',', v_levels, @start);
-    END WHILE;
+    
+    -- Kiểm tra xem @end có rỗng hay không
+    IF @end IS NOT NULL THEN
+        WHILE @end > 0 DO
+            INSERT INTO tasks (project_id, level_id, created_by)
+            VALUES (v_project_id, SUBSTRING(v_levels, @start, @end - @start), v_created_by);
+            SET @start = @end + 1;
+            SET @end = LOCATE(',', v_levels, @start);
+        END WHILE;
+    END IF;
 
     -- Xử lý giá trị cuối cùng
-    INSERT INTO tasks (project_id, level_id, created_by)
-    VALUES (v_project_id, SUBSTRING(v_levels, @start), v_created_by);
+    IF SUBSTRING(v_levels, @start) > 0 THEN
+        INSERT INTO tasks (project_id, level_id, created_by)
+        VALUES (v_project_id, SUBSTRING(v_levels, @start), v_created_by);
+    END IF;
 END;
 //
 DELIMITER ;

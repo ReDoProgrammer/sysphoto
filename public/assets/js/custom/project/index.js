@@ -183,23 +183,22 @@ $('#btnSubmitJob').click(function () {
                 description, instruction
             },
             success: function (data) {
-                console.log(data);
-                // try {
-                //     content = $.parseJSON(data);
-                //     if (content.code == 201) {                       
-                //         $('#modal_project').modal('hide');
-                //         $('#btnSearch').click();
-                //     }
-                //     $.toast({
-                //         heading: content.heading,
-                //         text: content.msg,
-                //         icon: content.icon,
-                //         loader: true,        // Change it to false to disable loader
-                //         loaderBg: '#9EC600'  // To change the background
-                //     })
-                // } catch (error) {
-                //     console.log(data, error);
-                // }
+                try {
+                    content = $.parseJSON(data);
+                    if (content.code == 201) {                       
+                        $('#modal_project').modal('hide');
+                        $('#btnSearch').click();
+                    }
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+                } catch (error) {
+                    console.log(data, error);
+                }
             }
         })
     } else {

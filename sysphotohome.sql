@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 03, 2023 lúc 08:30 PM
+-- Thời gian đã tạo: Th10 04, 2023 lúc 07:56 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -461,7 +461,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '142.250.204.36', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '142.251.222.196', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -527,9 +527,34 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 124, 'test name', 'fdsf fdsà ewrqư', 1, '2023-10-04 00:55:00', '2023-10-04 00:55:00', '1,2,3', '', NULL, NULL, 1, 1, '2023-10-04 01:02:34', 1, NULL, 0),
-(2, 124, 'test trigger', 'fdsf fdsà ewrqư', 1, '2023-10-04 00:55:00', '2023-10-04 00:55:00', '1,2,3', '', NULL, NULL, 1, 1, '2023-10-04 01:25:47', 1, NULL, 0),
-(3, 124, 'test trigger lần 2', 'fdsf fdsà ewrqư', 1, '2023-10-04 00:55:00', '2023-10-04 00:55:00', '1,2,3,4,5', '', NULL, NULL, 1, 1, '2023-10-04 01:27:03', 1, NULL, 0);
+(1, 124, 'test 123 update', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,3', '', NULL, NULL, 0, 1, '2023-10-04 12:40:51', 2, NULL, 0),
+(2, 124, 'test 123 update without template', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:41:06', 2, NULL, 0),
+(3, 124, 'test 123 update without template 1', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:42:56', 2, NULL, 0),
+(4, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:43:52', 2, NULL, 0),
+(5, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:44:13', 2, NULL, 0),
+(6, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1', '', NULL, NULL, 0, 1, '2023-10-04 12:44:25', 2, NULL, 0),
+(7, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,2', '', NULL, NULL, 0, 1, '2023-10-04 12:44:36', 2, NULL, 0),
+(8, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '2,3,4', '', NULL, NULL, 0, 1, '2023-10-04 12:44:51', 2, NULL, 0),
+(9, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '2,3,4', '', NULL, NULL, 0, 1, '2023-10-04 12:45:58', 2, NULL, 0),
+(10, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:46:12', 2, NULL, 0),
+(11, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:48:07', 2, NULL, 0),
+(12, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1', '', NULL, NULL, 0, 1, '2023-10-04 12:48:20', 2, NULL, 0),
+(13, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,2', '', NULL, NULL, 0, 1, '2023-10-04 12:48:35', 2, NULL, 0),
+(14, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,2,3', '', NULL, NULL, 0, 1, '2023-10-04 12:48:57', 2, NULL, 0),
+(15, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,2,3', '', NULL, NULL, 0, 1, '2023-10-04 12:50:01', 2, NULL, 0),
+(16, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:50:15', 2, NULL, 0),
+(17, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:50:44', 2, NULL, 0),
+(18, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,2,3', '', NULL, NULL, 0, 1, '2023-10-04 12:51:36', 2, NULL, 0),
+(19, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:51:48', 2, NULL, 0),
+(20, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,2', '', NULL, NULL, 0, 1, '2023-10-04 12:52:46', 2, NULL, 0),
+(21, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:52:57', 2, NULL, 0),
+(22, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1', '', NULL, NULL, 0, 1, '2023-10-04 12:53:09', 2, NULL, 0),
+(23, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '1,2,3,4,5,6', '', NULL, NULL, 0, 1, '2023-10-04 12:54:06', 2, NULL, 0),
+(24, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '5,6', '', NULL, NULL, 0, 1, '2023-10-04 12:54:21', 2, NULL, 0),
+(25, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:54:33', 2, NULL, 0),
+(26, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 15:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:55:24', 2, NULL, 0),
+(27, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 17:29:00', '', '', NULL, NULL, 0, 1, '2023-10-04 12:55:30', 2, NULL, 0),
+(28, 124, 'test 123 update without template 2', 'description here\n', 1, '2023-10-04 12:29:00', '2023-10-04 17:29:00', '1,2,3', '', NULL, NULL, 0, 1, '2023-10-04 12:55:38', 2, NULL, 0);
 
 --
 -- Bẫy `projects`
@@ -546,16 +571,22 @@ CREATE TRIGGER `AutoInsertTask` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
 
     SET @start = 1;
     SET @end = LOCATE(',', v_levels);
-    WHILE @end > 0 DO
-        INSERT INTO tasks (project_id, level_id, created_by)
-        VALUES (v_project_id, SUBSTRING(v_levels, @start, @end - @start), v_created_by);
-        SET @start = @end + 1;
-        SET @end = LOCATE(',', v_levels, @start);
-    END WHILE;
+    
+    -- Kiểm tra xem @end có rỗng hay không
+    IF @end IS NOT NULL THEN
+        WHILE @end > 0 DO
+            INSERT INTO tasks (project_id, level_id, created_by)
+            VALUES (v_project_id, SUBSTRING(v_levels, @start, @end - @start), v_created_by);
+            SET @start = @end + 1;
+            SET @end = LOCATE(',', v_levels, @start);
+        END WHILE;
+    END IF;
 
     -- Xử lý giá trị cuối cùng
-    INSERT INTO tasks (project_id, level_id, created_by)
-    VALUES (v_project_id, SUBSTRING(v_levels, @start), v_created_by);
+    IF SUBSTRING(v_levels, @start) > 0 THEN
+        INSERT INTO tasks (project_id, level_id, created_by)
+        VALUES (v_project_id, SUBSTRING(v_levels, @start), v_created_by);
+    END IF;
 END
 $$
 DELIMITER ;
@@ -575,6 +606,25 @@ CREATE TABLE `project_instructions` (
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
   `updated_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `project_instructions`
+--
+
+INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 4, '12341234\n', '2023-10-04 12:10:45', 2, NULL, 0),
+(2, 5, 'this is instruction for editor 1\n', '2023-10-04 12:11:12', 2, NULL, 0),
+(3, 6, 'this is instruction for editor 1\n', '2023-10-04 12:11:37', 2, NULL, 0),
+(4, 7, 'instruct 1\n', '2023-10-04 12:17:09', 2, NULL, 0),
+(5, 8, 'instruct 1\n', '2023-10-04 12:17:18', 2, NULL, 0),
+(6, 12, 'instruct 1\n', '2023-10-04 12:27:42', 2, NULL, 0),
+(7, 13, 'instruct 1\n', '2023-10-04 12:28:30', 2, NULL, 0),
+(8, 14, 'instruction here\n', '2023-10-04 12:30:16', 2, NULL, 0),
+(9, 15, 'instruction here\n', '2023-10-04 12:30:55', 2, NULL, 0),
+(10, 17, 'instruction here\n', '2023-10-04 12:31:49', 2, NULL, 0),
+(11, 26, 'instruction here\n', '2023-10-04 12:55:25', 2, NULL, 0),
+(12, 27, 'instruction here\n', '2023-10-04 12:55:30', 2, NULL, 0),
+(13, 28, 'instruction here\n', '2023-10-04 12:55:38', 2, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -651,14 +701,20 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `name`, `description`, `status_id`, `editor_id`, `qa_id`, `level_id`, `quantity`, `editor_view`, `qa_view`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 2, NULL, NULL, 0, 0, 0, 1, 1, 0, 0, '2023-10-04 01:25:47', 1, '2023-10-03 18:25:47', 0),
-(2, 2, NULL, NULL, 0, 0, 0, 2, 1, 0, 0, '2023-10-04 01:25:47', 1, '2023-10-03 18:25:47', 0),
-(3, 2, NULL, NULL, 0, 0, 0, 3, 1, 0, 0, '2023-10-04 01:25:47', 1, '2023-10-03 18:25:47', 0),
-(4, 3, NULL, NULL, 0, 0, 0, 1, 1, 0, 0, '2023-10-04 01:27:03', 1, '2023-10-03 18:27:03', 0),
-(5, 3, NULL, NULL, 0, 0, 0, 2, 1, 0, 0, '2023-10-04 01:27:03', 1, '2023-10-03 18:27:03', 0),
-(6, 3, NULL, NULL, 0, 0, 0, 3, 1, 0, 0, '2023-10-04 01:27:03', 1, '2023-10-03 18:27:03', 0),
-(7, 3, NULL, NULL, 0, 0, 0, 4, 1, 0, 0, '2023-10-04 01:27:03', 1, '2023-10-03 18:27:03', 0),
-(8, 3, NULL, NULL, 0, 0, 0, 5, 1, 0, 0, '2023-10-04 01:27:03', 1, '2023-10-03 18:27:03', 0);
+(1, 20, NULL, NULL, 0, 0, 0, 1, 1, 0, 0, '2023-10-04 12:52:46', 2, '2023-10-04 05:52:46', 0),
+(2, 20, NULL, NULL, 0, 0, 0, 2, 1, 0, 0, '2023-10-04 12:52:46', 2, '2023-10-04 05:52:46', 0),
+(3, 22, NULL, NULL, 0, 0, 0, 1, 1, 0, 0, '2023-10-04 12:53:09', 2, '2023-10-04 05:53:09', 0),
+(4, 23, NULL, NULL, 0, 0, 0, 1, 1, 0, 0, '2023-10-04 12:54:06', 2, '2023-10-04 05:54:06', 0),
+(5, 23, NULL, NULL, 0, 0, 0, 2, 1, 0, 0, '2023-10-04 12:54:06', 2, '2023-10-04 05:54:06', 0),
+(6, 23, NULL, NULL, 0, 0, 0, 3, 1, 0, 0, '2023-10-04 12:54:06', 2, '2023-10-04 05:54:06', 0),
+(7, 23, NULL, NULL, 0, 0, 0, 4, 1, 0, 0, '2023-10-04 12:54:06', 2, '2023-10-04 05:54:06', 0),
+(8, 23, NULL, NULL, 0, 0, 0, 5, 1, 0, 0, '2023-10-04 12:54:06', 2, '2023-10-04 05:54:06', 0),
+(9, 23, NULL, NULL, 0, 0, 0, 6, 1, 0, 0, '2023-10-04 12:54:06', 2, '2023-10-04 05:54:06', 0),
+(10, 24, NULL, NULL, 0, 0, 0, 5, 1, 0, 0, '2023-10-04 12:54:21', 2, '2023-10-04 05:54:21', 0),
+(11, 24, NULL, NULL, 0, 0, 0, 6, 1, 0, 0, '2023-10-04 12:54:21', 2, '2023-10-04 05:54:21', 0),
+(12, 28, NULL, NULL, 0, 0, 0, 1, 1, 0, 0, '2023-10-04 12:55:38', 2, '2023-10-04 05:55:38', 0),
+(13, 28, NULL, NULL, 0, 0, 0, 2, 1, 0, 0, '2023-10-04 12:55:38', 2, '2023-10-04 05:55:38', 0),
+(14, 28, NULL, NULL, 0, 0, 0, 3, 1, 0, 0, '2023-10-04 12:55:38', 2, '2023-10-04 05:55:38', 0);
 
 -- --------------------------------------------------------
 
@@ -944,9 +1000,9 @@ ALTER TABLE `project_statuses`
 --
 ALTER TABLE `tasks`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `level_id` (`level_id`),
   ADD KEY `project_id` (`project_id`),
-  ADD KEY `created_by` (`created_by`);
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `level_id` (`level_id`);
 
 --
 -- Chỉ mục cho bảng `task_statuses`
@@ -1052,13 +1108,13 @@ ALTER TABLE `levels`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
@@ -1076,7 +1132,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`
@@ -1141,9 +1197,9 @@ ALTER TABLE `project_instructions`
 -- Các ràng buộc cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  ADD CONSTRAINT `tasks_ibfk_1` FOREIGN KEY (`level_id`) REFERENCES `levels` (`id`),
   ADD CONSTRAINT `tasks_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `tasks_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `tasks_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `tasks_ibfk_5` FOREIGN KEY (`level_id`) REFERENCES `levels` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

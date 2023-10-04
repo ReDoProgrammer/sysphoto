@@ -33,13 +33,13 @@ class Project extends Controller
         $end_date = date("Y-m-d H:i:s", strtotime($_POST['end_date']));
         $status = $_POST['status'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
-        $levels = strval(!empty($_POST['templates']) ? implode(',', $_POST['templates']) : '');
+        $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        // $user = unserialize($_SESSION['user']);        
-        // $user_id = str_replace(['<br/>', '<br>', '<br />'], '', $user->id);
+        // $user = unserialize($_SESSION['user']);       
+       
         
         $user_id = 2;
 
@@ -55,49 +55,38 @@ class Project extends Controller
             'description' => $description,
             'created_by' => $user_id// nếu thay bằng 1 thì sẽ phát sinh lỗi.???
         );
-        print_r($params);
+       
 
         $pid = $this->project_model->callFunction("ProjectInsert", $params);
      
 
-        // if($pid>0){
-        //     if(!empty(trim($instruction))){
-        //         //thêm instruction vào csdl
-        //         $params = array(
-        //             'project_id'=>$pid,
-        //             'content'=>$instruction,
-        //             'created_by'=>$user_id
-        //         );
-        //         $piid = $this->project_model->callMySqlFunction("ProjectInstructionInsert", $params);
-        //         if(!empty($_POST['templates'])){
-        //             //thêm task tự động 
-        //             $levels = $_POST['templates'];
-        //             foreach($levels as $l){
-        //                 $params = array(
-        //                     'project_id'=>$pid,
-        //                     'level_id'=>$l,
-        //                     'created_by'=>$user_id
-        //                 );
-        //                 $tid = $this->project_model->callMySqlFunction("TaskInsertAuto", $params);
-        //             }
-        //         }
-        //     }
-        //     $data = array(
-        //         'code'=>201,
-        //         'msg'=>'Project has been created successfully!',
-        //         'heading'=>'SUCCESSFULLY',
-        //         'icon'=>'success'
-        //     );
-        // }else{
-        //     $data = array(
-        //         'code'=>204,
-        //         'msg'=>'Create new project failed!',
-        //         'heading'=>'FAILED',
-        //         'icon'=>'danger'
-        //     );
-        // }
+        if($pid>0){
+            if(!empty(trim($instruction))){
+                //thêm instruction vào csdl
+                $params = array(
+                    'project_id'=>$pid,
+                    'content'=>$instruction,
+                    'created_by'=>$user_id
+                );
+                $this->project_model->callFunction("ProjectInstructionInsert", $params);
 
-        // echo json_encode($data);
+            }
+            $data = array(
+                'code'=>201,
+                'msg'=>'Project has been created successfully!',
+                'heading'=>'SUCCESSFULLY',
+                'icon'=>'success'
+            );
+        }else{
+            $data = array(
+                'code'=>204,
+                'msg'=>'Create new project failed!',
+                'heading'=>'FAILED',
+                'icon'=>'danger'
+            );
+        }
+
+        echo json_encode($data);
 
     }
 
