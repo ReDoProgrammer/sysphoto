@@ -108,7 +108,6 @@ class Project extends Controller
             'customer_id' => $customer,
             'name' => $name,
             'description' => $description,
-            // 'instruction' => $instruction,
             'start_date' => (DateTime::createFromFormat('d/m/Y H:i', $start_date))->format('Y-m-d H:i'),
             'end_date' => (DateTime::createFromFormat('d/m/Y H:i', $end_date))->format('Y-m-d H:i'),
             'status_id' => $status,

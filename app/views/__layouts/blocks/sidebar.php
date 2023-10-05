@@ -273,7 +273,7 @@
             <div class="tab-pane fade" id="v-pills-clients" role="tabpanel" aria-labelledby="v-pills-clients-tab">
                 <p>Clients</p>
                 <ul>
-                    <li><a href="clients.html">Clients</a></li>
+                    <li><a href="<?php echo _WEB_ROOT?>/admin/customer">Customer</a></li>
                 </ul>
             </div>
             <div class="tab-pane fade" id="v-pills-projects" role="tabpanel" aria-labelledby="v-pills-projects-tab">
