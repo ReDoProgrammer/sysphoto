@@ -15,15 +15,15 @@ class Database
 
         global $db_config;
         $this->__conn = Connection::getInstance($db_config);
-        
+
         // khai báo mảng chứa các key của mảng
         $keys = array_keys($params);
         $values = array_values(($params));
 
         $sql = "SELECT $f(";
         foreach ($params as $key => $value) {
-           $sql.=":$key".($value == end($params)?"":",");
-        }        
+            $sql .= ":$key" . ($value == end($params) ? "" : ",");
+        }
 
         $sql .= ") AS result";
         $stmt = $this->__conn->prepare($sql);
@@ -40,6 +40,42 @@ class Database
         return $stmt->fetch(PDO::FETCH_ASSOC)['result'];
     }
 
+
+    function executeStoredProcedure($procedureName, $params = array())
+    {
+        try {
+            global $db_config;
+            $this->__conn = Connection::getInstance($db_config);
+            // Chuẩn bị câu lệnh SQL cho việc gọi stored procedure
+            $paramStr = '';
+            foreach ($params as $paramName => $paramValue) {
+                $paramStr .= ":$paramName, ";
+            }
+            $paramStr = rtrim($paramStr, ', ');
+
+            $sql = "CALL $procedureName($paramStr)";
+
+            // Tạo đối tượng câu lệnh SQL
+            $stmt = $this->__conn->prepare($sql);
+
+            // Bind giá trị cho các tham số IN
+            foreach ($params as $paramName => &$paramValue) {
+                $stmt->bindParam(":$paramName", $paramValue);
+            }
+
+            // Thực thi stored procedure
+            $stmt->execute();
+
+            // Lấy kết quả từ truy vấn SELECT
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);          
+
+            return $result;
+        } catch (PDOException $e) {
+            // Xử lý lỗi nếu cần
+            echo "Lỗi: " . $e->getMessage();
+            return false;
+        }
+    }
 
 
     public function select($table, $columns = '*', $join = '', $where = '', $params = [], $page = 1, $limit = 0, $orderby = '', $groupby = '')

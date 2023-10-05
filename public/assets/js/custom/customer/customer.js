@@ -81,7 +81,7 @@ $('#btnSubmitCustomer').click(function () {
             },
             success: function (data) {
                 try {
-                    content = $.parseJSON(data);
+                    let content = $.parseJSON(data);
                     if (content.code == 201) {
                         $('#modal_customer').modal('hide');
                         $('#btnSearch').click();
@@ -96,6 +96,7 @@ $('#btnSubmitCustomer').click(function () {
                 } catch (error) {
                     console.log(data, error);
                 }
+
             }
         })
 

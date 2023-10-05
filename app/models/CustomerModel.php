@@ -12,16 +12,15 @@ class CustomerModel extends Model
     {
         try {
             $user = unserialize($_SESSION['user']);
-            print_r($user);
             $params = [
-                'group_id' => $group_id,
-                'name' => $name,
-                'email' => $email,
-                'password' => $password,
+                'p_group_id' => $group_id,
+                'p_name' => $name,
+                'p_email' => $email,
+                'p_password' => $password,
                 'customer_url' => $customer_url,
-                'created_by' => $user->id
+                'p_created_by' => $user->id
             ];
-            return $this->callFunction("CustomerInsert", $params);
+            return $this->__db->executeStoredProcedure('CustomerInsert',$params);
         } catch (Exception $e) {
             return $e->getMessage();
         }

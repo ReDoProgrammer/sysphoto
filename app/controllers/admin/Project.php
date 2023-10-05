@@ -7,10 +7,26 @@ class Project extends Controller
     {
         $this->project_model = $this->model('ProjectModel');
     }
+    public function testproc()
+    {
+        $procedureName = "InsertEmployee";
+
+        // Khai báo biến cho ID và gán giá trị mặc định là null
+        $insertedId = null;
+
+        $params = array(
+            "p_name" => "John Doe",
+            "p_email" => "john@example.com"
+        );
+
+        $result = $this->project_model->executeStoredProcedure('FilterEmployeesBySalary');
+        print_r($result);
+    }
     public function index()
     {
+
         //renderview
-        $this->data['title'] = 'Projects list';
+        $this->data['title'] = "Projects List";
         $this->data['content'] = 'admin/project/index';
         $this->data['sub_content'] = [];
         $this->render('__layouts/admin_layout', $this->data);
@@ -39,8 +55,8 @@ class Project extends Controller
         $instruction = $_POST['instruction'];
 
         // $user = unserialize($_SESSION['user']);       
-       
-        
+
+
         $user_id = 2;
 
         $params = array(
@@ -50,39 +66,39 @@ class Project extends Controller
             'end_date' => $end_date,
             'status_id' => $status,
             'combo_id' => $combo,
-            'levels'=> $levels,
+            'levels' => $levels,
             'priority' => $priority,
             'description' => $description,
-            'created_by' => $user_id// nếu thay bằng 1 thì sẽ phát sinh lỗi.???
+            'created_by' => $user_id // nếu thay bằng 1 thì sẽ phát sinh lỗi.???
         );
-       
+
 
         $pid = $this->project_model->callFunction("ProjectInsert", $params);
-     
 
-        if($pid>0){
-            if(!empty(trim($instruction))){
+
+        if ($pid > 0) {
+            if (!empty(trim($instruction))) {
                 //thêm instruction vào csdl
                 $params = array(
-                    'project_id'=>$pid,
-                    'content'=>$instruction,
-                    'created_by'=>$user_id
+                    'project_id' => $pid,
+                    'content' => $instruction,
+                    'created_by' => $user_id
                 );
                 $this->project_model->callFunction("ProjectInstructionInsert", $params);
 
             }
             $data = array(
-                'code'=>201,
-                'msg'=>'Project has been created successfully!',
-                'heading'=>'SUCCESSFULLY',
-                'icon'=>'success'
+                'code' => 201,
+                'msg' => 'Project has been created successfully!',
+                'heading' => 'SUCCESSFULLY',
+                'icon' => 'success'
             );
-        }else{
+        } else {
             $data = array(
-                'code'=>204,
-                'msg'=>'Create new project failed!',
-                'heading'=>'FAILED',
-                'icon'=>'danger'
+                'code' => 204,
+                'msg' => 'Create new project failed!',
+                'heading' => 'FAILED',
+                'icon' => 'danger'
             );
         }
 

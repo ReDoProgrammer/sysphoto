@@ -46,13 +46,13 @@ class Customer extends Controller
         $password = $_POST['password'];
         $customer_url = $_POST['customer_url'];
         $result = $this->customer_model->InsertCustomer($group_id, $name, $email, $password, $customer_url);
-        if (is_int($result)) {
+        if (is_int($result['last_id'])) {
             $data = array(
                 'code' => 201,
                 'msg' => 'Customer has been inserted',
                 'heading' => 'SUCCESSFULLY!',
                 'icon' => 'success',
-                'lastedid' => $result
+                'lastedid' => $result['last_id']
             );
         } else {
             $data = array(
