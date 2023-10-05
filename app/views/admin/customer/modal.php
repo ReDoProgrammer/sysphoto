@@ -1,114 +1,52 @@
-<!-- Create OR Update Project Modal -->
+<!-- Add Or Update Customer Modal -->
 <div id="modal_customer" class="modal custom-modal fade" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modal_project_title">Create Project</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    <i class="fas fa-times"></i>
-                </button>
+                <h4 class="modal-title" id="taskModalTitle">Add New Customer</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Customer</label>
-                                <select id="slCustomers"></select>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Project Name (<span
-                                        class="text-danger fw-bold">*</span>)</label>
-                                <input class="form-control" type="text" id="txtProjectName">
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Start Date</label>
-                                <div class="cal-icon">
-                                    <input type="date" id="txtBeginDate" class="form-control datetimepicker">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-2">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Duration(hour)</label>
-                                <input class="form-control" type="text" id="txtDuration" value="1"
-                                    style="text-align: right;"
-                                    onkeypress="return isNumberKey(event)"
-                                    >
-                            </div>
-                        </div>
-                        <div class="col-sm-3">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">End Date</label>
-                                <div class="cal-icon">
-                                    <input type="date" id="txtEndDate" class="form-control datetimepicker">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Status</label>
-                                <select id="slStatuses" class="form-control"></select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Combo</label>
-                                <select id="slComboes"></select>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Template</label>
-                                <select class="select" name="templates[]" multiple="multiple" id="slTemplates"></select>
-                            </div>
-                        </div>
-
-                        <div class="col-sm-2">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Priority</label>
-                                <div class="checkbox">
-                                    <label class="col-form-label">
-                                        <input type="checkbox" name="checkbox" id="ckbPriority"> Urgent
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Project's description</label>
-                                <div id="divDescription" style="min-height: 100px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Instruction for Editor</label>
-                                <div id="divInstruction" style="min-height: 50px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="submit-section">
-                        <button class="btn btn-primary cancel-btn" data-bs-dismiss="modal"
-                            aria-label="Close">Cancel</button>
-                        <button class="btn btn-primary submit-btn" id="btnSubmitJob">Submit</button>
-                    </div>
+                <div class="input-block mb-3">
+                    <label class="col-form-label">Customer group</label>
+                    <select id="slMDCustomerGroups" class="form-control"></select>
                 </div>
+
+                <div class="input-block mb-3">
+                    <label class="col-form-label">Customer name (<span class="text-danger fw-bold">*</span>)</label>
+                    <input class="form-control" type="text" id="txtCustomerName">
+                </div>
+
+                <div class="input-block mb-3">
+                    <label class="col-form-label">Email (<span class="text-danger fw-bold">*</span>)</label>
+                    <input class="form-control" type="text" id="txtCustomerEmail">
+                </div>
+
+                <div class="input-block mb-3">
+                    <label class="col-form-label">Password (<span class="text-danger fw-bold">*</span>)</label>
+                    <input class="form-control" type="password" id="txtCustomerPassword">
+                </div>
+                <div class="input-block mb-3">
+                    <label class="col-form-label">Confirm Password (<span class="text-danger fw-bold">*</span>)</label>
+                    <input class="form-control" type="password" id="txtConfirmCustomerPassword">
+                </div>
+
+                <div class="input-block mb-3">
+                    <label class="col-form-label">Url (<span class="text-danger fw-bold">*</span>)</label>
+                    <input class="form-control" type="text" id="txtCustomerUrl">
+                </div>                       
+
+
+                <div class="submit-section">
+                    <button class="btn btn-primary cancel-btn" data-bs-dismiss="modal"
+                        aria-label="Close">Cancel</button>
+                    <button class="btn btn-primary submit-btn" id="btnSubmitCustomer">Submit</button>
+                </div>
+
+
             </div>
         </div>
     </div>
 </div>
-<!-- /Create OR Update Project Modal -->
+<!-- /Add Or Update Customer Modal -->
+

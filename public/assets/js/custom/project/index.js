@@ -123,8 +123,8 @@ $('#txtDuration').keyup(function () {
 $('#btnSubmitJob').click(function () {
     let customer = $('#slCustomers option:selected').val();
     let name = $('#txtProjectName').val();
-    let start_date = moment($('#txtBeginDate').val()+":00").format('DD/MM/YYYY HH:mm:ss');
-    let end_date =  moment($('#txtEndDate').val()+":00").format('DD/MM/YYYY HH:mm:ss');
+    let start_date = moment($('#txtBeginDate').val() + ":00").format('DD/MM/YYYY HH:mm:ss');
+    let end_date = moment($('#txtEndDate').val() + ":00").format('DD/MM/YYYY HH:mm:ss');
     let status = $('#slStatuses option:selected').val();
     let combo = $('#slComboes option:selected').val();
     let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
@@ -185,7 +185,7 @@ $('#btnSubmitJob').click(function () {
             success: function (data) {
                 try {
                     content = $.parseJSON(data);
-                    if (content.code == 201) {                       
+                    if (content.code == 201) {
                         $('#modal_project').modal('hide');
                         $('#btnSearch').click();
                     }
@@ -245,7 +245,7 @@ $('#slPageSize').on('change', function () {
 
 function LoadCustomers() {
     $.ajax({
-        url: 'customer/getlist',
+        url: 'customer/all',
         type: 'get',
         success: function (data) {
             try {
