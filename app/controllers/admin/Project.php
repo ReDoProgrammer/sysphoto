@@ -54,37 +54,37 @@ class Project extends Controller
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        // $user = unserialize($_SESSION['user']);       
+        $user = unserialize($_SESSION['user']);
 
 
-        $user_id = 2;
+
 
         $params = array(
-            'customer_id' => $customer,
-            'name' => $name,
-            'start_date' => $start_date,
-            'end_date' => $end_date,
-            'status_id' => $status,
-            'combo_id' => $combo,
-            'levels' => $levels,
-            'priority' => $priority,
-            'description' => $description,
-            'created_by' => $user_id // nếu thay bằng 1 thì sẽ phát sinh lỗi.???
+            'p_customer_id' => $customer,
+            'p_name' => $name,
+            'p_start_date' => $start_date,
+            'p_end_date' => $end_date,
+            'p_status_id' => $status,
+            'p_combo_id' => $combo,
+            'p_levels' => $levels,
+            'p_priority' => $priority,
+            'p_description' => $description,
+            'p_created_by' => $user->id
         );
 
 
-        $pid = $this->project_model->callFunction("ProjectInsert", $params);
+        $pid = $this->project_model->executeStoredProcedure("ProjectInsert", $params);
 
 
         if ($pid > 0) {
             if (!empty(trim($instruction))) {
                 //thêm instruction vào csdl
                 $params = array(
-                    'project_id' => $pid,
-                    'content' => $instruction,
-                    'created_by' => $user_id
+                    'p_project_id' => $pid['last_id'],
+                    'p_content' => $instruction,
+                    'p_created_by' => $user->id
                 );
-                $this->project_model->callFunction("ProjectInstructionInsert", $params);
+                $this->project_model->executeStoredProcedure("ProjectInstructionInsert", $params);
 
             }
             $data = array(
@@ -101,9 +101,7 @@ class Project extends Controller
                 'icon' => 'danger'
             );
         }
-
         echo json_encode($data);
-
     }
 
     public function update()
