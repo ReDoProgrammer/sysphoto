@@ -9,6 +9,11 @@ class CustomerModel extends Model
         return count($this->__db->select($this->__table,"id","",$where))==0;
     }
 
+    public function JoinDetail($id){
+        $params = ['p_id'=>$id];
+        return $this->__db->executeStoredProcedure('CustomerDetailJoin',$params);
+    }
+
     public function CustomerDetail($id){
         return $this->__db->select($this->__table,"*","","id = $id");
     }

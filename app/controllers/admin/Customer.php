@@ -17,6 +17,14 @@ class Customer extends Controller
         $this->data['sub_content'] = [];
         $this->render('__layouts/admin_layout', $this->data);
     }
+    public function detail(){
+         //renderview
+         $id = $_GET['id'];
+         $this->data['title'] = 'Customer detail';
+         $this->data['content'] = 'admin/customer/detail';
+         $this->data['sub_content']['customer'] = $this->customer_model->JoinDetail($id);        
+         $this->render('__layouts/admin_layout', $this->data);
+    }
 
     public function CheckMailAvailable()
     {
@@ -54,7 +62,7 @@ class Customer extends Controller
         $straighten_remark = $_POST['straighten_remark'];
         $tv = $_POST['tv'];
         $fire = $_POST['fire'];
-        $sky = $_POST['fire'];
+        $sky = $_POST['sky'];
         $grass = $_POST['grass'];
         $nationtal_style = $_POST['nationtal_style'];
         $cloud = $_POST['cloud'];
