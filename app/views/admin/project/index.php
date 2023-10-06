@@ -80,8 +80,7 @@
     </div>
 </div>
 
-<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.snow.css">
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.js"></script>
+
 
 <?php
 include_once 'modal_project.php';
