@@ -23,7 +23,9 @@
                                             <? echo $customer['company']; ?>
                                         </h5>
                                         <div class="staff-id">Acronym :
-                                            <span class="text-warning fw-bold"><?php echo $customer['acronym']; ?></span>
+                                            <span class="text-warning fw-bold">
+                                                <?php echo $customer['acronym']; ?>
+                                            </span>
                                         </div>
                                         <h6 class="text-muted mt-2">Created at:
                                             <?php echo $customer['created_at']; ?>
@@ -182,7 +184,10 @@
                                     <div class="card-header fw-bold text-success">Style remark:</div>
                                     <div class="card-body m-2">
                                         <p>
-                                            <?php echo $customer['style_remark']; ?>
+                                            <?php                                           
+                                                echo '<pre>' . $customer['style_remark'] . '</pre>';
+                                            ?>
+                                            
                                         </p>
                                     </div>
                                 </div>

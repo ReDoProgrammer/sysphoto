@@ -122,7 +122,7 @@ class Customer extends Controller
         $straighten_remark = $_POST['straighten_remark'];
         $tv = $_POST['tv'];
         $fire = $_POST['fire'];
-        $sky = $_POST['fire'];
+        $sky = $_POST['sky'];
         $grass = $_POST['grass'];
         $nationtal_style = $_POST['nationtal_style'];
         $cloud = $_POST['cloud'];
