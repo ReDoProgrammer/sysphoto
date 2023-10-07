@@ -203,5 +203,6 @@
 
 <?php
 $this->render('admin/task/modal');
-include_once 'view.php';
+$this->render('admin/task/detail');
+
 ?>

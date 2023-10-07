@@ -62,11 +62,12 @@ function editTask(id) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     let t = content.task;
-                    qDescription.setText(t.note ? t.note : '');
-                    $('#slLevels').val(t.lId);
-                    LoadEditorsByLevel(t.lId, t.eId);
-                    LoadQAsByLevel(t.lId, t.qaId);
-                    $('#txtQuantity').val(t.qty)
+                    console.log(t);
+                    qDescription.setText(t.description);
+                    $('#slLevels').val(t.level_id);
+                    LoadEditorsByLevel(t.level_id, t.editor_id);
+                    LoadQAsByLevel(t.level_id, t.qa_id);
+                    $('#txtQuantity').val(t.quantity)
                 }
                 taskId = id;
                 $('#task_modal').modal('show');
@@ -85,8 +86,37 @@ function viewTask(id) {
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
+                console.log(content);
+                let task = content.task;
                 if (content.code == 200) {
-                    $('#pDescription').html(content.task.note ? content.task.note : '');
+                    $('#pDescription').html(task.description);
+                    $('#dLevel').html(task.level);
+                    $('#dQuantity').html(task.quantity);
+
+
+                    if (task.editor) {
+                        $('#dEditor').html(task.editor);
+                        $('#dETimeStamp').html(task.editor ? task.editor_timestamp : '-');
+                        $('#dEAssigned').html(task.editor_assigned == 1 ? `<i class="far fa-check-square"></i> Assigned into task` : `<i class="far fa-check-square"></i> Get task`);
+                        $('#dEView').html(task.editor_view == 1 ? `<i class="far fa-check-square"></i> View instruction` : `<i class="fa-regular fa-square"></i> View instruction`);
+                    }
+
+
+                    if (task.qa) {
+                        $('#dQA').html(task.qa);
+                        $('#dQATimeStamp').html(task.qa ? task.qa_timestamp : '-');
+                        $('#dQAAssigned').html(task.qa_assigned == 1 ? `<i class="far fa-check-square"></i> Assigned into task` : `<i class="far fa-check-square"></i> Get task`);
+                        $('#dQAView').html(task.qa_view == 1 ? `<i class="far fa-check-square"></i> View instruction` : `<i class="fa-regular fa-square"></i> View instruction`);
+                    }
+
+                    if(task.dc){
+                        $('#dDC').html(task.dc);
+                        $('#dDCSubmit').html(task.dc_submit==1?`<span class="text-success">Submit</span>`:`<span class="text-danger">Reject</span>`);
+                        $('#dDCTimeStamp').html(task.editor_timestamp);
+                    }
+                   
+
+
                 }
                 $('#view_task_modal').modal('show');
             } catch (error) {

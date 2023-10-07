@@ -27,7 +27,7 @@ class Task extends Controller
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];
 
-        $result = $this->task_model->create($prjId,$description,$editor,$qa,$quantity,$level);
+        $result = $this->task_model->create($prjId, $description, $editor, $qa, $quantity, $level);
         if ($result['last_id'] > 0) {
             $data = array(
                 'code' => 201,
@@ -116,25 +116,15 @@ class Task extends Controller
     public function detail()
     {
         $id = $_GET['id'];
-        $tasks = $this->task_model->getDetail($id);
-        if (count($tasks) > 0) {
-            $data = array(
+        echo json_encode(
+            array(
                 'code' => '200',
                 'msg' => 'Get task by id successfully!',
-                'task' => $tasks[0],
+                'task' => $this->task_model->getDetail($id),
                 'icon' => 'success',
                 'heading' => 'Successfully!'
-            );
-        } else {
-            $data = array(
-                'code' => 404,
-                'msg' => 'Task not found!',
-                'icon' => 'warning',
-                'heading' => 'Valid task'
-            );
-        }
-
-        echo json_encode($data);
+            )
+        );
     }
 
 
@@ -142,11 +132,11 @@ class Task extends Controller
     {
         $id = $_GET['id'];
         echo json_encode([
-            'code'=>200,
-            'msg'=>'Get tasks list based on project successfully',
-            'icon'=>'success',
-            'heading'=>'SUCCESSFULLY',
-            'tasks'=>$this->task_model->GetTasksByProject($id)
+            'code' => 200,
+            'msg' => 'Get tasks list based on project successfully',
+            'icon' => 'success',
+            'heading' => 'SUCCESSFULLY',
+            'tasks' => $this->task_model->GetTasksByProject($id)
         ]);
     }
 }
