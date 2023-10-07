@@ -6,15 +6,15 @@ class EmployeeModel extends Model
 
 
     function getEditors($level){
-        $columns = " u.viettat,u.id ";
-        $join = " JOIN employee_group g ON u.groupe = g.group_id";
+        $columns = " u.acronym,u.id ";
+        $join = " JOIN employee_groups g ON u.editor_group_id = g.id";
         $where = " FIND_IN_SET('$level', g.levels) > 0 ";
         return $this->__db->select($this->__table, $columns, $join,$where);
     }
 
     function getQAs($level){
-        $columns = " u.viettat,u.id ";
-        $join = " JOIN employee_group g ON u.groupqa = g.group_id";
+        $columns = " u.acronym,u.id ";
+        $join = " JOIN employee_groups g ON u.qa_group_id = g.id";
         $where = " FIND_IN_SET('$level', g.levels) > 0 ";
         return $this->__db->select($this->__table, $columns, $join,$where);
     }

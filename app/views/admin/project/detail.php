@@ -1,18 +1,20 @@
+<?php if (!isset($project) || empty($project)) {
+    echo '<h1 class="text-center p-3 text-danger">PROJECT NOT FOUND</h1>';
+    return;
+} ?>
 <div class="row">
     <div class="col-lg-8 col-xl-9">
         <div class="card">
             <div class="card-body">
                 <div class="project-title">
-                    <h5 class="card-title">
-                        <?php echo $details[0]['name']; ?>
+                    <h5 class="card-title text-info fw-bold">
+                        <?php echo $project['project_name']; ?>
                     </h5>
                     <?php
-                    if (empty($details)) {
-                        return;
-                    }
                     $tasks = "";
-                    foreach ($details as $d) {
-                        $tasks .= $d['tasks_number'] . " " . $d["stt_task_name"] . " task, ";
+                    $tasks_list = json_decode($project['tasks_list'], true);
+                    foreach ($tasks_list as $d) {
+                        $tasks .= $d['quantity'] . " " . $d["status"] . " TASK, ";
                     }
                     ?>
                     <h6>
@@ -20,10 +22,7 @@
                     </h6>
                 </div>
                 <?php
-                $notes = $details[0]['description'];
-                $notes_with_links = preg_replace('/(https?:\/\/[^\s]+)/', '<a href="$1">$1</a>', $notes);
-                $notes_with_links = preg_replace('/(\R{2,})/', "\n", $notes_with_links);
-                echo '<pre>' . $notes_with_links . '</pre>';
+                echo '<pre>' . $project['description'] . '</pre>';
                 ?>
             </div>
         </div>
@@ -45,7 +44,7 @@
 
             </div>
             <div class="card-body">
-                <div class="table-responsive" style="min-height:200px; max-height:200px;">
+                <div class="table-responsive" style="min-height:100px; max-height:200px;">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
@@ -54,7 +53,7 @@
                                 <th>Q.ty</th>
                                 <th>Editor</th>
                                 <th>Q.A</th>
-                                <th>Got job</th>
+                                <th>DC</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
@@ -66,17 +65,14 @@
         </div>
 
         <div class="card p-2">
-            <div class="card-heading">
-                <h4 class="p-4">Timeline</h4>
-            </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-12">
                         <div class="activity" style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; ">
-                            <div class="activity-box" >
-                                <ul class="activity-list">
+                            <div class="activity-box">
+                                <ul class="activity-list" id="ulProjectLogs">
                                     <li>
-                                        <div class="activity-user">
+                                        <div class="activity-user ">
                                             <a href="profile.html" data-bs-toggle="tooltip" class="avatar"
                                                 aria-label="Lesley Grauer" data-bs-original-title="Lesley Grauer">
                                                 <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-01.jpg"
@@ -91,91 +87,7 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li>
-                                        <div class="activity-user">
-                                            <a href="profile.html" class="avatar" data-bs-toggle="tooltip"
-                                                aria-label="Jeffery Lalor" data-bs-original-title="Jeffery Lalor">
-                                                <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-16.jpg"
-                                                    alt="User Image">
-                                            </a>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div class="timeline-content">
-                                                <a href="profile.html" class="name">Jeffery Lalor</a> added <a
-                                                    href="profile.html" class="name">Loren Gatlin</a> and <a
-                                                    href="profile.html" class="name">Tarah Shropshire</a> to project <a
-                                                    href="#">Patient appointment booking</a>
-                                                <span class="time">6 mins ago</span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="activity-user">
-                                            <a href="profile.html" data-bs-toggle="tooltip" class="avatar"
-                                                aria-label="Catherine Manseau"
-                                                data-bs-original-title="Catherine Manseau">
-                                                <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-08.jpg"
-                                                    alt="User Image">
-                                            </a>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div class="timeline-content">
-                                                <a href="profile.html" class="name">Catherine Manseau</a> completed task
-                                                <a href="#">Appointment booking with payment gateway</a>
-                                                <span class="time">12 mins ago</span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="activity-user">
-                                            <a href="#" data-bs-toggle="tooltip" class="avatar"
-                                                aria-label="Bernardo Galaviz" data-bs-original-title="Bernardo Galaviz">
-                                                <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-13.jpg"
-                                                    alt="User Image">
-                                            </a>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div class="timeline-content">
-                                                <a href="profile.html" class="name">Bernardo Galaviz</a> changed the
-                                                task name <a href="#">Doctor available module</a>
-                                                <span class="time">1 day ago</span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="activity-user">
-                                            <a href="profile.html" data-bs-toggle="tooltip" class="avatar"
-                                                aria-label="Mike Litorus" data-bs-original-title="Mike Litorus">
-                                                <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-05.jpg"
-                                                    alt="User Image">
-                                            </a>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div class="timeline-content">
-                                                <a href="profile.html" class="name">Mike Litorus</a> added new task <a
-                                                    href="#">Patient and Doctor video conferencing</a>
-                                                <span class="time">2 days ago</span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="activity-user">
-                                            <a href="profile.html" data-bs-toggle="tooltip" class="avatar"
-                                                aria-label="Jeffery Lalor" data-bs-original-title="Jeffery Lalor">
-                                                <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-16.jpg"
-                                                    alt="User Image">
-                                            </a>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div class="timeline-content">
-                                                <a href="profile.html" class="name">Jeffery Lalor</a> added <a
-                                                    href="profile.html" class="name">Jeffrey Warden</a> and <a
-                                                    href="profile.html" class="name">Bernardo Galaviz</a> to the task of
-                                                <a href="#">Private chat module</a>
-                                                <span class="time">7 days ago</span>
-                                            </div>
-                                        </div>
-                                    </li>
+
                                 </ul>
                             </div>
                         </div>
@@ -190,43 +102,35 @@
             <div class="card-body prj-tbl pb-0">
                 <h6 class="card-title m-b-15">Project summary</h6>
                 <table class="table">
-                    <tbody>
+                    <tbody>                       
                         <tr>
-                            <td>Cost:</td>
-                            <td class="text-end">$1200</td>
-                        </tr>
-                        <tr>
-                            <td>Total Hours:</td>
-                            <td class="text-end">100 Hours</td>
-                        </tr>
-                        <tr>
-                            <td>Started date:</td>
+                            <td>Begin:</td>
                             <td class="text-end">
-                                <?php echo $details[0]['start_date']; ?>
+                                <?php echo $project['start_date']; ?>
                             </td>
                         </tr>
                         <tr>
                             <td>Deadline:</td>
                             <td class="text-end">
-                                <?php echo $details[0]['end_date']; ?>
+                                <?php echo $project['end_date']; ?>
                             </td>
                         </tr>
                         <tr>
                             <td>Priority:</td>
                             <td class="text-end">
-                                <?php echo $details[0]['urgent'] == 1 ? '<i class="fa fa-dot-circle-o text-danger">Urgent</i>' : 'Normal'; ?>
+                                <?php echo $project['priority'] == 1 ? '<i class="fa fa-dot-circle-o text-danger">Urgent</i>' : 'Normal'; ?>
                             </td>
                         </tr>
                         <tr>
                             <td>Combo:</td>
                             <td class="text-end">
-                                <?php echo '<span class="' . $details[0]['mau_sac'] . '">' . $details[0]['ten_combo'] . '</span>'; ?>
+                                <?php echo $project['combo_name']?'<i class="fa fa-dot-circle-o text-success">'.$project['combo_name'].'</i>':''; ?>
                             </td>
                         </tr>
                         <tr>
                             <td>Status:</td>
                             <td class="text-end">
-                                <?php echo '<span class="' . $details[0]['color_sttj'] . '">' . $details[0]['stt_job_name'] . '</span>'; ?>
+                            <?php echo '<i class="fa fa-dot-circle-o text-info">'.$project['status'].'</i>'; ?>
                             </td>
                         </tr>
                     </tbody>

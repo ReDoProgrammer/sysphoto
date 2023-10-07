@@ -351,7 +351,7 @@ function fetch() {
                         <td>${p.end_date}</td>
                         <td class="text-center">
                       
-                                    <span class="badge ${p.color_sttj}">${p.stt_job_name}</span>
+                                    <span class="badge ${p.status_color}">${p.status_name}</span>
                         </td>                       
                         <td class="text-center">
                             <div class="dropdown action-label">
@@ -391,9 +391,10 @@ function LoadProjectStatus() {
         success: function (data) {
             try {
                 var stt = $.parseJSON(data);
+          
                 stt.forEach(s => {
-                    $('#slStatuses').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
-                    $('#slJobStatus').append(`<option value="${s.id}">${s.stt_job_name.toUpperCase()}</option>`);
+                    $('#slStatuses').append(`<option value="${s.id}">${s.name.toUpperCase()}</option>`);
+                    $('#slJobStatus').append(`<option value="${s.id}">${s.name.toUpperCase()}</option>`);
                 })
             } catch (error) {
                 console.log(data, error);

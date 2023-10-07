@@ -7,24 +7,9 @@ class Project extends Controller
     {
         $this->project_model = $this->model('ProjectModel');
     }
-    public function testproc()
-    {
-        $procedureName = "InsertEmployee";
-
-        // Khai báo biến cho ID và gán giá trị mặc định là null
-        $insertedId = null;
-
-        $params = array(
-            "p_name" => "John Doe",
-            "p_email" => "john@example.com"
-        );
-
-        $result = $this->project_model->executeStoredProcedure('FilterEmployeesBySalary');
-        print_r($result);
-    }
+   
     public function index()
     {
-
         //renderview
         $this->data['title'] = "Projects List";
         $this->data['content'] = 'admin/project/index';
@@ -33,11 +18,11 @@ class Project extends Controller
     }
     public function detail()
     {
-
         $id = $_GET['id'];
+      
         $this->data['title'] = 'Projects detail';
         $this->data['content'] = 'admin/project/detail';
-        $this->data['sub_content']['details'] = $this->project_model->detail($id);
+        $this->data['sub_content']['project'] =$this->project_model->detail($id);;
         $this->render('__layouts/admin_layout', $this->data);
     }
 

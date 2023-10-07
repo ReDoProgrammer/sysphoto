@@ -1,4 +1,4 @@
-$(document).ready(function(){
+$(document).ready(function () {
     getTaskLevels();
 })
 
@@ -15,7 +15,7 @@ $("#task_modal").on("hidden.bs.modal", function () {
     taskId = 0;
 });
 
-function deleteTask(id){
+function deleteTask(id) {
     Swal.fire({
         title: 'Are you sure want to delete this task?',
         text: "You won't be able to revert this!",
@@ -24,32 +24,32 @@ function deleteTask(id){
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Yes, delete it!'
-      }).then((result) => {
+    }).then((result) => {
         if (result.isConfirmed) {
-          $.ajax({
-            url:'../task/delete',
-            type:'post',
-            data:{id},
-            success:function(data){
-                try {
-                    let content = $.parseJSON(data);
-                    if(content.code == 200){
-                        $.toast({
-                            heading: content.heading,
-                            text: content.msg,
-                            icon: content.icon,
-                            loader: true,        // Change it to false to disable loader
-                            loaderBg: '#9EC600'  // To change the background
-                        })
-                        getTasksList();
+            $.ajax({
+                url: '../task/delete',
+                type: 'post',
+                data: { id },
+                success: function (data) {
+                    try {
+                        let content = $.parseJSON(data);
+                        if (content.code == 200) {
+                            $.toast({
+                                heading: content.heading,
+                                text: content.msg,
+                                icon: content.icon,
+                                loader: true,        // Change it to false to disable loader
+                                loaderBg: '#9EC600'  // To change the background
+                            })
+                            getTasksList();
+                        }
+                    } catch (error) {
+                        console.log(data, error);
                     }
-                } catch (error) {
-                    console.log(data,error);
                 }
-            }
-          })
+            })
         }
-      })
+    })
 }
 
 function editTask(id) {
@@ -62,7 +62,7 @@ function editTask(id) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     let t = content.task;
-                    qDescription.setText(t.note?t.note:'');
+                    qDescription.setText(t.note ? t.note : '');
                     $('#slLevels').val(t.lId);
                     LoadEditorsByLevel(t.lId, t.eId);
                     LoadQAsByLevel(t.lId, t.qaId);
@@ -86,7 +86,7 @@ function viewTask(id) {
             try {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
-                    $('#pDescription').html(content.task.note?content.task.note:'');
+                    $('#pDescription').html(content.task.note ? content.task.note : '');
                 }
                 $('#view_task_modal').modal('show');
             } catch (error) {
@@ -115,7 +115,7 @@ $('#btnSubmitTask').click(function () {
         })
         return;
     }
-   
+
     if (quantity.trim().length == 0) {
         $.toast({
             heading: `Quantity is not valid`,
@@ -165,7 +165,8 @@ $('#btnSubmitTask').click(function () {
 
                     if (content.code == 201) {
                         $('#task_modal').modal('hide');
-                        getTasksList();
+                        GetTasksList();
+                        GetLogs();
                     }
                 } catch (error) {
                     console.log(data, error);
@@ -198,7 +199,8 @@ $('#btnSubmitTask').click(function () {
 
                     if (content.code == 200) {
                         $('#task_modal').modal('hide');
-                        getTasksList();
+                        GetTasksList();
+                        GetLogs();
                     }
                 } catch (error) {
                     console.log(data, error);
@@ -213,20 +215,20 @@ $('#slLevels').on('change', function () {
     LoadQAsByLevel($(this).val());
 })
 
-$('#slEditors').on('change', function() {
-    var selectedValue =  $(this).val();
+$('#slEditors').on('change', function () {
+    var selectedValue = $(this).val();
 
     // Kiểm tra xem giá trị đã chọn có rỗng không
     if (selectedValue === null || selectedValue === '') {
         selectizeQA.disable();
         selectizeQA.setValue(null);
-    }else{
+    } else {
         selectizeQA.enable();
     }
 })
 
 function LoadEditorsByLevel(level, selected = null) {
-   
+
     selectizeEditor.clearOptions();
     $.ajax({
         url: '../employee/getEditors',
@@ -238,7 +240,7 @@ function LoadEditorsByLevel(level, selected = null) {
                 if (content.code == 200) {
 
                     content.editors.forEach(e => {
-                        selectizeEditor.addOption({ value: `${e.id}`, text: `${e.viettat}` });
+                        selectizeEditor.addOption({ value: `${e.id}`, text: `${e.acronym}` });
                     })
 
                     if (selected != null) {
@@ -264,7 +266,7 @@ function LoadQAsByLevel(level, selected = null) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     content.qas.forEach(e => {
-                        selectizeQA.addOption({ value: `${e.id}`, text: `${e.viettat}` });
+                        selectizeQA.addOption({ value: `${e.id}`, text: `${e.acronym}` });
                     })
 
                     if (selected != null) {
@@ -279,7 +281,7 @@ function LoadQAsByLevel(level, selected = null) {
 }
 
 
-function getTaskLevels() {   
+function getTaskLevels() {
     $('#slLevels').append(` <option value="" disabled selected>Vui lòng chọn level</option>`);
     $.ajax({
         url: '../level/getList',

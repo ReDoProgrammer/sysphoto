@@ -53,8 +53,4 @@
 </div>
 <!-- /Add or update Task Modal -->
 
-
-<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.snow.css">
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.js"></script>
-
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/task/task.js"></script>

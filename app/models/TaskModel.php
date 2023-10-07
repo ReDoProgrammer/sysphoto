@@ -1,11 +1,21 @@
 <?php
 class TaskModel extends Model
 {
-    protected $__table = 'task_list';
+    protected $__table = 'tasks';
 
-    function create($data)
+    function create($prjId,$description,$editor,$qa,$quantity,$level)
     {
-        return $this->__db->insert($this->__table, $data);
+        $user = unserialize($_SESSION['user']);
+        $params = [
+            'p_project'=>$prjId,
+            'p_description'=>$description,
+            'p_editor'=>$editor,
+            'p_qa'=>$qa,
+            'p_quantity'=>$quantity,
+            'p_level'=>$level,
+            'p_created_by'=>$user->id
+        ];
+        return $this->executeStoredProcedure("TaskInsert",$params);
     }
     function updateTask($data,$where){
         return $this->__db->update($this->__table, $data,$where);
@@ -13,40 +23,41 @@ class TaskModel extends Model
 
     public function getDetail($id)
     {
-        $columns = "t.id,l.id as lId, l.name as level,l.mau_sac as level_bg, t.soluong as qty,t.description note, 
-           e.id as eId, e.viettat as editor,qa.id as qaId, qa.viettat as qa, t.date_created as got_time, st.stt_task_name as status, st.color_sttt as status_bg";
-        $join = " JOIN level l ON t.idlevel = l.id ";
-        $join .= "LEFT JOIN users e ON t.editor = e.id ";
-        $join .= "LEFT JOIN users qa ON t.qa = qa.id ";
-        $join .= "LEFT JOIN task_status st ON t.status = st.id ";
-        $where = "t.id = $id";
-        $data = $this->__db->select($this->__table . " t", $columns, $join, $where);
-        return $data;
+       
+        return null;
     }
     public function getList()
     {
-        $columns = "task_list.id, project_list.name, task_list.description, task,editor,qa, level.name as level, task_list.date_created";
-        $join = " JOIN project_list ON task_list.project_id = project_list.id ";
-        $join .= " JOIN level ON task_list.idlevel = level.id ";
-        $data = $this->__db->select($this->__table, $columns, $join);
-        return $data;
+        
+        return null;
     }
 
     function destroy($id){
         $where = "id =$id";
-        return $this->__db->delete($this->__table, $where);
+        return $this->__db->delete($this->__table.' t', $where);
     }
 
-    public function getTasksByProject($prjId)
-    {
-        $columns = "t.id, l.name as level,l.mau_sac as level_bg, t.soluong as qty,t.description note, 
-            e.viettat as editor, qa.viettat as qa, t.date_created as got_time,t.status as tStatus, st.stt_task_name as status, st.color_sttt as status_bg";
-        $join = " JOIN level l ON t.idlevel = l.id ";
-        $join .= "LEFT JOIN users e ON t.editor = e.id ";
-        $join .= "LEFT JOIN users qa ON t.qa = qa.id ";
-        $join .= "LEFT JOIN task_status st ON t.status = st.id ";
-        $where = "project_id = $prjId";
-        $data = $this->__db->select($this->__table . " t", $columns, $join, $where);
-        return $data;
+    public function GetTasksByProject($id)
+    {       
+        // $params = ['p_id'=>$id];
+        // return $this->executeStoredProcedure("TasksGetByProject",$params);
+        $columns = " t.id,
+        l.name as level,
+        t.quantity,
+        e.acronym as editor,
+        q.acronym as qa,
+        d.acronym as dc,
+        ts.name as status,
+        ts.color as status_color";
+        $join = " JOIN levels l ON t.level_id = l.id";
+        $join .=" LEFT JOIN task_statuses ts ON t.status_id = ts.id";
+        $join .=" LEFT JOIN users e ON t.editor_id =e.id";
+        $join .=" LEFT JOIN users q ON t.qa_id = q.id";
+        $join .=" LEFT JOIN users d ON t.dc_id = d.id";
+
+        $where = "t.project_id = $id";
+        $orderby ="t.created_at DESC";
+   
+        return $this->__db->select($this->__table." t",$columns,$join,$where,[],1,0, $orderby);
     }
 }
