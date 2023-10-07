@@ -17,8 +17,20 @@ class TaskModel extends Model
         ];
         return $this->executeStoredProcedure("TaskInsert",$params);
     }
-    function updateTask($data,$where){
-        return $this->__db->update($this->__table, $data,$where);
+    function UpdateTask($id,$description,$editor,$qa,$quantity,$level){
+        $user = unserialize($_SESSION['user']);
+        $params = [
+            'p_id'=>$id,
+            'p_description'=>$description,
+            'p_editor'=>$editor,
+            'p_assign_editor'=>$editor>0?1:0,
+            'p_qa'=>$qa,
+            'p_assign_qa'=>$qa>0?1:0,
+            'p_quantity'=>$quantity,
+            'p_level'=>$level,
+            'p_updated_by'=>$user->id
+        ];
+        return $this->executeStoredProcedure("TaskUpdate",$params);
     }
 
     public function getDetail($id)
@@ -33,8 +45,8 @@ class TaskModel extends Model
     }
 
     function destroy($id){
-        $where = "id =$id";
-        return $this->__db->delete($this->__table.' t', $where);
+        $params = ['p_id'=>$id];
+        return $this->__db->executeStoredProcedure("TaskDelete",$params);
     }
 
     public function GetTasksByProject($id)
@@ -47,6 +59,7 @@ class TaskModel extends Model
         e.acronym as editor,
         q.acronym as qa,
         d.acronym as dc,
+        t.status_id,
         ts.name as status,
         ts.color as status_color";
         $join = " JOIN levels l ON t.level_id = l.id";

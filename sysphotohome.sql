@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 07, 2023 lúc 12:11 AM
+-- Thời gian đã tạo: Th10 07, 2023 lúc 04:35 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -132,6 +132,32 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerUpdate` (IN `p_id` BIGINT, 
             SELECT ROW_COUNT() AS rows_changed;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGINT)   BEGIN
+	SELECT
+        p.id AS project_id,
+        p.name AS project_name,
+        c.acronym as customer,
+        p.priority,
+        ps.name as status, ps.color as status_color,
+        NormalizeContent(p.description) as description,
+        DATE_FORMAT(start_date, '%d/%c/%Y %h:%i:%s') as start_date,
+        DATE_FORMAT(end_date, '%d/%c/%Y %h:%i:%s') as end_date,
+        cb.name as combo_name,cb.color as combo_color, 
+        COUNT(t.id) as tasks_number,
+        CONCAT('[', GROUP_CONCAT(JSON_OBJECT(           
+            'status',ts.name, 
+            'quantity', t.quantity           
+        )), ']') AS tasks_list
+    FROM projects p
+    JOIN customers c ON p.customer_id = c.id
+    LEFT JOIN comboes cb ON p.combo_id = cb.id
+    LEFT JOIN project_statuses ps ON p.status_id = ps.id
+    LEFT JOIN tasks t ON p.id = t.project_id
+    LEFT JOIN task_statuses ts ON t.level_id = ts.id
+    WHERE p.id = p_id
+    GROUP BY p.id, p.name,ps.name,c.acronym;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_status_id` TINYINT, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
 	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,status_id,created_by)
     VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,p_description,p_status_id,p_created_by);
@@ -142,6 +168,94 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInstructionInsert` (IN `p_pr
 	INSERT INTO project_instructions(project_id,content,created_by)
     VALUES(p_project_id,p_content,p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectLogs` (IN `p_id` BIGINT)   BEGIN
+	SELECT 
+    	content,
+    	DATE_FORMAT(timestamp, '%d/%m/%Y %H:%i:%s') as timestamp
+    FROM 	project_logs 
+    WHERE project_id = p_id 
+    ORDER BY timestamp DESC;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDelete` (IN `p_id` BIGINT)   BEGIN
+	DELETE FROM tasks
+    WHERE id = p_id;
+    SELECT ROW_COUNT() AS deleted_rows;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT)   BEGIN   
+   SELECT 
+   		t.level_id,
+        lv.name as level,
+        t.quantity,
+        ts.name as status,
+		NormalizeContent(t.description) as description,
+        t.editor_id,
+        e.acronym as editor,
+         DATE_FORMAT(t.editor_timestamp, '%d/%m/%Y %H:%i:%s') as editor_timestamp,
+        t.editor_view,
+        t.editor_assigned,
+		
+        t.qa_id,
+        q.acronym as qa,
+        DATE_FORMAT(t.qa_timestamp, '%d/%m/%Y %H:%i:%s') as qa_timestamp,
+        t.qa_view,
+        t.qa_assigned,
+
+        d.acronym as dc,
+        t.dc_submit,
+        DATE_FORMAT(t.dc_timestamp, '%d/%m/%Y %H:%i:%s') as dc_timestamp ,
+
+        DATE_FORMAT(t.created_at, '%d/%m/%Y %H:%i:%s') as created_at,
+        c.acronym as created_by,
+        DATE_FORMAT(t.updated_at, '%d/%m/%Y %H:%i:%s') as updated_at,
+        u.acronym as updated_by
+    FROM tasks t
+    JOIN levels lv ON t.level_id = lv.id
+    LEFT JOIN users e ON t.editor_id = e.id
+    LEFT JOIN users q ON t.qa_id = q.id
+    LEFT JOIN users d ON t.dc_id = e.id
+    LEFT JOIN task_statuses ts ON t.status_id = ts.id
+    JOIN users c ON t.created_by = c.id
+    LEFT JOIN users u ON t.updated_by = u.id
+    WHERE t.id = p_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskInsert` (IN `p_project` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_qa` INT, IN `p_quantity` INT, IN `p_level` INT, IN `p_created_by` INT)   BEGIN
+	INSERT INTO tasks(project_id,description,editor_id,qa_id,quantity,level_id,created_by)
+    VALUES(p_project,p_description,p_editor,p_qa,p_quantity,p_level,p_created_by);
+    SELECT LAST_INSERT_ID() as last_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGetByProject` (IN `p_id` BIGINT)   BEGIN
+	SELECT 
+        t.id,
+        l.name,
+        t.quantity,
+        e.acronym as editor,
+        q.acronym as qa,
+        ts.name as status,
+        ts.color as status_color
+    FROM tasks t 
+    JOIN levels l ON t.level_id = l.id
+    LEFT JOIN task_statuses ts ON t.status_id = ts.id
+    LEFT JOIN users e ON t.editor_id =e.id
+    LEFT JOIN users q ON t.qa_id = q.id
+    WHERE t.project_id = p_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskUpdate` (IN `p_id` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_assign_editor` TINYINT, IN `p_qa` INT, IN `p_assign_qa` TINYINT, IN `p_quantity` INT, IN `p_level` INT, IN `p_updated_by` INT)   BEGIN
+	UPDATE tasks
+    SET
+    	description = p_description,
+        editor_id = p_editor, editor_timestamp = NOW(),editor_assigned = p_assign_editor,
+        qa_id = p_qa, qa_timestamp = NOW(), qa_assigned = p_assign_qa,
+        quantity = p_quantity,level_id = p_level,
+        updated_at = NOW(), updated_by = p_updated_by
+    WHERE id = p_id;
+    SELECT ROW_COUNT() as updated_rows;
 END$$
 
 --
@@ -543,7 +657,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '142.250.204.132', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '216.58.203.68', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -746,7 +860,10 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 (4, 2, '2023-10-07 05:11:04', '[admin] INSERT TASK [PE-STAND] with quantity: [1]'),
 (5, 2, '2023-10-07 05:11:04', '[admin] INSERT TASK [PE-BASIC] with quantity: [1]'),
 (6, 2, '2023-10-07 05:11:04', '[admin] INSERT TASK [PE-Drone-Basic] with quantity: [1]'),
-(7, 2, '2023-10-07 05:11:04', '[admin] CREATE PROJECT');
+(7, 2, '2023-10-07 05:11:04', '[admin] CREATE PROJECT'),
+(8, 2, '2023-10-07 15:43:51', '[admin] INSERT TASK [PE-STAND] with quantity: [1]'),
+(9, 2, '2023-10-07 15:59:16', '[admin] INSERT TASK [VHS] with quantity: [3]'),
+(10, 2, '2023-10-07 16:01:30', '[admin] INSERT TASK [Re-Stand] with quantity: [6]');
 
 -- --------------------------------------------------------
 
@@ -756,26 +873,27 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 
 CREATE TABLE `project_statuses` (
   `id` int(11) NOT NULL,
-  `stt_job_name` varchar(30) NOT NULL,
-  `color_sttj` varchar(50) NOT NULL,
-  `group_sttj` varchar(10) NOT NULL,
-  `ngay_tao_sttj` date NOT NULL,
-  `nguoi_tao_sttj` varchar(50) NOT NULL
+  `name` varchar(30) NOT NULL,
+  `color` varchar(50) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(10) NOT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `updated_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `project_statuses`
 --
 
-INSERT INTO `project_statuses` (`id`, `stt_job_name`, `color_sttj`, `group_sttj`, `ngay_tao_sttj`, `nguoi_tao_sttj`) VALUES
-(1, 'wait', 'badge badge-secondary', '', '0000-00-00', ''),
-(2, 'Processing', 'badge badge-warning', '', '0000-00-00', ''),
-(3, 'Sent', 'badge badge-success', '', '0000-00-00', ''),
-(4, 'Paid', 'badge badge-info', '', '0000-00-00', ''),
-(5, 'Unpay', 'badge badge-danger', '', '0000-00-00', ''),
-(6, 'Upload Link', 'badge badge-danger', '', '0000-00-00', ''),
-(7, 'Ask again', 'badge badge-dark', '', '0000-00-00', ''),
-(8, 'Responded', 'badge badge-danger', '', '0000-00-00', '');
+INSERT INTO `project_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'wait', 'badge badge-secondary', '0000-00-00 00:00:00', 0, NULL, 0),
+(2, 'Processing', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
+(3, 'Sent', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
+(4, 'Paid', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
+(5, 'Unpay', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
+(6, 'Upload Link', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
+(7, 'Ask again', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0),
+(8, 'Responded', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -786,13 +904,17 @@ INSERT INTO `project_statuses` (`id`, `stt_job_name`, `color_sttj`, `group_sttj`
 CREATE TABLE `tasks` (
   `id` bigint(30) NOT NULL,
   `project_id` bigint(30) NOT NULL,
-  `name` varchar(200) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `status_id` tinyint(4) NOT NULL DEFAULT 0,
   `editor_id` int(11) NOT NULL,
+  `editor_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm editor được gán hoặc nhận task',
   `editor_assigned` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1: Editor được gán, 0: editor nhận task',
   `qa_id` int(11) NOT NULL,
+  `qa_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm qa được gán task hoặc nhận task',
   `qa_assigned` tinyint(1) NOT NULL COMMENT '1: QA được gán, 0: QA nhận task',
+  `dc_id` int(11) NOT NULL COMMENT 'Quản lý chất lượng ảnh đầu ra',
+  `dc_submit` tinyint(4) DEFAULT 0 COMMENT '1: ok, -1 reject',
+  `dc_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm dc_submit',
   `level_id` int(30) NOT NULL,
   `quantity` int(11) NOT NULL DEFAULT 1,
   `editor_view` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu Editor đã xem instruction',
@@ -807,10 +929,10 @@ CREATE TABLE `tasks` (
 -- Đang đổ dữ liệu cho bảng `tasks`
 --
 
-INSERT INTO `tasks` (`id`, `project_id`, `name`, `description`, `status_id`, `editor_id`, `editor_assigned`, `qa_id`, `qa_assigned`, `level_id`, `quantity`, `editor_view`, `qa_view`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(4, 2, NULL, NULL, 0, 0, 0, 0, 0, 1, 1, 0, 0, '2023-10-07 05:11:04', 1, '2023-10-06 22:11:04', 0),
-(5, 2, NULL, NULL, 0, 0, 0, 0, 0, 2, 1, 0, 0, '2023-10-07 05:11:04', 1, '2023-10-06 22:11:04', 0),
-(6, 2, NULL, NULL, 0, 0, 0, 0, 0, 3, 1, 0, 0, '2023-10-07 05:11:04', 1, '2023-10-06 22:11:04', 0);
+INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `qa_id`, `qa_timestamp`, `qa_assigned`, `dc_id`, `dc_submit`, `dc_timestamp`, `level_id`, `quantity`, `editor_view`, `qa_view`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(5, 2, NULL, 0, 0, '2023-10-07 05:58:32', 0, 0, '2023-10-07 05:57:54', 0, 0, 0, NULL, 2, 1, 0, 0, '2023-10-07 05:11:04', 1, '2023-10-06 22:11:04', 0),
+(8, 2, 'dasfasfdas fasdfas \nsdfaf asdfdsa \nfdsafsadf sda fasd frdsafa 12341234 fdsaf asdf\nrewqr ewqrqwre weqr\n', 0, 30, '2023-10-07 14:27:22', 1, 0, '2023-10-07 14:27:22', 0, 0, 0, NULL, 9, 3, 0, 0, '2023-10-07 15:59:16', 1, '2023-10-07 14:27:22', 1),
+(9, 2, 'fdsafasd324 frsad fasdf sda 41 fdasf asdfas\nfsdaf asfds\na\n fdsa\n f\nasd \nf\nasdf\nsad \nfasd\nfasdf\nf1243124\nfdasf dsa\n', 0, 30, '2023-10-07 14:27:10', 1, 49, '2023-10-07 14:27:10', 1, 0, 0, NULL, 1, 6, 0, 0, '2023-10-07 16:01:30', 1, '2023-10-07 14:27:10', 1);
 
 --
 -- Bẫy `tasks`
@@ -826,142 +948,6 @@ CREATE TRIGGER `after_insert_task` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
     INSERT INTO project_logs(project_id,timestamp,content)
     VALUES(NEW.project_id,NEW.created_at,CONCAT('[',v_created_by,'] INSERT TASK [',v_level,'] with quantity: [',NEW.quantity,']'));
     
-END
-$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `after_update_task` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
-    DECLARE v_content VARCHAR(250) DEFAULT '';
-    DECLARE v_actioner VARCHAR(50);
-    
-    DECLARE v_old_level VARCHAR(100) DEFAULT '';
-    DECLARE v_new_level VARCHAR(100) DEFAULT '';
-    
-    DECLARE v_old_status VARCHAR(100) DEFAULT '';
-    DECLARE v_new_status VARCHAR(100) DEFAULT '';
-    
-    DECLARE v_old_emp VARCHAR(100) DEFAULT '';
-    DECLARE v_new_emp VARCHAR(100) DEFAULT '';
-  
-    SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.updated_by);    
-    
-    -- name
-    IF(OLD.name <> NEW.name) THEN
-        SET v_content = CONCAT(v_actioner, ' CHANGE TASK NAME FROM [', OLD.name, '] TO [', NEW.name, ']');
-    END IF;
-    -- //end name
-    
-    -- description
-    IF(OLD.description <> NEW.description) THEN
-        CASE WHEN LENGTH(v_content) = 0 THEN
-            SET v_content = CONCAT(v_actioner, ' CHANGE DESCRIPTION FROM [', OLD.description, '] TO [', NEW.description, ']');
-        ELSE
-            SET v_content = CONCAT(v_content, ', CHANGE DESCRIPTION FROM [', OLD.description, '] TO [', NEW.description, ']');
-        END CASE;
-    END IF;
-    -- //end description
-    
-    -- task level
-    IF(OLD.level_id <> NEW.level_id) THEN
-        SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id);
-        SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id);
-        
-        CASE WHEN LENGTH(v_content) = 0 THEN
-            SET v_content = CONCAT(v_actioner, ' CHANGE TASK LEVEL FROM [', v_old_level, '] TO [', v_new_level, ']');
-        ELSE
-            SET v_content = CONCAT(v_content, ', CHANGE TASK LEVEL FROM [', v_old_level, '] TO [', v_new_level, ']');
-        END CASE;
-    END IF;
-    -- //end task level
-    
-    -- status
-    IF(OLD.status_id <> NEW.status_id) THEN
-        SET v_old_status = (SELECT name FROM task_statuses WHERE id = OLD.status_id);
-        SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
-        
-        CASE WHEN LENGTH(v_content) = 0 THEN
-            SET v_content = CONCAT(v_actioner, ' CHANGE TASK STATUS FROM [', v_old_status, '] TO [', v_new_status, ']');
-        ELSE
-            SET v_content = CONCAT(v_content, ', CHANGE TASK STATUS FROM [', v_old_status, '] TO [', v_new_status, ']');
-        END CASE;
-    END IF;
-    -- //end status
-    
-    -- EDITOR AND QA
-    IF(OLD.editor_id <> NEW.editor_id) THEN
-        SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.editor_id);
-        
-        CASE WHEN OLD.editor_id <> 0 THEN
-            SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);
-            
-            CASE WHEN LENGTH(v_content) = 0 THEN
-                SET v_content = CONCAT(v_actioner, ' CHANGE EDITOR FROM [', v_old_emp, '] TO [', v_new_emp, ']');
-            ELSE
-                SET v_content = CONCAT(v_content, ', CHANGE EDITOR FROM [', v_old_emp, '] TO [', v_new_emp, ']');
-            END CASE;
-        ELSE
-            SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id);
-            
-            CASE WHEN NEW.editor_assigned = 1 THEN
-                CASE WHEN LENGTH(v_content) = 0 THEN
-                    SET v_content = CONCAT(v_actioner, ' ASSIGN EDITOR [', v_new_emp, '] ON TASK [', v_new_level, ']');
-                ELSE
-                    SET v_content = CONCAT(v_content, ', ASSIGN EDITOR [', v_new_emp, '] ON TASK [', v_new_level, ']');
-                END CASE;
-            ELSE
-                CASE WHEN LENGTH(v_content) = 0 THEN
-                    SET v_content = CONCAT(v_actioner, ' GET TASK [', v_new_level, ']');
-                ELSE
-                    SET v_content = CONCAT(v_content, ', GET TASK [', v_new_level, ']');
-                END CASE;
-            END CASE;
-        END CASE;
-    END IF; 
-    
-    IF(OLD.qa_id <> NEW.qa_id) THEN
-        SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.qa_id);
-        
-        CASE WHEN OLD.qa_id <> 0 THEN
-            SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.qa_id);
-            
-            CASE WHEN LENGTH(v_content) = 0 THEN
-                SET v_content = CONCAT(v_actioner, ' CHANGE QA FROM [', v_old_emp, '] TO [', v_new_emp, ']');
-            ELSE
-                SET v_content = CONCAT(v_content, ', CHANGE QA FROM [', v_old_emp, '] TO [', v_new_emp, ']');
-            END CASE;
-        ELSE
-            SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id);
-            
-            CASE WHEN NEW.qa_assigned = 1 THEN
-                CASE WHEN LENGTH(v_content) = 0 THEN
-                    SET v_content = CONCAT(v_actioner, ' ASSIGN QA [', v_new_emp, '] ON TASK [', v_new_level, ']');
-                ELSE
-                    SET v_content = CONCAT(v_content, ', ASSIGN QA [', v_new_emp, '] ON TASK [', v_new_level, ']');
-                END CASE;
-            ELSE
-                CASE WHEN LENGTH(v_content) = 0 THEN
-                    SET v_content = CONCAT('QA [', v_actioner, '] GET TASK [', v_new_level, ']');
-                ELSE
-                    SET v_content = CONCAT(v_content, ', GET TASK [', v_new_level, ']');
-                END CASE;
-            END CASE;
-        END CASE;
-    END IF;
-    -- //END EDITOR AND QA
-    
-    -- change quantity
-    IF(OLD.quantity <> NEW.quantity) THEN
-        CASE WHEN LENGTH(v_content) = 0 THEN
-            SET v_content = CONCAT(v_actioner, ' CHANGE QUANTITY FROM [', OLD.quantity, '] TO [', NEW.quantity, ']');
-        ELSE
-            SET v_content = CONCAT(v_content, ', CHANGE QUANTITY FROM [', OLD.quantity, '] TO [', NEW.quantity, ']');
-        END CASE;
-    END IF;
-    -- //end change quantity
-    
-    -- insert logs
-    INSERT INTO projects(project_id, timestamp, content)
-    VALUES(NEW.project_id, NEW.updated_at, v_content);
 END
 $$
 DELIMITER ;
@@ -1419,7 +1405,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1431,7 +1417,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

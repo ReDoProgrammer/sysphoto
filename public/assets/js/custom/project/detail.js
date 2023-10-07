@@ -67,7 +67,7 @@ function GetTasksList() {
                                                                     <div class="dropdown-menu dropdown-menu-right">
                                                                         <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> View</a>
                                                                         <a class="dropdown-item" href="javascript:void(0)" onClick="editTask(${t.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
-                                                                        ${t.tStatus == 0?'<a class="dropdown-item" href="javascript:void(0)" onClick="deleteTask('+t.id+')"><i class="fas fa-trash-alt"></i>  Delete</a>':''}
+                                                                        ${t.status_id == 0?'<a class="dropdown-item" href="javascript:void(0)" onClick="deleteTask('+t.id+')"><i class="fas fa-trash-alt"></i>  Delete</a>':''}
                                                                         
                                                                     </div> 
                                                                 </div>

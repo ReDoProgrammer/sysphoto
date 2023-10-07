@@ -57,15 +57,8 @@ class Task extends Controller
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];
-        $data = array(
-            'description' => $description,
-            'editor' => $editor,
-            'qa' => $qa,
-            'soluong' => $quantity,
-            'idlevel' => $level
-        );
-        $where = "id = $id";
-        if ($this->task_model->updateTask($data, $where)) {
+        $result = $this->task_model->UpdateTask($id, $description, $editor, $qa, $quantity, $level);
+        if ($result['updated_rows'] > 0) {
             $data = array(
                 'code' => 200,
                 'msg' => 'The task has been updated!',
@@ -86,7 +79,7 @@ class Task extends Controller
     {
         $id = $_POST['id'];
         $rs = $this->task_model->destroy($id);
-        if ($rs) {
+        if ($rs['deleted_rows']>0) {
             $data = array(
                 'code' => 200,
                 'msg' => 'The task has been deleted!',

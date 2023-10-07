@@ -41,7 +41,7 @@ function deleteTask(id) {
                                 loader: true,        // Change it to false to disable loader
                                 loaderBg: '#9EC600'  // To change the background
                             })
-                            getTasksList();
+                            GetTasksList();
                         }
                     } catch (error) {
                         console.log(data, error);
@@ -63,7 +63,7 @@ function editTask(id) {
                 if (content.code == 200) {
                     let t = content.task;
                     console.log(t);
-                    qDescription.setText(t.description);
+                    qDescription.setText(t.description?t.description:'');
                     $('#slLevels').val(t.level_id);
                     LoadEditorsByLevel(t.level_id, t.editor_id);
                     LoadQAsByLevel(t.level_id, t.qa_id);
