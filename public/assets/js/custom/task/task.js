@@ -42,6 +42,7 @@ function deleteTask(id) {
                                 loaderBg: '#9EC600'  // To change the background
                             })
                             GetTasksList();
+                            GetLogs();
                         }
                     } catch (error) {
                         console.log(data, error);

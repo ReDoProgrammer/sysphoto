@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2023 lúc 07:56 AM
+-- Thời gian đã tạo: Th10 08, 2023 lúc 09:52 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -664,7 +664,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '142.251.130.4', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '172.217.27.36', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -869,7 +869,23 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 (1, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">PE-STAND</span>] with quantity: 1'),
 (2, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">PE-Drone-Basic</span>] with quantity: 1'),
 (3, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-Basic</span>] with quantity: 1'),
-(4, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C122115T202310</span>]');
+(4, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C122115T202310</span>]'),
+(5, 1, '2023-10-08 12:57:39', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-Basic]'),
+(6, 1, '2023-10-08 14:34:15', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK QUANTITY</span> FROM [<span class=\"text-secondary\">5</span>] TO [<span class=\"text-primary\">3</span>],'),
+(7, 1, '2023-10-08 14:34:35', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">2</span>],'),
+(8, 1, '2023-10-08 14:34:42', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">description here\n</span>] TO [<span class=\"text-primary\">description here 1\n</span>],'),
+(9, 1, '2023-10-08 14:34:52', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">ASSIGN EDITOR</span> [<span class=\"text-warning\">chinh.nd</span>] ON TASK [<span class=\"text-primary\">PE-STAND</span>],'),
+(10, 1, '2023-10-08 14:42:31', '[<span class=\"fw-bold text-info\">admin</span>] CHANGE TASK DESCRIPTION FROM [description here 1\n] TO [description here 1123\n],'),
+(11, 1, '2023-10-08 14:42:46', '[<span class=\"fw-bold text-info\">admin</span>] CHANGE TASK LEVEL FROM [PE-STAND] TO [PE-BASIC], UNASSIGN EDITOR ON TASK [PE-BASIC],'),
+(12, 1, '2023-10-08 14:43:20', '[<span class=\"fw-bold text-info\">admin</span>] CHANGE TASK LEVEL FROM [PE-BASIC] TO [PE-STAND], ASSIGN EDITOR [chinh.nd] ON TASK [PE-STAND], ASSIGN QA [duy.dd] ON TASK [PE-STAND],'),
+(13, 1, '2023-10-08 14:43:55', '[<span class=\"fw-bold text-info\">admin</span>] CHANGE TASK QUANTITY FROM [2] TO [3],'),
+(14, 1, '2023-10-08 14:44:17', '[<span class=\"fw-bold text-info\">admin</span>] CHANGE TASK DESCRIPTION FROM [\n] TO [enter description\n],'),
+(15, 1, '2023-10-08 14:44:30', '[<span class=\"fw-bold text-info\">admin</span>] UNASSIGN EDITOR ON TASK [PE-Drone-Basic], UNASSIGN QA ON TASK [PE-Drone-Basic],'),
+(16, 1, '2023-10-08 14:45:16', '[<span class=\"fw-bold text-info\">admin</span>] CHANGE QA FROM [duy.dd] TO [son.vh]  ON TASK [PE-STAND],'),
+(17, 1, '2023-10-08 14:45:30', '[<span class=\"fw-bold text-info\">admin</span>] ASSIGN EDITOR [chinh.nd] ON TASK [PE-Drone-Basic],'),
+(18, 1, '2023-10-08 14:47:51', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">description here 1123\n</span>] TO [<span class=\"text-primary\">description \n</span>],'),
+(19, 1, '2023-10-08 14:48:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK LEVEL</span> FROM [<span class=\"text-secondary\">PE-STAND</span>] TO [<span class=\"text-primary\">Re-Stand</span>], <span class=\"text-danger\">UNASSIGN EDITOR</span> O'),
+(20, 1, '2023-10-08 14:48:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">5</span>],');
 
 -- --------------------------------------------------------
 
@@ -938,9 +954,8 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `qa_id`, `qa_timestamp`, `qa_assigned`, `dc_id`, `dc_submit`, `dc_timestamp`, `level_id`, `quantity`, `editor_view`, `qa_view`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 1, NULL, 0, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 1, 1, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 05:55:21', 0, NULL, NULL),
-(2, 1, NULL, 0, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 3, 1, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 05:55:21', 0, NULL, NULL),
-(3, 1, NULL, 0, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 5, 1, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 05:55:21', 0, NULL, NULL);
+(1, 1, 'description \n', 0, 0, '2023-10-08 07:48:19', 0, 0, '2023-10-08 07:48:19', 0, 0, 0, NULL, 4, 5, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 07:48:19', 1, NULL, NULL),
+(2, 1, 'enter description\n', 0, 30, '2023-10-08 07:45:30', 1, 0, '2023-10-08 07:45:30', 0, 0, 0, NULL, 3, 5, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 07:45:30', 1, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -966,6 +981,137 @@ CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
     INSERT INTO project_logs(project_id,timestamp,content)
     VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="text-info fw-bold">',v_created_by,'</span>] <span class="text-success">INSERT TASK</span> [<span class="text-primary">',v_level,'</span>] with quantity: ',NEW.quantity));
     
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
+    DECLARE v_content VARCHAR(250) DEFAULT '';
+    DECLARE v_action VARCHAR(250) DEFAULT '';
+    
+    DECLARE v_old_level VARCHAR(100) DEFAULT '';
+    DECLARE v_new_level VARCHAR(100) DEFAULT '';
+    
+    DECLARE v_old_status VARCHAR(100) DEFAULT '';
+    DECLARE v_new_status VARCHAR(100) DEFAULT '';
+    
+    DECLARE v_old_emp VARCHAR(100) DEFAULT '';
+    DECLARE v_new_emp VARCHAR(100) DEFAULT '';
+  
+  	SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai
+
+    SET v_content = CONCAT('[<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
+   
+    
+    -- description
+    IF(OLD.description <> NEW.description) THEN
+    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> FROM [<span class="text-secondary">', OLD.description, '</span>] TO [<span class="text-primary">', NEW.description, '</span>],');
+         SET v_content = CONCAT(v_content,' ',v_action);
+    END IF;
+    -- //end description
+    
+    -- task level
+    IF(OLD.level_id <> NEW.level_id) THEN
+        SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id);
+       
+        SET v_action = CONCAT('<span class="text-warning">CHANGE TASK LEVEL</span> FROM [<span class="text-secondary">', v_old_level, '</span>] TO [<span class="text-primary">', v_new_level, '</span>],');
+        SET v_content = CONCAT(v_content,' ',v_action);        
+    END IF;
+    -- //end task level
+    
+    -- status
+    IF(OLD.status_id <> NEW.status_id) THEN
+        SET v_old_status = (SELECT name FROM task_statuses WHERE id = OLD.status_id);
+        SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
+        
+         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK STATUS</span> FROM [<span class="text-secondary">', v_old_status, '</span>] TO [<span class="text-primary">', v_new_status, '</span>],');
+        SET v_content = CONCAT(v_content,' ',v_action); 
+    END IF;
+    -- //end status
+    
+    -- EDITOR
+    IF(OLD.editor_id <> NEW.editor_id) THEN
+    	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.editor_id);        
+      	IF OLD.editor_id = 0 THEN -- neu truoc do chua co editor     		
+            IF NEW.editor_assigned = 1 THEN -- neu la gan editor
+            	SET v_action = CONCAT('<span class="text-warning">ASSIGN EDITOR</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+            ELSE -- neu la editor get task
+            	SET v_action = CONCAT('EDITOR: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
+                SET v_content = v_action;
+            END IF;            
+     	ELSE -- neu truoc do co editor
+        	IF NEW.editor_id = 0 THEN -- neu la huy editor
+            	SET v_action = CONCAT('<span class="text-danger">UNASSIGN EDITOR</span> ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+            ELSE -- thay sang editor khac
+            	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);
+                SET v_action = CONCAT('<span class="text-warning">CHANGE EDITOR</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+            END IF;      
+      	END IF;       
+    END IF; 
+    -- //EDITOR
+    
+    
+    -- QA
+     IF(OLD.qa_id <> NEW.qa_id) THEN
+    	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.qa_id);        
+      	IF OLD.qa_id = 0 THEN -- neu truoc do chua co QA     		
+            IF NEW.qa_assigned = 1 THEN -- neu la gan QA
+            	SET v_action = CONCAT('<span class="text-warning">ASSIGN QA</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+            ELSE -- neu la QA get task
+            	SET v_action = CONCAT('QA: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
+                SET v_content = v_action;
+            END IF;            
+     	ELSE -- neu truoc do co QA
+        	IF NEW.qa_id = 0 THEN -- neu la huy QA
+            	SET v_action = CONCAT('<span class="text-danger">UNASSIGN QA</span> ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+            ELSE -- thay doi QA
+            	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.qa_id);
+                SET v_action = CONCAT('<span class="text-warning">CHANGE QA</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+            END IF;      
+      	END IF;       
+    END IF; 
+    
+    -- // QA
+    	
+    -- DC
+    	IF NEW.dc_timestamp <> OLD.dc_timestamp THEN -- neu co tac dong cua DC
+        	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.dc_id);     
+        	IF OLD.dc_id = 0 THEN -- DC nhan task            	
+            	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
+                SET v_content = v_action;
+            ELSE -- DC submit task hoac thay doi DC
+            	IF OLD.dc_id <> NEW.dc_id THEN -- thay doi DC
+                	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.dc_id);    
+                    SET v_action = CONCAT('<span class="text-warning">CHANGE DC</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],'); 
+                   	SET v_content = CONCAT(v_content,' ',v_action); 
+                ELSE  -- DC submit hoac reject task
+                	IF NEW.dc_submit = 1 THEN -- submit task
+                    	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">SUBMIT TASK</span> [',v_new_level,']');               
+                    ELSE -- reject task
+                    	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-danger">REJECT TASK</span> [',v_new_level,']');  
+                    END IF;
+                     SET v_content = v_action;
+                END IF;
+            END IF;
+        END IF;  
+    -- //DC
+    
+    -- quantity
+    IF(OLD.quantity <> NEW.quantity) THEN
+        SET v_action = CONCAT('<span class="text-warning">CHANGE TASK QUANTITY</span> FROM [<span class="text-secondary">', OLD.quantity, '</span>] TO [<span class="text-primary">', NEW.quantity, '</span>],');
+        SET v_content = CONCAT(v_content,' ',v_action); 
+    END IF;
+    -- //end quantity
+    
+    -- insert logs
+    INSERT INTO project_logs(project_id, timestamp, content)
+    VALUES(OLD.project_id, NEW.updated_at, v_content);
 END
 $$
 DELIMITER ;
@@ -1000,26 +1146,6 @@ INSERT INTO `task_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, 
 (7, 'Upload', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
 (8, 'DC-FIX', 'badge badge-ligh', '0000-00-00 00:00:00', 0, NULL, 0),
 (9, 'Wait', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0);
-
--- --------------------------------------------------------
-
---
--- Cấu trúc bảng cho bảng `test`
---
-
-CREATE TABLE `test` (
-  `id` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `description` varchar(255) NOT NULL,
-  `level` int(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `test`
---
-
-INSERT INTO `test` (`id`, `name`, `description`, `level`) VALUES
-(1, '0', '0', 1);
 
 -- --------------------------------------------------------
 
@@ -1290,12 +1416,6 @@ ALTER TABLE `task_statuses`
   ADD PRIMARY KEY (`id`);
 
 --
--- Chỉ mục cho bảng `test`
---
-ALTER TABLE `test`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Chỉ mục cho bảng `users`
 --
 ALTER TABLE `users`
@@ -1423,7 +1543,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1442,12 +1562,6 @@ ALTER TABLE `tasks`
 --
 ALTER TABLE `task_statuses`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
-
---
--- AUTO_INCREMENT cho bảng `test`
---
-ALTER TABLE `test`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
