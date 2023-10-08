@@ -90,4 +90,4 @@ include_once 'modal_cc.php';
 ?>
 
 
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/index.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/project.js"></script>

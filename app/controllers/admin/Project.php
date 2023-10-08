@@ -3,9 +3,11 @@
 class Project extends Controller
 {
     public $project_model;
+    public $project_instruction_model;
     function __construct()
     {
         $this->project_model = $this->model('ProjectModel');
+        $this->project_instruction_model = $this->model('ProjectInstructionModel');
     }
    
     public function index()
@@ -22,55 +24,32 @@ class Project extends Controller
       
         $this->data['title'] = 'Projects detail';
         $this->data['content'] = 'admin/project/detail';
-        $this->data['sub_content']['project'] =$this->project_model->detail($id);;
+        $this->data['sub_content']['project'] =$this->project_model->ProjectDetail($id);;
         $this->render('__layouts/admin_layout', $this->data);
     }
 
     public function create()
     {
+       
+        
+
         $customer = $_POST['customer'];
         $name = $_POST['name'];
-        $start_date = date("Y-m-d H:i:s", strtotime($_POST['start_date']));
-        $end_date = date("Y-m-d H:i:s", strtotime($_POST['end_date']));
-        $status = $_POST['status'];
+
+        $start_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['start_date']))->format('Y-m-d H:i:s');
+        $end_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['end_date']))->format('Y-m-d H:i:s');
+
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
         $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
-        $instruction = $_POST['instruction'];
+        $instruction = $_POST['instruction'];       
 
-        $user = unserialize($_SESSION['user']);
-
-
-
-
-        $params = array(
-            'p_customer_id' => $customer,
-            'p_name' => $name,
-            'p_start_date' => $start_date,
-            'p_end_date' => $end_date,
-            'p_status_id' => $status,
-            'p_combo_id' => $combo,
-            'p_levels' => $levels,
-            'p_priority' => $priority,
-            'p_description' => $description,
-            'p_created_by' => $user->id
-        );
-
-
-        $pid = $this->project_model->executeStoredProcedure("ProjectInsert", $params);
-
-
-        if ($pid > 0) {
+        $result = $this->project_model->CreateProject($customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description);
+        if ($result['last_id'] > 0) {
             if (!empty(trim($instruction))) {
                 //thêm instruction vào csdl
-                $params = array(
-                    'p_project_id' => $pid['last_id'],
-                    'p_content' => $instruction,
-                    'p_created_by' => $user->id
-                );
-                $this->project_model->executeStoredProcedure("ProjectInstructionInsert", $params);
-
+                $this->project_instruction_model->InsertInstruction($result['last_id'],$instruction);
             }
             $data = array(
                 'code' => 201,
@@ -159,12 +138,12 @@ class Project extends Controller
     public function getdetail()
     {
         $id = $_GET['id'];
-        $projects = $this->project_model->detail($id);
-        if (count($projects) > 0) {
+        $project = $this->project_model->ProjectDetail($id);
+        if ($project) {
             $data = array(
                 'code' => 200,
                 'msg' => 'Get project detail successfully!',
-                'project' => $projects[0]
+                'project' => $project
             );
         } else {
             $data = array(

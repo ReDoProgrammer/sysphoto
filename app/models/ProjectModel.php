@@ -2,27 +2,39 @@
     class ProjectModel extends Model{
         protected $__table = 'projects';
 
-        public function createProject($data){
-            return $this->__db->insert($this->__table,$data);
+        public function CreateProject($customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description){
+            $user = unserialize($_SESSION['user']);
+            $params = array(
+                'p_customer_id' => $customer,
+                'p_name' => $name,
+                'p_start_date' => $start_date,
+                'p_end_date' => $end_date,
+                'p_combo_id' => $combo,
+                'p_levels' => $levels,
+                'p_priority' => $priority,
+                'p_description' => $description,
+                'p_created_by' => $user->id
+            );
+            return $this->__db->executeStoredProcedure("ProjectInsert",$params);
         }
 
-        public function updateProject($id,$data){
+        public function UpdateProject($id,$data){
             $where  = " id = $id";
             return $this->__db->update($this->__table,$data,$where);
         }
 
-        public function deleteProject($id){
+        public function DeleteProject($id){
             return $this->__db->delete($this->__table," id = $id");
         }
 
-        public function detail($id){
+        public function ProjectDetail($id){
             $params = ['p_id'=>$id];
             return $this->__db->executeStoredProcedure("ProjectDetailJoin",$params);
         }
 
-        public function getList($from_date,$to_date,$stt,$search,$page = 1,$limit = 10){
+        public function GetList($from_date,$to_date,$stt,$search,$page = 1,$limit = 10){
             $columns = "p.id,c.acronym,p.name,p.status_id,
-            DATE_FORMAT(p.start_date, '%m/%d/%Y %H:%i') start_date, DATE_FORMAT(p.end_date, '%m/%d/%Y %H:%i') end_date, 
+            DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') start_date, DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') end_date, 
             s.name as status_name,s.color status_color";
             $join = " JOIN customers c ON p.customer_id = c.id ";
             $join .= " JOIN project_statuses s ON p.status_id = s.id ";

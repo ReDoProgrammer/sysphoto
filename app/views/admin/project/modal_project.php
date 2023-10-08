@@ -27,7 +27,7 @@
 
                     </div>
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-5">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Start Date</label>
                                 <div class="cal-icon">
@@ -44,7 +44,7 @@
                                     >
                             </div>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-5">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">End Date</label>
                                 <div class="cal-icon">
@@ -52,12 +52,12 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-4">
+                        <!-- <div class="col-sm-4">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Status</label>
                                 <select id="slStatuses" class="form-control"></select>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                     <div class="row">
                         <div class="col-sm-4">

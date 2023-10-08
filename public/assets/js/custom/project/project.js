@@ -3,7 +3,6 @@ var pId = 0;
 
 
 $(document).ready(function () {
-    LoadProjectStatus();
     LoadComboes();
     LoadTemplates();
     LoadCustomers();
@@ -18,25 +17,26 @@ function UpdateProject(id) {
         url: 'project/getdetail',
         type: 'get',
         data: { id },
-        success: function (data) {
+        success: function (data) {  ;
             try {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     pId = id;
                     $('#modal_project').modal('show');
                     let p = content.project;
-                    $('#txtProjectName').val(p.name);
-                    $('#txtBeginDate').val(convertDateTime(p.start_date));
-                    $('#txtEndDate').val(convertDateTime(p.end_date));
-                    qDescription.setText(p.description);
-                    qInstruction.setText(p.instruction);
-                    selectizeCustomer.setValue(p.idkh);
-                    selectizeCombo.setValue(p.idcb);
-                    let templates = p.idlevels.split(',');
+                    console.log(p);
+                    $('#txtProjectName').val(p.project_name);                    
+                    $('#txtBeginDate').val(p.start_date);
+                    $('#txtEndDate').val(p.end_date);
+                    qDescription.setText(p.description?p.description:'');
+                    qInstruction.setText(p.instruction?p.instruction:'');
+                    selectizeCustomer.setValue(p.customer_id);
+                    selectizeCombo.setValue(p.combo_id);
+                    let templates = p.levels.split(',');
                     $("#slTemplates").select2("val", templates);
-                    $('#ckbPriority').prop('checked', p.urgent == 1);
-                    $('#slStatuses').val(p.status);
-                }
+                    $('#ckbPriority').prop('checked', p.priority == 1);
+                    $('#slStatuses').val(p.status_id);
+                }   
             } catch (error) {
                 console.log(data, error);
             }
@@ -86,162 +86,6 @@ function AddNewTask(id) {
     pId = id;
     $('#task_modal').modal('show');
 }
-
-$("#modal_project").on('shown.bs.modal', function (e) {
-    if (pId < 1) {
-        $('#slStatuses').attr("disabled", true);
-        $('#modal_project_title').text('Create a new project');
-        $('#btnSubmitJob').text('Submit creating');
-    } else {
-        $('#slStatuses').removeAttr('disabled');
-        $('#modal_project_title').text('Update project');
-        $('#btnSubmitJob').text('Save changes');
-    }
-});
-
-$("#modal_project").on("hidden.bs.modal", function () {
-    pId = 0;
-});
-
-
-
-$('#txtDuration').keyup(function () {
-    if ($(this).val().length != 0) {
-        let sd = strToDateTime($('#txtBeginDate').val());
-        let durationHours = parseInt($(this).val()); // Chuyển đổi giá trị nhập thành số nguyên
-
-        if (!isNaN(durationHours)) { // Kiểm tra nếu giá trị nhập là một số
-            let td = new Date(sd); // Tạo một bản sao của ngày bắt đầu
-            td.setHours(sd.getHours() + durationHours); // Thêm giờ vào ngày bắt đầu
-            $('#txtEndDate').val(moment(td).format('DD/MM/YYYY HH:mm'));
-        } else {
-            console.log("Giá trị nhập không phải là số.");
-        }
-    }
-})
-
-$('#btnSubmitJob').click(function () {
-    let customer = $('#slCustomers option:selected').val();
-    let name = $('#txtProjectName').val();
-    let start_date = moment($('#txtBeginDate').val() + ":00").format('DD/MM/YYYY HH:mm:ss');
-    let end_date = moment($('#txtEndDate').val() + ":00").format('DD/MM/YYYY HH:mm:ss');
-    let status = $('#slStatuses option:selected').val();
-    let combo = $('#slComboes option:selected').val();
-    let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
-        return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
-    }) : [];
-    let priority = $('#ckbPriority').is(':checked') ? 1 : 0;
-    let description = qDescription.getText();
-    let instruction = qInstruction.getText();
-
-
-    // validate inputs
-    if ($.trim(customer) === "") {
-        $.toast({
-            heading: `Customer can not be null`,
-            text: `Please choose a customer from list`,
-            icon: 'warning',
-            loader: true,        // Change it to false to disable loader
-            loaderBg: '#9EC600'  // To change the background
-        })
-        return;
-    }
-    if ($.trim(name) === "") {
-        $.toast({
-            heading: `Project name can not be null`,
-            text: `Please enter project name`,
-            icon: 'warning',
-            loader: true,        // Change it to false to disable loader
-            loaderBg: '#9EC600'  // To change the background
-        })
-        return;
-    }
-
-    let sd = strToDateTime($('#txtBeginDate').val());
-    let td = strToDateTime($('#txtEndDate').val());
-    if (td < sd) {
-        $.toast({
-            heading: `End date can not be less than start date!`,
-            text: `Please choose another value`,
-            icon: 'warning',
-            loader: true,        // Change it to false to disable loader
-            loaderBg: '#9EC600'  // To change the background
-        })
-        return;
-    }
-    // end validating inputs
-
-
-
-    if (pId < 1) {
-        $.ajax({
-            url: 'project/create',
-            type: 'post',
-            data: {
-                customer, name, start_date, end_date, status,
-                combo, templates, priority,
-                description, instruction
-            },
-            success: function (data) {
-                try {
-                    content = $.parseJSON(data);
-                    if (content.code == 201) {
-                        $('#modal_project').modal('hide');
-                        $('#btnSearch').click();
-                    }
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-                } catch (error) {
-                    console.log(data, error);
-                }
-            }
-        })
-    } else {
-        $.ajax({
-            url: 'project/update',
-            type: 'post',
-            data: {
-                id: pId,
-                customer, name, start_date, end_date, status,
-                combo, templates, priority,
-                description, instruction
-            },
-            success: function (data) {
-                try {
-                    content = $.parseJSON(data);
-                    console.log(content);
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-
-                    $('#modal_project').modal('hide');
-                    $('#btnSearch').click();
-
-                } catch (error) {
-                    console.log(data, error);
-                }
-            }
-        })
-    }
-})
-$('#btnSearch').click(function (e) {
-    e.preventDefault();
-    fetch();
-})
-$('#slPageSize').on('change', function () {
-    limit = $(this).val();
-    page = 1;
-    fetch();
-});
 
 function LoadCustomers() {
     $.ajax({
@@ -294,14 +138,6 @@ function LoadTemplates() {
         }
     })
 }
-
-$(document).on("click", "#pagination li a.page-link", function (e) {
-    e.preventDefault();
-    $("#pagination li").removeClass("active");
-    $(this).closest("li.page-item").addClass("active");
-    page = $(this).text();
-    fetch();
-});
 
 function fetch() {
     let from_date = $('#txtFromDate').val();
@@ -384,24 +220,174 @@ function fetch() {
     })
 }
 
-function LoadProjectStatus() {
-    $.ajax({
-        url: 'projectstatus/list',
-        type: 'get',
-        success: function (data) {
-            try {
-                var stt = $.parseJSON(data);
-          
-                stt.forEach(s => {
-                    $('#slStatuses').append(`<option value="${s.id}">${s.name.toUpperCase()}</option>`);
-                    $('#slJobStatus').append(`<option value="${s.id}">${s.name.toUpperCase()}</option>`);
-                })
-            } catch (error) {
-                console.log(data, error);
+$('#btnSubmitJob').click(function () {
+    let customer = $('#slCustomers option:selected').val();
+    let name = $('#txtProjectName').val();
+    let start_date = $('#txtBeginDate').val() + ":00";
+    let end_date = $('#txtEndDate').val() + ":00";
+    let combo = $('#slComboes option:selected').val();
+    let templates = $('#slTemplates').val() ? $.map($('#slTemplates').val(), function (value) {
+        return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
+    }) : [];
+    let priority = $('#ckbPriority').is(':checked') ? 1 : 0;
+    let description = qDescription.getText();
+    let instruction = qInstruction.getText();
+
+
+    // validate inputs
+    if ($.trim(customer) === "") {
+        $.toast({
+            heading: `Customer can not be null`,
+            text: `Please choose a customer from list`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+    if ($.trim(name) === "") {
+        $.toast({
+            heading: `Project name can not be null`,
+            text: `Please enter project name`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+
+    let sd = strToDateTime($('#txtBeginDate').val());
+    let td = strToDateTime($('#txtEndDate').val());
+    if (td < sd) {
+        $.toast({
+            heading: `End date can not be less than start date!`,
+            text: `Please choose another value`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+    // end validating inputs
+
+
+
+    if (pId < 1) {
+        $.ajax({
+            url: 'project/create',
+            type: 'post',
+            data: {
+                customer, name, start_date, end_date,
+                combo, templates, priority,
+                description, instruction
+            },
+            success: function (data) {
+                try {
+                    content = $.parseJSON(data);
+                    if (content.code == 201) {
+                        $('#modal_project').modal('hide');
+                        $('#btnSearch').click();
+                    }
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+                } catch (error) {
+                    console.log(data, error);
+                }
             }
+        })
+    } else {
+        $.ajax({
+            url: 'project/update',
+            type: 'post',
+            data: {
+                id: pId,
+                customer, name, start_date, end_date, 
+                combo, templates, priority,
+                description, instruction
+            },
+            success: function (data) {
+                try {
+                    content = $.parseJSON(data);
+                    console.log(content);
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+
+                    $('#modal_project').modal('hide');
+                    $('#btnSearch').click();
+
+                } catch (error) {
+                    console.log(data, error);
+                }
+            }
+        })
+    }
+})
+
+$(document).on("click", "#pagination li a.page-link", function (e) {
+    e.preventDefault();
+    $("#pagination li").removeClass("active");
+    $(this).closest("li.page-item").addClass("active");
+    page = $(this).text();
+    fetch();
+});
+
+
+$("#modal_project").on('shown.bs.modal', function (e) {
+    if (pId < 1) {
+        $('#slStatuses').attr("disabled", true);
+        $('#modal_project_title').text('Create a new project');
+        $('#btnSubmitJob').text('Submit creating');
+    } else {
+        $('#slStatuses').removeAttr('disabled');
+        $('#modal_project_title').text('Update project');
+        $('#btnSubmitJob').text('Save changes');
+    }
+});
+
+$("#modal_project").on("hidden.bs.modal", function () {
+    pId = 0;
+});
+
+
+
+$('#txtDuration').keyup(function () {
+    if ($(this).val().length != 0) {
+        let sd = strToDateTime($('#txtBeginDate').val());
+        let durationHours = parseInt($(this).val()); // Chuyển đổi giá trị nhập thành số nguyên
+
+        if (!isNaN(durationHours)) { // Kiểm tra nếu giá trị nhập là một số
+            let td = new Date(sd); // Tạo một bản sao của ngày bắt đầu
+            td.setHours(sd.getHours() + durationHours); // Thêm giờ vào ngày bắt đầu
+            $('#txtEndDate').val(moment(td).format('DD/MM/YYYY HH:mm'));
+        } else {
+            console.log("Giá trị nhập không phải là số.");
         }
-    })
-}
+    }
+})
+
+
+$('#btnSearch').click(function (e) {
+    e.preventDefault();
+    fetch();
+})
+$('#slPageSize').on('change', function () {
+    limit = $(this).val();
+    page = 1;
+    fetch();
+});
+
+
+
 
 var qDescription = new Quill('#divDescription', {
     theme: 'snow', // Chọn giao diện "snow"
@@ -444,7 +430,6 @@ $selectizeComboes.selectize({
     sortField: 'text' // Sắp xếp mục theo văn bản
 });
 var selectizeCombo = $selectizeComboes[0].selectize;
-
 
 
 
