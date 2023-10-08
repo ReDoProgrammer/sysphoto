@@ -34,16 +34,7 @@
                             <div id="divCCDescription" style="min-height: 100px;"></div>
                         </div>
                     </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div class="input-block mb-3">
-                            <label class="col-form-label">CC Instruction</label>
-                            <div id="divCCInstruction" style="min-height: 100px;"></div>
-                        </div>
-                    </div>
-                </div>
+                </div>               
 
 
                 <div class="submit-section">

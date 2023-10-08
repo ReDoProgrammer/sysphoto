@@ -65,28 +65,29 @@
         </div>
 
         <div class="card p-2">
+            <div class="card-header">CC & Feedback</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="activity" style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; ">
+                            <div class="activity-box">
+                                <ul class="activity-list" id="ulFeedback"> </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card p-2">
+            <div class="card-header">Project logs</div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-12">
                         <div class="activity" style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; ">
                             <div class="activity-box">
                                 <ul class="activity-list" id="ulProjectLogs">
-                                    <li>
-                                        <div class="activity-user ">
-                                            <a href="profile.html" data-bs-toggle="tooltip" class="avatar"
-                                                aria-label="Lesley Grauer" data-bs-original-title="Lesley Grauer">
-                                                <img src="<?php echo _WEB_ROOT; ?>/public/assets/img/profiles/avatar-01.jpg"
-                                                    alt="User Image">
-                                            </a>
-                                        </div>
-                                        <div class="activity-content">
-                                            <div class="timeline-content">
-                                                <a href="profile.html" class="name">Lesley Grauer</a> added new task <a
-                                                    href="#">Hospital Administration</a>
-                                                <span class="time">4 mins ago</span>
-                                            </div>
-                                        </div>
-                                    </li>
+
 
                                 </ul>
                             </div>
@@ -96,13 +97,15 @@
             </div>
         </div>
 
+
+
     </div>
     <div class="col-lg-4 col-xl-3">
         <div class="card">
             <div class="card-body prj-tbl pb-0">
                 <h6 class="card-title m-b-15">Project summary</h6>
                 <table class="table">
-                    <tbody>                       
+                    <tbody>
                         <tr>
                             <td>Begin:</td>
                             <td class="text-end">
@@ -124,13 +127,13 @@
                         <tr>
                             <td>Combo:</td>
                             <td class="text-end">
-                                <?php echo $project['combo_name']?'<i class="fa fa-dot-circle-o text-success">'.$project['combo_name'].'</i>':''; ?>
+                                <?php echo $project['combo_name'] ? '<i class="fa fa-dot-circle-o text-success">' . $project['combo_name'] . '</i>' : ''; ?>
                             </td>
                         </tr>
                         <tr>
                             <td>Status:</td>
                             <td class="text-end">
-                            <?php echo '<i class="fa fa-dot-circle-o text-info">'.$project['status'].'</i>'; ?>
+                                <?php echo '<i class="fa fa-dot-circle-o text-info">' . $project['status'] . '</i>'; ?>
                             </td>
                         </tr>
                     </tbody>

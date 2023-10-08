@@ -84,6 +84,7 @@ class Project extends Controller
         $result = $this->project_model->UpdateProject($id,$customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description);
 
         if ($result) {
+            $this->project_instruction_model->UpdateInstruction($id,$instruction);
             $data = array(
                 'code' => 200,
                 'msg' => 'The project has been updated.',

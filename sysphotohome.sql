@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2023 lúc 07:27 PM
+-- Thời gian đã tạo: Th10 08, 2023 lúc 08:05 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -143,6 +143,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGIN
         ps.name as status, 
         ps.color as status_color,
         NormalizeContent(p.description) as description,
+        MAX(i.content) as instruction,
         DATE_FORMAT(start_date, '%d/%m/%Y %H:%i') as start_date,
        DATE_FORMAT(end_date, '%d/%m/%Y %H:%i') as end_date,
         p.combo_id,
@@ -160,19 +161,34 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGIN
     LEFT JOIN project_statuses ps ON p.status_id = ps.id
     LEFT JOIN tasks t ON p.id = t.project_id
     LEFT JOIN task_statuses ts ON t.level_id = ts.id
+    JOIN project_instructions i ON i.project_id = p.id
     WHERE p.id = p_id
     GROUP BY p.id, p.name,ps.name,c.acronym;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
 	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,created_by)
-    VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,p_description,p_created_by);
+    VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInstruction1stUpdate` (IN `p_project_id` BIGINT, IN `p_content` TEXT, IN `p_updated_by` INT)   BEGIN
+	DECLARE v_id bigint;
+    SET v_id = (SELECT MIN(id) FROM project_instructions WHERE project_id = p_project_id);
+    
+    UPDATE project_instructions
+    SET 
+    	content = NormalizeContent(p_content),
+        updated_at = NOW(),
+        updated_by = p_updated_by
+    WHERE id = v_id;
+    
+    SELECT ROW_COUNT() as updated_rows;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInstructionInsert` (IN `p_project_id` BIGINT, IN `p_content` TEXT, IN `p_created_by` INT)   BEGIN
 	INSERT INTO project_instructions(project_id,content,created_by)
-    VALUES(p_project_id,p_content,p_created_by);
+    VALUES(p_project_id,NormalizeContent(p_content),p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
 END$$
 
@@ -799,7 +815,8 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 (4, 1, 'test after fix datetime inputs', 'description here\n', 1, '2023-10-08 15:29:00', '2023-10-08 18:29:00', '2', '', NULL, NULL, 2, 1, '2023-10-08 15:37:14', 1, NULL, 0, NULL, ''),
 (5, 1, 'test after fix datetime inputs', 'description here with fixxing datetime in php\n', 1, '2023-10-08 15:29:00', '2023-10-08 20:29:00', '2,4,6', '', NULL, NULL, 2, 0, '2023-10-08 15:37:46', 1, NULL, 0, NULL, ''),
 (6, 4, 'test auto gen task', 'test description\n', 1, '2023-10-08 12:47:00', '2023-10-08 15:47:00', '1,3,5', '', NULL, NULL, 2, 0, '2023-10-08 16:21:02', 1, NULL, 0, NULL, ''),
-(8, 4, 'auto gen task project', 'test description\n', 1, '2023-10-08 12:47:00', '2023-10-08 15:47:00', '1,3,6', '', NULL, NULL, 1, 1, '2023-10-08 16:24:38', 1, NULL, 0, NULL, '');
+(8, 4, 'auto gen task project', 'test description\n', 1, '2023-10-08 12:47:00', '2023-10-08 15:47:00', '1,3,6', '', NULL, NULL, 1, 1, '2023-10-08 16:24:38', 1, NULL, 0, NULL, ''),
+(9, 1, 'Test new project with CC', 'description \n', 1, '2023-10-09 00:35:00', '2023-10-09 10:35:00', '1', '', NULL, NULL, 2, 1, '2023-10-09 00:36:25', 1, '2023-10-09 01:04:48', 1, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -990,21 +1007,40 @@ CREATE TABLE `project_instructions` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) NOT NULL,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
-  `updated_by` int(11) NOT NULL
+  `updated_by` int(11) NOT NULL,
+  `deleted_by` varchar(50) DEFAULT NULL COMMENT 'Người xóa '
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `project_instructions`
 --
 
-INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 1, 'test instruction\n', '2023-10-08 12:55:21', 1, NULL, 0),
-(2, 2, 'instruction here\n', '2023-10-08 15:27:07', 1, NULL, 0),
-(3, 3, 'instruction here\n', '2023-10-08 15:30:36', 1, NULL, 0),
-(4, 4, 'instruction here\n', '2023-10-08 15:37:14', 1, NULL, 0),
-(5, 5, 'instruction here\n', '2023-10-08 15:37:46', 1, NULL, 0),
-(6, 6, 'instruction auto gen task\n', '2023-10-08 16:21:02', 1, NULL, 0),
-(7, 8, 'instruction auto gen task\n', '2023-10-08 16:24:38', 1, NULL, 0);
+INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`) VALUES
+(1, 1, 'test instruction\n', '2023-10-08 12:55:21', 1, NULL, 0, NULL),
+(2, 2, 'instruction here\n', '2023-10-08 15:27:07', 1, NULL, 0, NULL),
+(3, 3, 'instruction here\n', '2023-10-08 15:30:36', 1, NULL, 0, NULL),
+(4, 4, 'instruction here\n', '2023-10-08 15:37:14', 1, NULL, 0, NULL),
+(5, 5, 'instruction here\n', '2023-10-08 15:37:46', 1, NULL, 0, NULL),
+(6, 6, 'instruction auto gen task\n', '2023-10-08 16:21:02', 1, NULL, 0, NULL),
+(7, 8, 'instruction auto gen task\n', '2023-10-08 16:24:38', 1, NULL, 0, NULL),
+(8, 9, 'blah blah blah 123434141234\n', '2023-10-09 00:36:25', 1, '2023-10-08 18:04:48', 1, NULL);
+
+--
+-- Bẫy `project_instructions`
+--
+DELIMITER $$
+CREATE TRIGGER `after_project_instruction_updated` AFTER UPDATE ON `project_instructions` FOR EACH ROW BEGIN
+	DECLARE v_content varchar(255) DEFAULT '';
+    DECLARE v_actioner varchar(50);
+	IF NEW.content <> OLD.content THEN
+     	SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.updated_by);
+    	SET v_content = CONCAT('[<span class="fw-bold text-info">',v_actioner,'</span>] <span class="text-warning">CHANGE INSTRUCTION</span> FROM [<span class="text-secondary">',OLD.content,'</span>] TO [<span class="text-info">',NEW.content,'</span>],');     
+         INSERT INTO project_logs(project_id,timestamp,content)
+         VALUES(OLD.project_id,NEW.updated_at,v_content);
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -1052,7 +1088,12 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 (125, 1, '2023-10-08 23:31:50', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">UNASSIGN QA</span> ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
 (126, 1, '2023-10-08 23:31:56', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">ASSIGN QA</span> [<span class=\"text-warning\">dung.ha</span>] ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
 (127, 1, '2023-10-08 23:32:16', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]'),
-(128, 1, '2023-10-08 23:48:22', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 4');
+(128, 1, '2023-10-08 23:48:22', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 4'),
+(129, 9, '2023-10-09 00:36:25', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C122115T1202310</span>]'),
+(130, 9, '2023-10-09 00:36:25', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">PE-STAND</span>] with quantity: 1'),
+(131, 9, '2023-10-09 00:57:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">instruction\n</span>] TO [<span class=\"text-info\">instruction here\n</span>],'),
+(132, 9, '2023-10-09 00:58:22', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">instruction here\n</span>] TO [<span class=\"text-info\">blah blah blah\n</span>],'),
+(133, 9, '2023-10-09 01:04:48', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">blah blah blah\n</span>] TO [<span class=\"text-info\">blah blah blah 123434141234\n</span>],');
 
 -- --------------------------------------------------------
 
@@ -1142,7 +1183,8 @@ INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`
 (15, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
 (16, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
 (17, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 1, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
-(18, 1, 'description 12\n', 0, 42, NULL, 0, 0, 49, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 4, 0, 0, 1, '', '2023-10-08 23:48:22', 1, '2023-10-08 16:48:22', 0, NULL, NULL);
+(18, 1, 'description 12\n', 0, 42, NULL, 0, 0, 49, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 4, 0, 0, 1, '', '2023-10-08 23:48:22', 1, '2023-10-08 16:48:22', 0, NULL, NULL),
+(19, 9, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 1, 0, 0, 1, '', '2023-10-09 00:36:25', 1, '2023-10-08 17:36:25', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -1731,19 +1773,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=134;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1755,7 +1797,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

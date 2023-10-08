@@ -10,4 +10,13 @@
             );
            return $this->__db->executeStoredProcedure("ProjectInstructionInsert", $params);
         }
+        public function UpdateInstruction($projectId,$content){
+            $user = unserialize($_SESSION['user']);
+            $params = array(
+                'p_project_id' => $projectId,
+                'p_content' => $content,
+                'p_updated_by' => $user->id
+            );
+           return $this->__db->executeStoredProcedure("ProjectInstruction1stUpdate", $params);
+        }
     }
