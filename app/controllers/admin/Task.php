@@ -79,6 +79,7 @@ class Task extends Controller
     {
         $id = $_POST['id'];
         $rs = $this->task_model->destroy($id);
+        
         if ($rs['deleted_rows']>0) {
             $data = array(
                 'code' => 200,
@@ -89,7 +90,7 @@ class Task extends Controller
         } else {
             $data = array(
                 'code' => 204,
-                'msg' => 'Can not delete this task',
+                'msg' => 'Can not delete this task. Error: '.$rs,
                 'icon' => 'danger',
                 'heading' => 'OPP!!!'
             );

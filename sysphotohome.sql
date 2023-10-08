@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 07, 2023 lúc 04:35 PM
+-- Thời gian đã tạo: Th10 08, 2023 lúc 07:56 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -179,10 +179,17 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectLogs` (IN `p_id` BIGINT)   B
     ORDER BY timestamp DESC;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDelete` (IN `p_id` BIGINT)   BEGIN
-	DELETE FROM tasks
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDelete` (IN `p_id` BIGINT, IN `p_deleted_by` VARCHAR(20))   BEGIN
+	UPDATE tasks 
+    SET deleted_by = p_deleted_by, deleted_at = NOW() 
     WHERE id = p_id;
-    SELECT ROW_COUNT() AS deleted_rows;
+    
+    CASE WHEN ROW_COUNT() > 0 THEN
+    	DELETE FROM tasks WHERE id = p_id;
+        SELECT ROW_COUNT() AS deleted_rows;
+    ELSE
+    	SELECT 'Update deleted info failed' AS msg;
+    END CASE;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT)   BEGIN   
@@ -657,7 +664,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '216.58.203.68', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '142.251.130.4', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -769,7 +776,7 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(2, 10, 'TEST project with triggers', 'description here\n', 1, '2023-10-07 05:09:00', '2023-10-07 08:09:00', '1,2,3', '', NULL, NULL, 1, 1, '2023-10-07 05:11:04', 1, NULL, 0);
+(1, 4, 'test project with new trigger', 'test description\n', 1, '2023-10-08 12:47:00', '2023-10-08 15:47:00', '1,3,5', '', NULL, NULL, 2, 0, '2023-10-08 12:55:21', 1, NULL, 0);
 
 --
 -- Bẫy `projects`
@@ -806,12 +813,14 @@ END
 $$
 DELIMITER ;
 DELIMITER $$
-CREATE TRIGGER `after_insert_project` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
+CREATE TRIGGER `after_project_created` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);
-    SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM projects WHERE id = NEW.id));
+    DECLARE v_customer varchar(100);
     
+    SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM projects WHERE id = NEW.id));
+    SET v_customer = (SELECT acronym FROM customers WHERE id = NEW.customer_id);
     INSERT INTO project_logs(project_id,timestamp,content)
-    VALUES(NEW.id,NEW.created_at,CONCAT('[',v_created_by,'] ','CREATE PROJECT' ));
+    VALUES(NEW.id,NEW.created_at,CONCAT('[<span class="text-info fw-bold">',v_created_by,'</span>] <span class="text-success">CREATE PROJECT FOR CUSTOMER</span> [<span class="text-primary">',v_customer,'</span>]'));
 END
 $$
 DELIMITER ;
@@ -837,7 +846,7 @@ CREATE TABLE `project_instructions` (
 --
 
 INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 2, 'instruction here\n', '2023-10-07 05:11:04', 1, NULL, 0);
+(1, 1, 'test instruction\n', '2023-10-08 12:55:21', 1, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -857,13 +866,10 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
-(4, 2, '2023-10-07 05:11:04', '[admin] INSERT TASK [PE-STAND] with quantity: [1]'),
-(5, 2, '2023-10-07 05:11:04', '[admin] INSERT TASK [PE-BASIC] with quantity: [1]'),
-(6, 2, '2023-10-07 05:11:04', '[admin] INSERT TASK [PE-Drone-Basic] with quantity: [1]'),
-(7, 2, '2023-10-07 05:11:04', '[admin] CREATE PROJECT'),
-(8, 2, '2023-10-07 15:43:51', '[admin] INSERT TASK [PE-STAND] with quantity: [1]'),
-(9, 2, '2023-10-07 15:59:16', '[admin] INSERT TASK [VHS] with quantity: [3]'),
-(10, 2, '2023-10-07 16:01:30', '[admin] INSERT TASK [Re-Stand] with quantity: [6]');
+(1, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">PE-STAND</span>] with quantity: 1'),
+(2, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">PE-Drone-Basic</span>] with quantity: 1'),
+(3, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-Basic</span>] with quantity: 1'),
+(4, 1, '2023-10-08 12:55:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C122115T202310</span>]');
 
 -- --------------------------------------------------------
 
@@ -922,23 +928,35 @@ CREATE TABLE `tasks` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) NOT NULL,
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `updated_by` int(11) NOT NULL
+  `updated_by` int(11) NOT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `deleted_by` varchar(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `tasks`
 --
 
-INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `qa_id`, `qa_timestamp`, `qa_assigned`, `dc_id`, `dc_submit`, `dc_timestamp`, `level_id`, `quantity`, `editor_view`, `qa_view`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(5, 2, NULL, 0, 0, '2023-10-07 05:58:32', 0, 0, '2023-10-07 05:57:54', 0, 0, 0, NULL, 2, 1, 0, 0, '2023-10-07 05:11:04', 1, '2023-10-06 22:11:04', 0),
-(8, 2, 'dasfasfdas fasdfas \nsdfaf asdfdsa \nfdsafsadf sda fasd frdsafa 12341234 fdsaf asdf\nrewqr ewqrqwre weqr\n', 0, 30, '2023-10-07 14:27:22', 1, 0, '2023-10-07 14:27:22', 0, 0, 0, NULL, 9, 3, 0, 0, '2023-10-07 15:59:16', 1, '2023-10-07 14:27:22', 1),
-(9, 2, 'fdsafasd324 frsad fasdf sda 41 fdasf asdfas\nfsdaf asfds\na\n fdsa\n f\nasd \nf\nasdf\nsad \nfasd\nfasdf\nf1243124\nfdasf dsa\n', 0, 30, '2023-10-07 14:27:10', 1, 49, '2023-10-07 14:27:10', 1, 0, 0, NULL, 1, 6, 0, 0, '2023-10-07 16:01:30', 1, '2023-10-07 14:27:10', 1);
+INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `qa_id`, `qa_timestamp`, `qa_assigned`, `dc_id`, `dc_submit`, `dc_timestamp`, `level_id`, `quantity`, `editor_view`, `qa_view`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(1, 1, NULL, 0, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 1, 1, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 05:55:21', 0, NULL, NULL),
+(2, 1, NULL, 0, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 3, 1, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 05:55:21', 0, NULL, NULL),
+(3, 1, NULL, 0, 0, NULL, 0, 0, NULL, 0, 0, 0, NULL, 5, 1, 0, 0, '2023-10-08 12:55:21', 1, '2023-10-08 05:55:21', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
 --
 DELIMITER $$
-CREATE TRIGGER `after_insert_task` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
+CREATE TRIGGER `after_task_deleted` AFTER DELETE ON `tasks` FOR EACH ROW BEGIN
+	DECLARE v_level varchar(100);
+    SET v_level = (SELECT name FROM levels WHERE id = OLD.level_id);
+    
+	INSERT INTO project_logs(project_id,timestamp,content)
+    VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE TASK </span>[',v_level,']'));
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);
     DECLARE v_level varchar(50);
     
@@ -946,7 +964,7 @@ CREATE TRIGGER `after_insert_task` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
     SET v_level = (SELECT name FROM levels WHERE id = NEW.level_id);
     
     INSERT INTO project_logs(project_id,timestamp,content)
-    VALUES(NEW.project_id,NEW.created_at,CONCAT('[',v_created_by,'] INSERT TASK [',v_level,'] with quantity: [',NEW.quantity,']'));
+    VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="text-info fw-bold">',v_created_by,'</span>] <span class="text-success">INSERT TASK</span> [<span class="text-primary">',v_level,'</span>] with quantity: ',NEW.quantity));
     
 END
 $$
@@ -1393,7 +1411,7 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
@@ -1405,7 +1423,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1417,7 +1435,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

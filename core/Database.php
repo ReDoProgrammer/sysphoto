@@ -67,7 +67,7 @@ class Database
             $stmt->execute();
 
             // Lấy kết quả từ truy vấn SELECT
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);          
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return $result;
         } catch (PDOException $e) {
@@ -158,4 +158,5 @@ class Database
             return $e->getMessage(); // Lỗi khi xóa dữ liệu
         }
     }
+
 }

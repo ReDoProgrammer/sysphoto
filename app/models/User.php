@@ -2,16 +2,18 @@
 class User
 {
     public $id;
-    public $firstname;
+    public $fullname;
+    public $acronym;
     public $email;
     public $role;
     public $roleName;
     public $task_getable;
 
-    public function __construct($id,$firstname, $email,$role,$roleName,$task_getable)
+    public function __construct($id,$fullname,$acronym, $email,$role,$roleName,$task_getable)
     {
         $this->id = $id;
-        $this->firstname = $firstname;
+        $this->firstname = $fullname;
+        $this->acronym = $acronym;
         $this->email = $email;
         $this->role = $role;
         $this->roleName = $roleName;

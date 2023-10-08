@@ -50,7 +50,7 @@ class EmployeeModel extends Model
                     $where .= " AND EXISTS (SELECT 1 FROM ips WHERE address = '$ipaddress')";
                     $users = $this->__db->select($this->__table, $columns, $join, $where);
                     if (count($users) > 0) {
-                        $user = new User($users[0]['id'], $users[0]['fullname'],$users[0]['email'], $users[0]['type_id'], $users[0]['type_name'],$users[0]['task_getable']);
+                        $user = new User($users[0]['id'], $users[0]['fullname'],$users[0]['acronym'],$users[0]['email'], $users[0]['type_id'], $users[0]['type_name'],$users[0]['task_getable']);
                        
                         $_SESSION['user'] = serialize($user);
                         $data = array(

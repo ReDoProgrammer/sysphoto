@@ -45,8 +45,14 @@ class TaskModel extends Model
     }
 
     function destroy($id){
-        $params = ['p_id'=>$id];
+        $user = unserialize($_SESSION['user']);
+        $params = [
+            'p_id'=>$id,
+            'p_deleted_by'=>$user->acronym
+        ];
         return $this->__db->executeStoredProcedure("TaskDelete",$params);
+
+        // return $this->__db->delete($this->__table,"id = ".$id);
     }
 
     public function GetTasksByProject($id)
