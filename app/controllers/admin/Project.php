@@ -31,8 +31,6 @@ class Project extends Controller
     public function create()
     {
        
-        
-
         $customer = $_POST['customer'];
         $name = $_POST['name'];
 
@@ -71,29 +69,19 @@ class Project extends Controller
     public function update()
     {
         $id = $_POST['id'];
-
         $customer = $_POST['customer'];
         $name = $_POST['name'];
-        $start_date = $_POST['start_date'];
-        $status = $_POST['status_id'];
-        $end_date = $_POST['end_date'];
+
+        $start_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['start_date']))->format('Y-m-d H:i:s');
+        $end_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['end_date']))->format('Y-m-d H:i:s');
+
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
-        $templates = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
-        $urgent = $_POST['urgent'];
+        $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
+        $priority = $_POST['priority'];
         $description = $_POST['description'];
-        $instruction = $_POST['instruction'];
-        $data = array(
-            'customer_id' => $customer,
-            'name' => $name,
-            'description' => $description,
-            'start_date' => (DateTime::createFromFormat('d/m/Y H:i', $start_date))->format('Y-m-d H:i'),
-            'end_date' => (DateTime::createFromFormat('d/m/Y H:i', $end_date))->format('Y-m-d H:i'),
-            'status_id' => $status,
-            'level_id' => $templates,
-            'priority' => $urgent,
-            'combo_id' => $combo
-        );
-        $result = $this->project_model->updateProject($id, $data);
+        $instruction = $_POST['instruction'];     
+        
+        $result = $this->project_model->UpdateProject($id,$customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description);
 
         if ($result) {
             $data = array(

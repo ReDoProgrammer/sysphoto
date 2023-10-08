@@ -13,6 +13,8 @@ BEGIN
     
     DECLARE v_old_emp VARCHAR(100) DEFAULT '';
     DECLARE v_new_emp VARCHAR(100) DEFAULT '';
+    
+    DECLARE v_changes BOOLEAN DEFAULT FALSE;
   
   	SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai
 
@@ -21,6 +23,7 @@ BEGIN
     
     -- description
     IF(OLD.description <> NEW.description) THEN
+    	SET v_changes = TRUE;
     	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> FROM [<span class="text-secondary">', OLD.description, '</span>] TO [<span class="text-primary">', NEW.description, '</span>],');
          SET v_content = CONCAT(v_content,' ',v_action);
     END IF;
@@ -28,6 +31,7 @@ BEGIN
     
     -- task level
     IF(OLD.level_id <> NEW.level_id) THEN
+    	SET v_changes = TRUE;
         SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id);
        
         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK LEVEL</span> FROM [<span class="text-secondary">', v_old_level, '</span>] TO [<span class="text-primary">', v_new_level, '</span>],');
@@ -37,6 +41,7 @@ BEGIN
     
     -- status
     IF(OLD.status_id <> NEW.status_id) THEN
+    	SET v_changes = TRUE;
         SET v_old_status = (SELECT name FROM task_statuses WHERE id = OLD.status_id);
         SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
         
@@ -47,6 +52,7 @@ BEGIN
     
     -- EDITOR
     IF(OLD.editor_id <> NEW.editor_id) THEN
+    	SET v_changes = TRUE;
     	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.editor_id);        
       	IF OLD.editor_id = 0 THEN -- neu truoc do chua co editor     		
             IF NEW.editor_assigned = 1 THEN -- neu la gan editor
@@ -72,6 +78,7 @@ BEGIN
     
     -- QA
      IF(OLD.qa_id <> NEW.qa_id) THEN
+     	SET v_changes = TRUE;
     	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.qa_id);        
       	IF OLD.qa_id = 0 THEN -- neu truoc do chua co QA     		
             IF NEW.qa_assigned = 1 THEN -- neu la gan QA
@@ -97,6 +104,7 @@ BEGIN
     	
     -- DC
     	IF NEW.dc_timestamp <> OLD.dc_timestamp THEN -- neu co tac dong cua DC
+        	SET v_changes = TRUE;
         	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.dc_id);     
         	IF OLD.dc_id = 0 THEN -- DC nhan task            	
             	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
@@ -120,13 +128,17 @@ BEGIN
     
     -- quantity
     IF(OLD.quantity <> NEW.quantity) THEN
+    	SET v_changes = TRUE;
         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK QUANTITY</span> FROM [<span class="text-secondary">', OLD.quantity, '</span>] TO [<span class="text-primary">', NEW.quantity, '</span>],');
         SET v_content = CONCAT(v_content,' ',v_action); 
     END IF;
     -- //end quantity
     
     -- insert logs
-    INSERT INTO project_logs(project_id, timestamp, content)
-    VALUES(OLD.project_id, NEW.updated_at, v_content);
+    IF v_changes = TRUE THEN
+    	SET v_content = (SELECT TRIM(TRAILING ',' FROM v_content));
+        INSERT INTO project_logs(project_id, timestamp, content)
+        VALUES(OLD.project_id, NEW.updated_at, v_content);
+    END IF;
 END; //
 DELIMITER ;

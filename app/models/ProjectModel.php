@@ -18,9 +18,21 @@
             return $this->__db->executeStoredProcedure("ProjectInsert",$params);
         }
 
-        public function UpdateProject($id,$data){
-            $where  = " id = $id";
-            return $this->__db->update($this->__table,$data,$where);
+        public function UpdateProject($id,$customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description){
+            $user = unserialize($_SESSION['user']);
+            $params = array(
+                'p_id'=>$id,
+                'p_customer_id' => $customer,
+                'p_name' => $name,
+                'p_start_date' => $start_date,
+                'p_end_date' => $end_date,
+                'p_combo_id' => $combo,
+                'p_levels' => $levels,
+                'p_priority' => $priority,
+                'p_description' => $description,
+                'p_updated_by' => $user->id
+            );
+            return $this->__db->executeStoredProcedure("ProjectUpdate",$params);
         }
 
         public function DeleteProject($id){
