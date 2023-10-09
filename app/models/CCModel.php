@@ -16,4 +16,32 @@
             $columns = "id,feedback,DATE_FORMAT(start_date, '%d/%m/%Y %H:%i') as start_date,DATE_FORMAT(end_date, '%d/%m/%Y %H:%i') as end_date";
             return $this->__db->select($this->__table,$columns,"","project_id = $project_id");
         }
+
+        public function GetCCsListWithTasks($prjId){
+           $columns = " c.id AS c_id, c.feedback AS feedback,";
+           $columns.="  IF( COUNT(t.id) > 0,
+                            CONCAT('[', GROUP_CONCAT(
+                                JSON_OBJECT(
+                                    'task_id', t.id,
+                                    'level_id', lv.name,
+                                    'quantity', t.quantity,
+                                    'editor', e.acronym,
+                                    'qa', q.acronym,
+                                    'dc', dc.acronym,
+                                    'status', ts.name,
+                                    'status_color', ts.color
+                                ) SEPARATOR ','
+                            ), ']'),
+                            '[]'
+                        ) AS tasks_list";
+            $join = "LEFT JOIN tasks t ON c.id = t.cc_id";
+            $join .="LEFT JOIN levels lv ON t.level_id = lv.id";
+            $join .="LEFT JOIN users e ON t.editor_id = e.id";
+            $join .="LEFT JOIN users q ON t.qa_id = q.id";
+            $join .="LEFT JOIN users dc ON t.dc_id = dc.id";
+            $join .="LEFT JOIN task_statuses ts ON t.status_id = ts.id";
+            $where = "c.project_id = $prjId";
+            $groupby = " c.id, c.project_id;";
+            return $this->__db->select($this->__table." c", $columns, $join, $where,[],1,0,'', $groupby);
+        }
     }

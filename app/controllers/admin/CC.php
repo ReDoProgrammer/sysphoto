@@ -44,4 +44,14 @@ class CC extends Controller
             'ccs'=>$this->cc_model->AllCCs($project_id)
         ]);
     }
+    public function getccs(){
+        $prjId = $_GET['project_id'];
+        echo json_encode([
+            'code'=>200,
+            'msg'=>'Get CCs list with own tasks based on project successfully',
+            'icon'=>'success',
+            'heading'=>'SUCCESSFULLY',
+            'ccs'=>$this->cc_model->GetCCsListWithTasks($prjId)
+        ]);
+    }
 }

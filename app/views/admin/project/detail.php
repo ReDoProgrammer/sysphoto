@@ -67,33 +67,20 @@
         <div class="card p-2">
             <div class="card-header">CC & Feedback</div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="activity" style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; ">
-                            <div class="activity-box">
-                                <ul class="activity-list" id="ulFeedbacks"> </ul>
-                            </div>
-                        </div>
-                    </div>
+                <div class="accordion" id="accordionFeedbacksAndCCs">                  
+                    
                 </div>
             </div>
         </div>
-        
-        <div class="card p-2">
-            <div class="card-header">Project logs</div>
+
+        <div class="card recent-activity flex-fill">
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="activity" style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; ">
-                            <div class="activity-box">
-                                <ul class="activity-list" id="ulProjectLogs">
+                <h5 class="card-title">Project logs</h5>
+                <ul class="res-activity-list" id="ulProjectLogs"
+                    style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; ">
 
 
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </ul>
             </div>
         </div>
 
@@ -208,3 +195,48 @@ $this->render('admin/task/modal');
 $this->render('admin/task/detail');
 
 ?>
+
+<script>
+    $(document).ready(function () {
+        $(".content").each(function () {
+            var $content = $(this).find("p");
+            var $button = $(this).find(".show-more");
+            var currentText = $content.text();
+
+            if (currentText.length > 100) {
+                // Hiển thị chỉ 100 ký tự ban đầu và nút "Xem thêm"
+                $content.text(currentText.substring(0, 100) + "...");
+                $button.show();
+            }
+
+            $button.click(function () {
+                var hiddenText = $content.data("hidden-text");
+
+                if (hiddenText) {
+                    // Đã hiển thị "Xem thêm", nên ẩn nó đi
+                    $content.text(hiddenText);
+                    $content.data("hidden-text", "");
+                    $button.text("Xem thêm");
+                } else {
+                    // Chưa hiển thị "Xem thêm", nên hiển thị toàn bộ nội dung
+                    $content.text(currentText);
+                    $content.data("hidden-text", currentText);
+                    $button.text("Ẩn bớt");
+                }
+            });
+        });
+    });
+
+</script>
+<style>
+    .show-more {
+        display: none;
+    }
+
+    .content p {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+</style>

@@ -16,14 +16,13 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/bootstrap.min.css">
 
-    <!-- Fontawesome CSS -->
-    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/fontawesome/css/fontawesome.min.css">
-    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/fontawesome/css/all.min.css">
-
-    <!-- Lineawesome CSS -->
-    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/line-awesome.min.css">
-    <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/material.css">
-
+		<!-- Fontawesome CSS -->
+        <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/fontawesome/css/fontawesome.min.css">
+    	<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/fontawesome/css/all.min.css">	  	
+		
+		<!-- Lineawesome CSS -->
+		<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/line-awesome.min.css">
+		<link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/css/material.css">
     <!-- Quill -->
     <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.snow.css">
 

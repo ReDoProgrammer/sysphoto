@@ -40,6 +40,7 @@ class Database
         return $stmt->fetch(PDO::FETCH_ASSOC)['result'];
     }
 
+    
 
     function executeStoredProcedure($procedureName, $params = array())
     {

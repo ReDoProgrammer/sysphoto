@@ -1,37 +1,35 @@
 var taskId = 0;
 $(document).ready(function () {
-    GetTasksList();  
-    GetLogs(); 
+    GetTasksList();
+    GetLogs();
     GetCCs();
 })
-function GetLogs(){
+function GetLogs() {
     $('#ulProjectLogs').empty();
     if (idValue !== null) {
         $.ajax({
-            url:'../projectlog/list',
-            type:'get',
-            data:{projectId:idValue},
-            success:function(data){
+            url: '../projectlog/list',
+            type: 'get',
+            data: { projectId: idValue },
+            success: function (data) {
                 try {
                     let content = $.parseJSON(data);
                     let logs = content.logs;
-                    logs.forEach(l=>{
+                    logs.forEach(l => {
                         $('#ulProjectLogs').append(`
-                        <li>
-                            <div class="row">                                
-                                <div class="col-sm-1 align-middle pt-2">                               
-                                    <i class="fa-regular fa-clock align-middle pl-2 text-warning"></i>
+                            <li>
+                                <p class="mb-0">${l.content}</p>
+                                <div>
+                                    <span class="res-activity-time">
+                                        <i class="fa-regular fa-clock"></i>
+                                        ${l.timestamp}
+                                    </span>
                                 </div>
-                                <div class="col-sm-11">                                  
-                                        <span class="text-info">${l.content}</span>
-                                        <span class="time">${l.timestamp}</span>                                    
-                                </div>
-                            </div>                           
-                        </li>
+                            </li>
                         `);
                     })
                 } catch (error) {
-                    console.log(data,error);
+                    console.log(data, error);
                 }
             }
         })
@@ -51,7 +49,7 @@ function GetTasksList() {
                     let content = $.parseJSON(data)
                     if (content.code == 200) {
                         let idx = 1;
-                        content.tasks.forEach(t => {                            
+                        content.tasks.forEach(t => {
                             $('#tblTasksList').append(`
                                                         <tr id = "${t.id}">
                                                             <td>${idx++}</td>
@@ -59,8 +57,8 @@ function GetTasksList() {
                                                             <td class="text-center">${t.quantity}</td>
                                                             <td>${t.editor ? t.editor : '-'}</td>
                                                             <td>${t.qa ? t.qa : '-'}</td>
-                                                            <td>${t.dc?t.dc:'-'}</td>
-                                                            <td><span class="${t.status_color?t.status_color:''}">${t.status ? t.status : ''}</span></td>
+                                                            <td>${t.dc ? t.dc : '-'}</td>
+                                                            <td><span class="${t.status_color ? t.status_color : ''}">${t.status ? t.status : ''}</span></td>
                                                             <td>
                                                                 <div class="dropdown action-label">
                                                                     <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
@@ -68,7 +66,7 @@ function GetTasksList() {
                                                                     <div class="dropdown-menu dropdown-menu-right">
                                                                         <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> View</a>
                                                                         <a class="dropdown-item" href="javascript:void(0)" onClick="editTask(${t.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
-                                                                        ${t.status_id == 0?'<a class="dropdown-item" href="javascript:void(0)" onClick="deleteTask('+t.id+')"><i class="fas fa-trash-alt"></i>  Delete</a>':''}
+                                                                        ${t.status_id == 0 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="deleteTask(' + t.id + ')"><i class="fas fa-trash-alt"></i>  Delete</a>' : ''}
                                                                         
                                                                     </div> 
                                                                 </div>
@@ -84,35 +82,54 @@ function GetTasksList() {
         })
     }
 }
-function GetCCs(){
+function GetCCs() {
     if (idValue !== null) {
         $.ajax({
-            url:'../cc/select',
-            type:'get',
-            data:{
-                project_id:idValue
+            url: '../cc/getccs',
+            type: 'get',
+            data: {
+                project_id: idValue
             },
-            success:function(data){
-                try {
-                    let content = $.parseJSON(data);
-                    content.ccs.forEach(c=>{
-                        $('#ulFeedbacks').append(`
-                        <li>
-                            <div class="row">                                
-                                <div class="col-sm-1 align-middle pt-2">                               
-                                <i class="fa-regular fa-comments"></i>
-                                </div>
-                                <div class="col-sm-11">                                  
-                                        <span class="text-info">${c.feedback}</span>
-                                        <span class="time">${c.start_date} - ${c.end_date}</span>                                    
-                                </div>
-                            </div>                           
-                        </li>
-                        `);
-                    })
-                } catch (error) {
-                    console.log(data,error);
-                }
+            success: function (data) {
+                console.log(data);
+                // try {
+                //     let content = $.parseJSON(data);
+                //     content.ccs.forEach(c => {
+                //         console.log({ c });
+                //         $('#accordionFeedbacksAndCCs').append(`
+                //             <div class="accordion-item">
+                //                 <h2 class="accordion-header">
+                //                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                //                         data-bs-target="#collapse${c.id}" aria-expanded="true" aria-controls="collapseOne1">
+                //                         <i class="fa-regular fa-clock text-warning" style="margin-right:5px;"></i>  ${c.start_date} - ${c.end_date}
+                //                     </button>
+                //                 </h2>
+                //                 <div id="collapse${c.id}" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                //                     <div class="accordion-body">
+                //                         <p>${c.feedback}</p>
+                //                         <table class="table table-hover mb-0">
+                //                             <thead>
+                //                                 <tr>
+                //                                     <th>#</th>
+                //                                     <th>Level</th>
+                //                                     <th>Q.ty</th>
+                //                                     <th>Editor</th>
+                //                                     <th>Q.A</th>
+                //                                     <th>DC</th>
+                //                                     <th>Status</th>
+                //                                     <th>Action</th>
+                //                                 </tr>
+                //                             </thead>
+                //                             <tbody id="tblCCTasksList"></tbody>
+                //                         </table>
+                //                     </div>
+                //                 </div>
+                //             </div>
+                //         `);
+                //     })
+                // } catch (error) {
+                //     console.log(data, error);
+                // }
             }
         })
     }

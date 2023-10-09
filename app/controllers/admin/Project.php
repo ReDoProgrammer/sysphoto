@@ -161,4 +161,6 @@ class Project extends Controller
         $data = $this->project_model->getList($from_date, $to_date, $stt, $search, $page, $limit);
         echo $data;
     }
+
+    
 }
