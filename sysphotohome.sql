@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2023 lúc 08:05 PM
+-- Thời gian đã tạo: Th10 09, 2023 lúc 07:19 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -25,6 +25,12 @@ DELIMITER $$
 --
 -- Thủ tục
 --
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CCInsert` (IN `p_project` BIGINT, IN `p_feedback` TEXT, IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_created_by` INT)   BEGIN
+	INSERT INTO ccs(project_id,feedback,start_date,end_date,created_by)
+    VALUES(p_project,NormalizeContent(p_feedback),p_start_date,p_end_date,p_created_by);
+    SELECT LAST_INSERT_ID() AS last_id;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerDetailJoin` (IN `p_id` BIGINT)   BEGIN
     SELECT cp.name as company,c.avatar, c.name, c.acronym, c.email, c.customer_url, g.name as customer_group,
         cm.name as color_mode, op.name as output,c.size, c.is_straighten, c.straighten_remark, c.tv, c.fire, c.sky, c.grass,
@@ -384,6 +390,34 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `ccs`
+--
+
+CREATE TABLE `ccs` (
+  `id` int(11) NOT NULL,
+  `project_id` bigint(11) NOT NULL,
+  `feedback` text NOT NULL,
+  `start_date` datetime NOT NULL,
+  `end_date` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(11) NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(11) NOT NULL,
+  `deleted_by` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `ccs`
+--
+
+INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`) VALUES
+(5, 9, 'fasdfasasdffas\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:25', 1, '2023-10-09 01:24:25', 0, ''),
+(6, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwerqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:59', 1, '2023-10-09 01:24:59', 0, ''),
+(7, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwedsafasfsarqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:25:07', 1, '2023-10-09 01:25:07', 0, '');
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `ccses`
 --
 
@@ -695,7 +729,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '142.250.66.68', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '142.250.199.68', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1522,6 +1556,12 @@ INSERT INTO `user_types` (`id`, `name`, `wage`, `group`, `created_at`, `created_
 --
 
 --
+-- Chỉ mục cho bảng `ccs`
+--
+ALTER TABLE `ccs`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Chỉ mục cho bảng `ccses`
 --
 ALTER TABLE `ccses`
@@ -1678,6 +1718,12 @@ ALTER TABLE `user_types`
 --
 -- AUTO_INCREMENT cho các bảng đã đổ
 --
+
+--
+-- AUTO_INCREMENT cho bảng `ccs`
+--
+ALTER TABLE `ccs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT cho bảng `ccses`
