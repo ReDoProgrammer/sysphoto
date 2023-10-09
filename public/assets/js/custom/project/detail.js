@@ -2,6 +2,7 @@ var taskId = 0;
 $(document).ready(function () {
     GetTasksList();  
     GetLogs(); 
+    GetCCs();
 })
 function GetLogs(){
     $('#ulProjectLogs').empty();
@@ -78,6 +79,39 @@ function GetTasksList() {
                     }
                 } catch (error) {
                     console.log(data);
+                }
+            }
+        })
+    }
+}
+function GetCCs(){
+    if (idValue !== null) {
+        $.ajax({
+            url:'../cc/select',
+            type:'get',
+            data:{
+                project_id:idValue
+            },
+            success:function(data){
+                try {
+                    let content = $.parseJSON(data);
+                    content.ccs.forEach(c=>{
+                        $('#ulFeedbacks').append(`
+                        <li>
+                            <div class="row">                                
+                                <div class="col-sm-1 align-middle pt-2">                               
+                                <i class="fa-regular fa-comments"></i>
+                                </div>
+                                <div class="col-sm-11">                                  
+                                        <span class="text-info">${c.feedback}</span>
+                                        <span class="time">${c.start_date} - ${c.end_date}</span>                                    
+                                </div>
+                            </div>                           
+                        </li>
+                        `);
+                    })
+                } catch (error) {
+                    console.log(data,error);
                 }
             }
         })

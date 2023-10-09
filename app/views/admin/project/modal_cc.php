@@ -51,4 +51,3 @@
 <!-- /Create CC Modal -->
 
 
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/cc.js"></script>

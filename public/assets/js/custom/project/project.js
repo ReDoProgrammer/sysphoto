@@ -433,6 +433,82 @@ var selectizeCombo = $selectizeComboes[0].selectize;
 
 
 
+var ccId = 0;
+var project_id=0;
+$('#btnSubmitCC').click(function(){
+    let start_date = $('#txtCCBeginDate').val() + ":00";
+    let end_date = $('#txtCCEndDate').val() + ":00";
+    let feedback = qCCDescription.getText();
+
+    let sd = strToDateTime($('#txtBeginDate').val());
+    let td = strToDateTime($('#txtEndDate').val());
+    if (td < sd) {
+        $.toast({
+            heading: `End date can not be less than start date!`,
+            text: `Please choose another value`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+
+
+    if(ccId<1){
+        $.ajax({
+            url:'cc/insert',
+            type:'post',
+            data:{
+                project_id,
+                feedback,
+                start_date,end_date                
+            },
+            success:function(data){
+                try {
+                    let content = $.parseJSON(data);
+                    if(content.code == 201){
+                        $('#modal_cc').modal('hide');
+                    }
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+                } catch (error) {
+                    console.log(data,error);
+                }
+            }
+        })
+    }
+
+})
+
+function AddNewCC(pId){
+    project_id = pId;
+    $('#modal_cc').modal('show');
+}
+
+var qCCDescription = new Quill('#divCCDescription', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter CC description here...",
+    // Đặt chiều cao cho trình soạn thảo
+    // Ví dụ: Chiều cao 300px
+    height: '300px'
+    // Hoặc chiều cao 5 dòng
+    // height: '10em'
+});
+
+
 
 
 

@@ -71,7 +71,7 @@
                     <div class="col-md-12">
                         <div class="activity" style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; ">
                             <div class="activity-box">
-                                <ul class="activity-list" id="ulFeedback"> </ul>
+                                <ul class="activity-list" id="ulFeedbacks"> </ul>
                             </div>
                         </div>
                     </div>
@@ -200,7 +200,6 @@
 
 
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/detail.js"></script>
-
 
 
 
