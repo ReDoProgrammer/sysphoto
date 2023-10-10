@@ -66,6 +66,7 @@ class TaskModel extends Model
         q.acronym as qa,
         d.acronym as dc,
         t.status_id,
+        t.cc_id,
         ts.name as status,
         ts.color as status_color";
         $join = " JOIN levels l ON t.level_id = l.id";

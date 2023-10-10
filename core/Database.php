@@ -40,7 +40,34 @@ class Database
         return $stmt->fetch(PDO::FETCH_ASSOC)['result'];
     }
 
-    
+    function callStoredProcedure($procedureName, $params = [])
+    {
+        try {
+
+            // Xây dựng chuỗi truy vấn gọi stored procedure
+            $paramPlaceholder = implode(',', array_fill(0, count($params), '?'));
+
+            // Chuẩn bị truy vấn gọi procedure
+            $sql = "CALL $procedureName($paramPlaceholder)";
+            $stmt = $this->__conn->prepare($sql);
+
+            // Gán giá trị cho các tham số đầu vào
+            foreach ($params as $index => $paramValue) {
+                $stmt->bindValue($index + 1, $paramValue);
+            }
+
+            // Thực hiện truy vấn
+            $stmt->execute();
+
+            // Lấy kết quả trả về từ procedure
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $result;
+        } catch (PDOException $e) {
+            echo "Lỗi kết nối đến cơ sở dữ liệu: " . $e->getMessage();
+            return false;
+        }
+    }
 
     function executeStoredProcedure($procedureName, $params = array())
     {
