@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 09, 2023 lúc 07:19 AM
+-- Thời gian đã tạo: Th10 10, 2023 lúc 02:01 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -29,6 +29,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CCInsert` (IN `p_project` BIGINT, I
 	INSERT INTO ccs(project_id,feedback,start_date,end_date,created_by)
     VALUES(p_project,NormalizeContent(p_feedback),p_start_date,p_end_date,p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerBasicalAll` ()   BEGIN
+	SELECT 
+        id,
+        CONCAT(name,' - [',acronym,']') as fullname
+    FROM customers
+    ORDER BY name;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerDetailJoin` (IN `p_id` BIGINT)   BEGIN
@@ -121,7 +129,7 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerInsert` (IN `p_group_id` INT, IN `p_name` VARCHAR(100), IN `p_email` VARCHAR(255), IN `p_password` VARCHAR(255), IN `p_customer_url` VARCHAR(255), IN `p_color_mode` INT, IN `p_output` INT, IN `p_size` VARCHAR(255), IN `p_is_straighten` BOOLEAN, IN `p_straighten_remark` VARCHAR(255), IN `p_tv` VARCHAR(255), IN `p_fire` VARCHAR(255), IN `p_sky` VARCHAR(255), IN `p_grass` VARCHAR(255), IN `p_national_style` INT, IN `p_cloud` INT, IN `p_style_remark` TEXT, IN `p_created_by` INT)   BEGIN
     DECLARE v_acronym VARCHAR(100) DEFAULT '';
-    SET v_acronym = CONCAT('C',DATE_FORMAT(NOW(), '%i%H%s'),GetInitials(p_name),DATE_FORMAT(NOW(), '%Y%m'));
+    SET v_acronym = CONCAT('C',DATE_FORMAT(NOW(), '%i%H%s'),'-',GetInitials(p_name),UPPER(LEFT(p_email,3)));
     SET p_name = NormalizeString(p_name);
 	INSERT INTO customers(group_id,name,acronym,email,pwd,customer_url,color_mode_id,output_id,size,is_straighten,straighten_remark,tv,fire,sky,grass,national_style_id,cloud_id,style_remark,created_by)
     		VALUES(p_group_id,p_name,v_acronym,p_email,md5(p_password),p_customer_url,p_color_mode,p_output,p_size,p_is_straighten,p_straighten_remark,p_tv,p_fire,p_sky,p_grass,p_national_style,p_cloud,p_style_remark,p_created_by);
@@ -130,12 +138,48 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerUpdate` (IN `p_id` BIGINT, IN `p_group_id` INT, IN `p_name` VARCHAR(100), IN `p_email` VARCHAR(255), IN `p_password` VARCHAR(255), IN `p_customer_url` VARCHAR(255), IN `p_color_mode` INT, IN `p_output` INT, IN `p_size` VARCHAR(255), IN `p_is_straighten` BOOLEAN, IN `p_straighten_remark` VARCHAR(255), IN `p_tv` VARCHAR(255), IN `p_fire` VARCHAR(255), IN `p_sky` VARCHAR(255), IN `p_grass` VARCHAR(255), IN `p_national_style` INT, IN `p_cloud` INT, IN `p_style_remark` TEXT, IN `p_updated_by` INT)   BEGIN
     DECLARE v_acronym VARCHAR(100) DEFAULT '';
-    SET v_acronym = CONCAT('C',DATE_FORMAT(NOW(), '%i%H%s'),GetInitials(p_name),DATE_FORMAT(NOW(), '%Y%m'));
+    SET v_acronym = CONCAT('C',DATE_FORMAT(NOW(), '%i%H%s'),'-',GetInitials(p_name),UPPER(LEFT(p_email,3)));
     SET p_name = NormalizeString(p_name);
 	UPDATE customers
     SET group_id = p_group_id, name = p_name, acronym = v_acronym, email = p_email, pwd = MD5(p_password), customer_url = p_customer_url, color_mode_id = p_color_mode, output_id = p_output, size = p_size, is_straighten = p_is_straighten, straighten_remark = p_straighten_remark, tv = p_tv,fire=p_fire,sky = p_sky, grass = p_grass, national_style_id = p_national_style, cloud_id = p_cloud, style_remark = p_style_remark, updated_at = CURRENT_TIMESTAMP(), updated_by = p_updated_by
     WHERE id = p_id;
             SELECT ROW_COUNT() AS rows_changed;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `PrjectGetCCsWithTasks` (IN `p_project` BIGINT)   BEGIN
+    SELECT 
+        c.id AS c_id,
+        c.feedback AS feedback,
+        DATE_FORMAT(c.start_date, '%d/%m/%Y %H:%i') as start_date,
+        DATE_FORMAT(c.end_date, '%d/%m/%Y %H:%i') as end_date,
+        IF(
+            COUNT(t.id) > 0,
+            CONCAT('[', GROUP_CONCAT(
+                JSON_OBJECT(
+                    'task_id', t.id,
+                    'level', lv.name,
+                    'level_color',lv.color,
+                    'description',t.description,
+                    'quantity', t.quantity,
+                    'editor', e.acronym,
+                    'qa', q.acronym,
+                    'dc', dc.acronym,
+                    'status_id',t.status_id,
+                    'status', ts.name,
+                    'status_color', ts.color
+                ) SEPARATOR ','
+            ), ']'),
+            '[]'
+        ) AS tasks_list
+    FROM ccs c
+    LEFT JOIN tasks t ON c.id = t.cc_id
+    LEFT JOIN levels lv ON t.level_id = lv.id
+    LEFT JOIN users e ON t.editor_id = e.id
+    LEFT JOIN users q ON t.qa_id = q.id
+    LEFT JOIN users dc ON t.dc_id = dc.id
+    LEFT JOIN task_statuses ts ON t.status_id = ts.id
+    WHERE c.project_id = p_project
+    GROUP BY c.id, c.project_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGINT)   BEGIN
@@ -268,9 +312,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
     WHERE t.id = p_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskInsert` (IN `p_project` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_qa` INT, IN `p_quantity` INT, IN `p_level` INT, IN `p_created_by` INT)   BEGIN
-	INSERT INTO tasks(project_id,description,editor_id,qa_id,quantity,level_id,created_by)
-    VALUES(p_project,p_description,p_editor,p_qa,p_quantity,p_level,p_created_by);
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskInsert` (IN `p_project` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_qa` INT, IN `p_quantity` INT, IN `p_level` INT, IN `p_cc` INT, IN `p_created_by` INT)   BEGIN
+	INSERT INTO tasks(project_id,description,editor_id,qa_id,quantity,level_id,cc_id,created_by)
+    VALUES(p_project,p_description,p_editor,p_qa,p_quantity,p_level,p_cc,p_created_by);
     SELECT LAST_INSERT_ID() as last_id;
 END$$
 
@@ -413,26 +457,27 @@ CREATE TABLE `ccs` (
 INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`) VALUES
 (5, 9, 'fasdfasasdffas\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:25', 1, '2023-10-09 01:24:25', 0, ''),
 (6, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwerqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:59', 1, '2023-10-09 01:24:59', 0, ''),
-(7, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwedsafasfsarqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:25:07', 1, '2023-10-09 01:25:07', 0, '');
-
--- --------------------------------------------------------
+(7, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwedsafasfsarqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:25:07', 1, '2023-10-09 01:25:07', 0, ''),
+(8, 1, 'This is CC description 1\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 17:09:38', 1, '2023-10-10 10:09:38', 0, ''),
+(9, 1, 'This is CC description 2\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 17:09:47', 1, '2023-10-10 10:09:47', 0, ''),
+(10, 1, 'CC --description\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 18:10:35', 1, '2023-10-10 11:10:35', 0, ''),
+(11, 1, 'This is cc description\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 18:12:06', 1, '2023-10-10 11:12:06', 0, ''),
+(12, 1, 'NEW CC description\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 18:14:40', 1, '2023-10-10 11:14:40', 0, '');
 
 --
--- Cấu trúc bảng cho bảng `ccses`
+-- Bẫy `ccs`
 --
-
-CREATE TABLE `ccses` (
-  `id` int(11) NOT NULL,
-  `project_id` bigint(11) NOT NULL,
-  `feedback` text NOT NULL,
-  `start_date` datetime NOT NULL,
-  `end_date` datetime NOT NULL,
-  `created_at` datetime NOT NULL,
-  `created_by` int(11) NOT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `updated_by` int(11) NOT NULL,
-  `deleted_by` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+DELIMITER $$
+CREATE TRIGGER `after_cc_inserted` AFTER INSERT ON `ccs` FOR EACH ROW BEGIN
+	DECLARE v_created_by varchar(100);    
+    SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM tasks WHERE id = NEW.id));
+    
+    INSERT INTO project_logs(project_id,timestamp,content)
+    VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">CREATE NEW CC</span> FROM [<span class="text-warning">',DATE_FORMAT(NEW.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-warning">',DATE_FORMAT(NEW.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
+    
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -590,18 +635,18 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`id`, `company_id`, `name`, `acronym`, `email`, `customer_url`, `pwd`, `avatar`, `group_id`, `color_mode_id`, `output_id`, `size`, `is_straighten`, `straighten_remark`, `tv`, `fire`, `sky`, `grass`, `national_style_id`, `cloud_id`, `style_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 0, 'Test 1234', 'C122115T1202310', 'emailtes1t1@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:51:28', 1, '2023-10-06 14:57:11', 0),
-(4, 0, 'Test2', 'C122115T202310', 'emailtest2@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:54:11', 1, '2023-10-06 14:12:15', 0),
-(5, 0, 'Test3', 'C122115T202310', 'emailtest3@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:55:06', 1, '2023-10-06 14:12:15', 0),
-(6, 0, 'Test4 Ra Fdasf ', 'C122115TRF202310', 'emailtest4@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 2, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 1, 1, 'style remark\n', '2023-10-06 20:55:51', 1, '2023-10-06 14:12:15', 0),
-(8, 0, 'Truong Nguyen Huu', 'C122115TNH202310', 'emailtest21@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 2, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:22', 1, '2023-10-06 14:12:15', 0),
-(9, 0, 'Truong Nguyen Huu', 'C122115TNH202310', 'emailtest221@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 2, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:40', 1, '2023-10-06 14:12:15', 0),
-(10, 0, 'Spyder Man', 'C122115SM202310', 'syperman@gmail.com', 'spyder man url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, 'origin', 1, '1234', '', '', '', '411', 1, 1, 'style remark\n', '2023-10-06 21:04:23', 1, '2023-10-06 14:12:15', 0),
-(11, 0, 'Jocker Allain', 'C122115JA202310', 'testemail123@gmail.com', 'adsfá', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:08:07', 1, '2023-10-06 14:12:15', 0),
-(12, 0, 'Test  New Acronym', 'C142111TNA2023October', 'testnewacronym@gmail.com', 'sdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'dfsấ', 'fsadfsa', 'fdsấ', 'fdsấ', 'fdsàdsa', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:14:11', 1, '2023-10-06 14:14:11', 0),
-(13, 0, 'Test  New Acronym ', 'C152111TNA202310', 'testnewacronym1@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, '', '', '', '', '', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:15:11', 1, '2023-10-06 14:15:11', 0),
-(15, 0, 'This Is New Customer1', 'C322232TINC202310', 'emailtes1t11@gmail.com', 'dsfấ', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:19:23', 1, '2023-10-06 15:32:32', 1),
-(16, 0, 'Test Straighten1', 'C290147TS202310', 'teststraighten@gmail.com', 'straighten url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, 'straighten note', 'tvnote', 'fire note', 'sky note', 'grass note', 1, 1, 'straighten style remark\n\nremark \n\ndfafasd fdasf                     fsdjfsalkfj \n\n\n\n\nfdsafsadjf\nfsadfjsdal\n\n1234124\n\nfdsafsa\n', '2023-10-06 22:02:34', 1, '2023-10-06 18:29:47', 1);
+(1, 0, 'Test 1234', 'C431651-T1', 'emailtes1t1@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:51:28', 1, '2023-10-10 09:43:51', 0),
+(4, 0, 'Test2', 'C431651-T', 'emailtest2@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:54:11', 1, '2023-10-10 09:43:51', 0),
+(5, 0, 'Test3', 'C431651-T', 'emailtest3@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:55:06', 1, '2023-10-10 09:43:51', 0),
+(6, 0, 'Test4 Ra Fdasf ', 'C431651-TRF', 'emailtest4@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 2, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 1, 1, 'style remark\n', '2023-10-06 20:55:51', 1, '2023-10-10 09:43:51', 0),
+(8, 0, 'Truong Nguyen Huu', 'C431651-TNH', 'emailtest21@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 2, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:22', 1, '2023-10-10 09:43:51', 0),
+(9, 0, 'Truong Nguyen Huu', 'C441635-TNH', 'emailtest221@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 1, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:40', 1, '2023-10-10 09:44:35', 1),
+(10, 0, 'Spyder Man', 'C431651-SM', 'syperman@gmail.com', 'spyder man url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, 'origin', 1, '1234', '', '', '', '411', 1, 1, 'style remark\n', '2023-10-06 21:04:23', 1, '2023-10-10 09:43:51', 0),
+(11, 0, 'Jocker Allain', 'C431651-JA', 'testemail123@gmail.com', 'adsfá', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:08:07', 1, '2023-10-10 09:43:51', 0),
+(12, 0, 'Test  New Acronym', 'C451601-TNA', 'testnewacronym@gmail.com', 'sdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'dfsấ', 'fsadfsa', 'fdsấ', 'fdsấ', 'fdsàdsa', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:14:11', 1, '2023-10-10 09:45:01', 1),
+(13, 0, 'Test  New Acronym ', 'C431651-TNA', 'testnewacronym1@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, '', '', '', '', '', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:15:11', 1, '2023-10-10 09:43:51', 0),
+(15, 0, 'This Is New Customer1', 'C481631-TINCEMA', 'emailtes1t11@gmail.com', 'dsfấ', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:19:23', 1, '2023-10-10 09:48:31', 1),
+(16, 0, 'Test Straighten1', 'C481615-TSTES', 'teststraighten@gmail.com', 'straighten url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, 'straighten note', 'tvnote', 'fire note', 'sky note', 'grass note', 1, 1, 'straighten style remark\n\nremark \n\ndfafasd fdasf                     fsdjfsalkfj \n\n\n\n\nfdsafsadjf\nfsadfjsdal\n\n1234124\n\nfdsafsa\n', '2023-10-06 22:02:34', 1, '2023-10-10 09:48:15', 1);
 
 -- --------------------------------------------------------
 
@@ -729,7 +774,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '142.250.199.68', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '172.217.24.100', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1127,7 +1172,22 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 (130, 9, '2023-10-09 00:36:25', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">PE-STAND</span>] with quantity: 1'),
 (131, 9, '2023-10-09 00:57:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">instruction\n</span>] TO [<span class=\"text-info\">instruction here\n</span>],'),
 (132, 9, '2023-10-09 00:58:22', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">instruction here\n</span>] TO [<span class=\"text-info\">blah blah blah\n</span>],'),
-(133, 9, '2023-10-09 01:04:48', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">blah blah blah\n</span>] TO [<span class=\"text-info\">blah blah blah 123434141234\n</span>],');
+(133, 9, '2023-10-09 01:04:48', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">blah blah blah\n</span>] TO [<span class=\"text-info\">blah blah blah 123434141234\n</span>],'),
+(134, 9, '2023-10-09 22:43:25', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">VIDEO</span>] with quantity: 1'),
+(135, 9, '2023-10-09 22:43:34', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">VHS</span>] with quantity: 1'),
+(136, 9, '2023-10-09 22:43:44', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-Extreme</span>] with quantity: 1'),
+(137, 9, '2023-10-10 16:37:03', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">task description\n</span>] TO [<span class=\"text-primary\">task description 123 123\n</span>]'),
+(138, 1, '2023-10-10 18:10:35', '[admin] CREATE NEW CC FROM [<span class=\"text-warning\">10/10/2023 17:08</span>] TO [<span text-warning>10/10/2023 17:08</span>]'),
+(139, 1, '2023-10-10 18:12:06', '[admin] CREATE NEW CC FROM [<span class=\"text-warning\">10/10/2023 17:08</span>] TO [<span class=\"text-warning\">10/10/2023 17:08</span>]'),
+(140, 1, '2023-10-10 18:14:40', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 17:08</span>] TO [<span class=\"text-warning\">10/10/2023 17:08</span>]'),
+(141, 1, '2023-10-10 18:48:14', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">VHS</span>] with quantity: 1'),
+(142, 1, '2023-10-10 18:49:41', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
+(143, 1, '2023-10-10 18:50:01', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
+(144, 1, '2023-10-10 18:50:39', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
+(145, 1, '2023-10-10 18:52:35', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-Extreme</span>] with quantity: 3'),
+(146, 1, '2023-10-10 18:53:03', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
+(147, 1, '2023-10-10 19:01:01', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
+(148, 1, '2023-10-10 19:01:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [<span class=\"fw-bold\">3</span>]');
 
 -- --------------------------------------------------------
 
@@ -1184,6 +1244,7 @@ CREATE TABLE `tasks` (
   `dc_wage` float NOT NULL DEFAULT 0 COMMENT 'Tiền công của DC',
   `level_id` int(30) NOT NULL,
   `auto_gen` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu task được gen tự động hay là insert thủ công. 1: auto, 0: insert',
+  `cc_id` int(11) NOT NULL DEFAULT 0 COMMENT 'CC id nếu có (>0). Mặc định sẽ là 0',
   `quantity` int(11) NOT NULL DEFAULT 1,
   `editor_view` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu Editor đã xem instruction',
   `qa_view` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu QA đã xem instruction',
@@ -1201,24 +1262,35 @@ CREATE TABLE `tasks` (
 -- Đang đổ dữ liệu cho bảng `tasks`
 --
 
-INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 1, 'description 12\n', 0, 42, '2023-10-08 16:31:56', 1, 0, 49, '2023-10-08 16:31:56', 1, 0, 0, 0, NULL, 0, 1, 0, 4, 0, 0, 1, '', '2023-10-08 12:55:21', 1, '2023-10-08 16:31:56', 1, NULL, NULL),
-(4, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
-(5, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
-(6, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
-(7, 3, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 1, 0, 0, 1, '', '2023-10-08 15:30:36', 1, '2023-10-08 08:30:36', 0, NULL, NULL),
-(8, 4, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:14', 1, '2023-10-08 08:37:14', 0, NULL, NULL),
-(9, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
-(10, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
-(11, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
-(12, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
-(13, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
-(14, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
-(15, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
-(16, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
-(17, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 1, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
-(18, 1, 'description 12\n', 0, 42, NULL, 0, 0, 49, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 4, 0, 0, 1, '', '2023-10-08 23:48:22', 1, '2023-10-08 16:48:22', 0, NULL, NULL),
-(19, 9, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 1, 0, 0, 1, '', '2023-10-09 00:36:25', 1, '2023-10-08 17:36:25', 0, NULL, NULL);
+INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(1, 1, 'description 12\n', 0, 42, '2023-10-08 16:31:56', 1, 0, 49, '2023-10-08 16:31:56', 1, 0, 0, 0, NULL, 0, 1, 0, 0, 4, 0, 0, 1, '', '2023-10-08 12:55:21', 1, '2023-10-08 16:31:56', 1, NULL, NULL),
+(4, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
+(5, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
+(6, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
+(7, 3, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:30:36', 1, '2023-10-08 08:30:36', 0, NULL, NULL),
+(8, 4, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:14', 1, '2023-10-08 08:37:14', 0, NULL, NULL),
+(9, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
+(10, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
+(11, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
+(12, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
+(13, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
+(14, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 0, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
+(15, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
+(16, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
+(17, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
+(18, 1, 'description 12\n', 0, 42, NULL, 0, 0, 49, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 4, 0, 0, 1, '', '2023-10-08 23:48:22', 1, '2023-10-08 16:48:22', 0, NULL, NULL),
+(19, 9, 'task description 123 123\n', 0, 0, '2023-10-10 09:37:03', 0, 0, 0, '2023-10-10 09:37:03', 0, 0, 0, 0, NULL, 0, 1, 1, 5, 1, 0, 0, 1, '', '2023-10-09 00:36:25', 1, '2023-10-10 09:37:03', 1, NULL, NULL),
+(20, 9, 'task test cc\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 10, 0, 0, 1, 0, 0, 1, '', '2023-10-09 22:43:25', 1, '2023-10-09 15:43:25', 0, NULL, NULL),
+(21, 9, 'task test cc 2\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 9, 0, 6, 1, 0, 0, 1, '', '2023-10-09 22:43:34', 1, '2023-10-09 15:46:49', 0, NULL, NULL),
+(22, 9, 'task test cc 2\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 6, 1, 0, 0, 1, '', '2023-10-09 22:43:44', 1, '2023-10-09 15:48:25', 0, NULL, NULL),
+(23, 1, 'Task created before creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 9, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:48:14', 1, '2023-10-10 11:48:14', 0, NULL, NULL),
+(24, 1, 'Task created before creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:49:41', 1, '2023-10-10 11:49:41', 0, NULL, NULL),
+(25, 1, 'Create a new CC task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 8, 1, 0, 0, 1, '', '2023-10-10 18:50:01', 1, '2023-10-10 11:50:01', 0, NULL, NULL),
+(26, 1, 'Task created after creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:50:39', 1, '2023-10-10 11:50:39', 0, NULL, NULL),
+(27, 1, 'Add CC task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 9, 3, 0, 0, 1, '', '2023-10-10 18:52:35', 1, '2023-10-10 11:52:35', 0, NULL, NULL),
+(28, 1, '33fdsaf\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 9, 1, 0, 0, 1, '', '2023-10-10 18:53:03', 1, '2023-10-10 11:53:03', 0, NULL, NULL),
+(29, 1, 'Task normal\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 8, 0, 0, 3, 0, 0, 1, '', '2023-10-10 19:01:01', 1, '2023-10-10 12:01:01', 0, NULL, NULL),
+(30, 1, 'Task CC\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 8, 3, 0, 0, 1, '', '2023-10-10 19:01:19', 1, '2023-10-10 12:01:19', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -1227,9 +1299,13 @@ DELIMITER $$
 CREATE TRIGGER `after_task_deleted` AFTER DELETE ON `tasks` FOR EACH ROW BEGIN
 	DECLARE v_level varchar(100);
     SET v_level = (SELECT name FROM levels WHERE id = OLD.level_id);
-    
-	INSERT INTO project_logs(project_id,timestamp,content)
-    VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE TASK </span>[',v_level,']'));
+    IF OLD.cc_id > 0 THEN
+        INSERT INTO project_logs(project_id,timestamp,content)
+        VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE CC TASK </span>[',v_level,']'));
+     ELSE
+     	INSERT INTO project_logs(project_id,timestamp,content)
+        VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE TASK </span>[',v_level,']'));
+     END IF;
 END
 $$
 DELIMITER ;
@@ -1237,12 +1313,18 @@ DELIMITER $$
 CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);
     DECLARE v_level varchar(50);
+    DECLARE v_action varchar(250) DEFAULT '';
     
     SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM tasks WHERE id = NEW.id));
     SET v_level = (SELECT name FROM levels WHERE id = NEW.level_id);
+    IF NEW.cc_id = 0 THEN
+    	SET v_action = "INSERT TASK";
+    ELSE
+    	SET v_action = "INSERT CC TASK";
+    END IF;
     
     INSERT INTO project_logs(project_id,timestamp,content)
-    VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="text-info fw-bold">',v_created_by,'</span>] <span class="text-success">INSERT TASK</span> [<span class="text-primary">',v_level,'</span>] with quantity: ',NEW.quantity));
+    VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">',v_action,'</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [<span class="fw-bold">',NEW.quantity,'</span>]'));
     
 END
 $$
@@ -1562,12 +1644,6 @@ ALTER TABLE `ccs`
   ADD PRIMARY KEY (`id`);
 
 --
--- Chỉ mục cho bảng `ccses`
---
-ALTER TABLE `ccses`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Chỉ mục cho bảng `clouds`
 --
 ALTER TABLE `clouds`
@@ -1723,13 +1799,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
---
--- AUTO_INCREMENT cho bảng `ccses`
---
-ALTER TABLE `ccses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -1831,7 +1901,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=134;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=149;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1843,7 +1913,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

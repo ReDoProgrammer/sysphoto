@@ -1,9 +1,17 @@
 var taskId = 0;
+var ccId = 0;
+
 $(document).ready(function () {
     GetTasksList();
     GetLogs();
     GetCCs();
 })
+
+function AddCCTask(id){
+    ccId = id;
+    $("#task_modal").modal('show');
+    GetCCs();
+}
 function GetLogs() {
     $('#ulProjectLogs').empty();
     if (idValue !== null) {
@@ -53,7 +61,7 @@ function GetTasksList() {
                             $('#tblTasksList').append(`
                                                         <tr id = "${t.id}">
                                                             <td>${idx++}</td>
-                                                            <td><span class="text-info">${t.cc_id>0?'<i class="fa-regular fa-closed-captioning text-danger" style="margin-right:5px;"></i>':""}${t.level}</span></td>
+                                                            <td><span class="text-info">${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger" style="margin-right:5px;"></i>' : ""}${t.level}</span></td>
                                                             <td class="text-center">${t.quantity}</td>
                                                             <td>${t.editor ? t.editor : '-'}</td>
                                                             <td>${t.qa ? t.qa : '-'}</td>
@@ -93,6 +101,7 @@ function GetCCs() {
             success: function (data) {
                 try {
                     let content = $.parseJSON(data);
+                    $('#accordionFeedbacksAndCCs').empty();
                     content.ccs.forEach(c => {
                         let item = `
                         <div class="accordion-item">
@@ -103,15 +112,20 @@ function GetCCs() {
                                     </div>
                                     <div class="col-sm-9 text-end">
                                         <button class="accordion-button collapsed float-right" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapse${c.id}" aria-expanded="true" aria-controls="collapseOne1">
+                                            data-bs-target="#collapse${c.c_id}" aria-expanded="true" aria-controls="collapseOne1">
                                             <i class="fa-regular fa-clock text-warning" style="margin-right:20px;"></i>  ${c.start_date} - ${c.end_date}
                                         </button>
                                     </div>
                                 </div>
                             </h2>
-                            <div id="collapse${c.id}" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                            <div id="collapse${c.c_id}" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
                                 <div class="accordion-body">
                                     <p>${c.feedback}</p>
+                                    <div class="submit-section text-end mb-3">
+                                        <button class="btn btn-sm btn-success" onClick="AddCCTask(${c.c_id})" id="btnAddCCTask">
+                                        <i class="fa-solid fa-plus"></i> Add New Task
+                                        </button>
+                                    </div>
                                     <table class="table table-hover mb-0">
                                         <thead>
                                             <tr>
@@ -126,18 +140,17 @@ function GetCCs() {
                                             </tr>
                                         </thead>
                                         <tbody id="tblCCTasksList">`;
-                                        let tasks_list = $.parseJSON(c.tasks_list);
-                                        console.log(tasks_list);
-                                        let idx = 1;
-                                        tasks_list.forEach(t=>{
-                                            item +=`<tr id="${t.task_id}">
+                        let tasks_list = $.parseJSON(c.tasks_list);
+                        let idx = 1;
+                        tasks_list.forEach(t => {
+                            item += `<tr id="${t.task_id}">
                                                         <td>${idx++}</td>
                                                         <td><span class="${t.level_color}">${t.level}</span></td>
                                                         <td>${t.quantity}</td>
-                                                        <td>${t.editor?t.editor:'-'}</td>
-                                                        <td>${t.qa?t.qa:'-'}</td>
-                                                        <td>${t.dc?t.dc:'-'}</td>
-                                                        <td><span class="${t.status_color}">${t.status?t.status:'-'}</span></td>
+                                                        <td>${t.editor ? t.editor : '-'}</td>
+                                                        <td>${t.qa ? t.qa : '-'}</td>
+                                                        <td>${t.dc ? t.dc : '-'}</td>
+                                                        <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                                                         <td>
                                                             <div class="dropdown action-label">
                                                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
@@ -151,8 +164,8 @@ function GetCCs() {
                                                             </div>
                                                         </td>
                                                     </td>`;
-                                        });
-                                        item+= ` </tbody>
+                        });
+                        item += ` </tbody>
                                         </table>
                                     </div>
                                 </div>

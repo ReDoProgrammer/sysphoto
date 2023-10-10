@@ -10,6 +10,7 @@ $("#task_modal").on('shown.bs.modal', function () {
 
 $("#task_modal").on("hidden.bs.modal", function () {
     pId = 0;
+    ccId = 0;
 });
 
 
@@ -63,7 +64,8 @@ $('#btnSubmitTask').click(function () {
         data: {
             prjId: pId,
             description,
-            level,
+            level, 
+            cc:ccId,
             editor: editor ? editor : 0,
             qa: qa ? qa : 0,
             quantity: parseInt(quantity)

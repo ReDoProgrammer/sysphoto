@@ -13,6 +13,7 @@ $("#task_modal").on('shown.bs.modal', function (e) {
 });
 $("#task_modal").on("hidden.bs.modal", function () {
     taskId = 0;
+    ccId = 0;
 });
 
 function deleteTask(id) {
@@ -179,6 +180,7 @@ $('#btnSubmitTask').click(function () {
                 prjId: idValue,
                 description,
                 level,
+                cc:ccId,
                 editor: editor ? editor : 0,
                 qa: qa ? qa : 0,
                 quantity: parseInt(quantity)

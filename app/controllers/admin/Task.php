@@ -23,16 +23,17 @@ class Task extends Controller
         $prjId = $_POST['prjId'];
         $description = $_POST['description'];
         $level = $_POST['level'];
+        $cc = $_POST['cc'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];
 
-        $result = $this->task_model->create($prjId, $description, $editor, $qa, $quantity, $level);
+        $result = $this->task_model->create($prjId, $description, $editor, $qa, $quantity, $level,$cc);
         if ($result['last_id'] > 0) {
             $data = array(
                 'code' => 201,
-                'msg' => 'New task has been created!',
-                'heading' => 'Successfully!',
+                'msg' => $cc>0?'New CC task has been created!':'New task has been created!',
+                'heading' =>'Successfully!',
                 'icon' => 'success',
                 'id' => $result['last_id']
             );
@@ -54,6 +55,7 @@ class Task extends Controller
         $id = $_POST['id'];
         $description = $_POST['description'];
         $level = $_POST['level'];
+        $cc = $_POST['cc'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];
