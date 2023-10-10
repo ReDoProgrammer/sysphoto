@@ -12,6 +12,14 @@
             ];
             return $this->__db->executeStoredProcedure("CCInsert",$params);
         }
+        public function DeleteCC($id){
+            $user = unserialize($_SESSION['user']);   
+            $params = [
+                        'p_id'=>$id,
+                        'p_deleted_by'=>$user->acronym
+                    ];
+            return $this->__db->executeStoredProcedure("CCDelete",$params);
+        }
         public function AllCCs($project_id){
             $columns = "id,feedback,DATE_FORMAT(start_date, '%d/%m/%Y %H:%i') as start_date,DATE_FORMAT(end_date, '%d/%m/%Y %H:%i') as end_date";
             return $this->__db->select($this->__table,$columns,"","project_id = $project_id");

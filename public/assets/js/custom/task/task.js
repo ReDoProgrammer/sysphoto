@@ -14,6 +14,7 @@ $("#task_modal").on('shown.bs.modal', function (e) {
 $("#task_modal").on("hidden.bs.modal", function () {
     taskId = 0;
     ccId = 0;
+    GetCCs();
 });
 
 function deleteTask(id) {

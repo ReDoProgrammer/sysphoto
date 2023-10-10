@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 10, 2023 lúc 02:01 PM
+-- Thời gian đã tạo: Th10 10, 2023 lúc 05:43 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -25,6 +25,16 @@ DELIMITER $$
 --
 -- Thủ tục
 --
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CCDelete` (IN `p_id` BIGINT, IN `p_deleted_by` VARCHAR(100))   BEGIN
+	UPDATE ccs 
+    SET deleted_by = p_deleted_by, deleted_at = NOW() 
+    WHERE id = p_id;
+    IF ROW_COUNT() > 0 THEN
+		DELETE FROM ccs WHERE id = p_id;
+    	SELECT ROW_COUNT() as rows_deleted;
+    END IF;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CCInsert` (IN `p_project` BIGINT, IN `p_feedback` TEXT, IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_created_by` INT)   BEGIN
 	INSERT INTO ccs(project_id,feedback,start_date,end_date,created_by)
     VALUES(p_project,NormalizeContent(p_feedback),p_start_date,p_end_date,p_created_by);
@@ -447,26 +457,30 @@ CREATE TABLE `ccs` (
   `created_by` int(11) NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `updated_by` int(11) NOT NULL,
-  `deleted_by` varchar(100) NOT NULL
+  `deleted_by` varchar(100) NOT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp() COMMENT 'Thời điểm xóa cc'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `ccs`
 --
 
-INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`) VALUES
-(5, 9, 'fasdfasasdffas\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:25', 1, '2023-10-09 01:24:25', 0, ''),
-(6, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwerqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:59', 1, '2023-10-09 01:24:59', 0, ''),
-(7, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwedsafasfsarqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:25:07', 1, '2023-10-09 01:25:07', 0, ''),
-(8, 1, 'This is CC description 1\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 17:09:38', 1, '2023-10-10 10:09:38', 0, ''),
-(9, 1, 'This is CC description 2\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 17:09:47', 1, '2023-10-10 10:09:47', 0, ''),
-(10, 1, 'CC --description\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 18:10:35', 1, '2023-10-10 11:10:35', 0, ''),
-(11, 1, 'This is cc description\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 18:12:06', 1, '2023-10-10 11:12:06', 0, ''),
-(12, 1, 'NEW CC description\n', '2023-10-10 17:08:00', '2023-10-10 17:08:00', '2023-10-10 18:14:40', 1, '2023-10-10 11:14:40', 0, '');
+INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(5, 9, 'fasdfasasdffas\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:25', 1, '2023-10-09 01:24:25', 0, '', NULL),
+(6, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwerqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:59', 1, '2023-10-09 01:24:59', 0, '', NULL),
+(7, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwedsafasfsarqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:25:07', 1, '2023-10-09 01:25:07', 0, '', NULL),
+(15, 1, 'CC3\n', '2023-10-10 22:03:00', '2023-10-12 22:03:00', '2023-10-10 22:15:41', 1, '2023-10-10 15:15:41', 0, '', NULL);
 
 --
 -- Bẫy `ccs`
 --
+DELIMITER $$
+CREATE TRIGGER `after_cc_deleted` AFTER DELETE ON `ccs` FOR EACH ROW BEGIN
+	INSERT INTO project_logs(project_id,timestamp,content)
+    VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE CC</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-secondary">',DATE_FORMAT(OLD.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
+END
+$$
+DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_cc_inserted` AFTER INSERT ON `ccs` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);    
@@ -475,6 +489,16 @@ CREATE TRIGGER `after_cc_inserted` AFTER INSERT ON `ccs` FOR EACH ROW BEGIN
     INSERT INTO project_logs(project_id,timestamp,content)
     VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">CREATE NEW CC</span> FROM [<span class="text-warning">',DATE_FORMAT(NEW.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-warning">',DATE_FORMAT(NEW.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
     
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `before_cc_deleted` BEFORE DELETE ON `ccs` FOR EACH ROW BEGIN
+	UPDATE tasks 
+    SET deleted_by = OLD.deleted_by, deleted_at = NOW() 
+    WHERE cc_id = OLD.id;
+    
+    DELETE FROM tasks WHERE cc_id = OLD.id;
 END
 $$
 DELIMITER ;
@@ -774,7 +798,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '172.217.24.100', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '142.250.204.36', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1187,7 +1211,29 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 (145, 1, '2023-10-10 18:52:35', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-Extreme</span>] with quantity: 3'),
 (146, 1, '2023-10-10 18:53:03', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
 (147, 1, '2023-10-10 19:01:01', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
-(148, 1, '2023-10-10 19:01:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [<span class=\"fw-bold\">3</span>]');
+(148, 1, '2023-10-10 19:01:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
+(149, 1, '2023-10-10 20:14:13', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
+(150, 1, '2023-10-10 20:19:13', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
+(151, 1, '2023-10-10 20:19:19', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
+(152, 1, '2023-10-10 22:04:27', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-Basic]'),
+(153, 1, '2023-10-10 22:04:33', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-ADV]'),
+(154, 1, '2023-10-10 22:04:38', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-Extreme]'),
+(155, 1, '2023-10-10 22:04:45', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-ADV]'),
+(156, 1, '2023-10-10 22:05:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(157, 1, '2023-10-10 22:06:33', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(158, 1, '2023-10-10 22:10:00', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
+(159, 1, '2023-10-10 22:10:11', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-ADV]'),
+(160, 1, '2023-10-10 22:10:16', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[PE-DTE]'),
+(161, 1, '2023-10-10 22:13:56', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(162, 1, '2023-10-10 22:14:01', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-Extreme]'),
+(163, 1, '2023-10-10 22:14:01', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
+(164, 1, '2023-10-10 22:15:06', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 22:03</span>] TO [<span class=\"text-warning\">10/10/2023 22:03</span>]'),
+(165, 1, '2023-10-10 22:15:22', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 22:03</span>] TO [<span class=\"text-warning\">11/10/2023 22:03</span>]'),
+(166, 1, '2023-10-10 22:15:41', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 22:03</span>] TO [<span class=\"text-warning\">12/10/2023 22:03</span>]'),
+(167, 1, '2023-10-10 22:27:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM [<span class=\"text-secondary\">10/10/2023 22:03</span>] TO [<span class=\"text-secondary\">10/10/2023 22:03</span>]'),
+(168, 1, '2023-10-10 22:27:58', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">VIDEO</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(169, 1, '2023-10-10 22:43:05', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[VIDEO]'),
+(170, 1, '2023-10-10 22:43:05', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM [<span class=\"text-secondary\">10/10/2023 22:03</span>] TO [<span class=\"text-secondary\">11/10/2023 22:03</span>]');
 
 -- --------------------------------------------------------
 
@@ -1285,12 +1331,8 @@ INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`
 (22, 9, 'task test cc 2\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 6, 1, 0, 0, 1, '', '2023-10-09 22:43:44', 1, '2023-10-09 15:48:25', 0, NULL, NULL),
 (23, 1, 'Task created before creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 9, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:48:14', 1, '2023-10-10 11:48:14', 0, NULL, NULL),
 (24, 1, 'Task created before creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:49:41', 1, '2023-10-10 11:49:41', 0, NULL, NULL),
-(25, 1, 'Create a new CC task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 8, 1, 0, 0, 1, '', '2023-10-10 18:50:01', 1, '2023-10-10 11:50:01', 0, NULL, NULL),
 (26, 1, 'Task created after creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:50:39', 1, '2023-10-10 11:50:39', 0, NULL, NULL),
-(27, 1, 'Add CC task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 9, 3, 0, 0, 1, '', '2023-10-10 18:52:35', 1, '2023-10-10 11:52:35', 0, NULL, NULL),
-(28, 1, '33fdsaf\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 9, 1, 0, 0, 1, '', '2023-10-10 18:53:03', 1, '2023-10-10 11:53:03', 0, NULL, NULL),
-(29, 1, 'Task normal\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 8, 0, 0, 3, 0, 0, 1, '', '2023-10-10 19:01:01', 1, '2023-10-10 12:01:01', 0, NULL, NULL),
-(30, 1, 'Task CC\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 8, 3, 0, 0, 1, '', '2023-10-10 19:01:19', 1, '2023-10-10 12:01:19', 0, NULL, NULL);
+(29, 1, 'Task normal\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 8, 0, 0, 3, 0, 0, 1, '', '2023-10-10 19:01:01', 1, '2023-10-10 12:01:01', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -1799,7 +1841,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -1901,7 +1943,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=149;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=171;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1913,7 +1955,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

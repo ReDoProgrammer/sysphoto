@@ -34,6 +34,27 @@ class CC extends Controller
         echo json_encode($data);
     }
 
+    public function delete(){
+        $id = $_POST['id'];
+        $result = $this->cc_model->DeleteCC($id);
+        if($result['rows_deleted']>0){
+            $data = [
+                'code'=>200,
+                'msg'=>'CC has been deleted!',
+                'icon'=>'success',
+                'heading'=>'SUCCESSFULLY'
+            ];
+        }else{
+            $data =[
+                'code'=>409,
+                'msg'=>'Can not delete this CC',
+                'icon'=>'warning',
+                'heading'=>'FAILED!!'
+            ];
+        }
+        echo json_encode($data);
+    }
+
     public function select(){
         $project_id = $_GET['project_id'];
         echo json_encode([

@@ -9,8 +9,45 @@ $(document).ready(function () {
 
 function AddCCTask(id){
     ccId = id;
-    $("#task_modal").modal('show');
-    GetCCs();
+    $("#task_modal").modal('show');   
+}
+function DeleteCC(id){
+    Swal.fire({
+        title: 'Are you sure want to delete this task?',
+        text: "When this CC is deleted, its associated tasks will also be deleted. \n You won't be able to revert this!",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '../cc/delete',
+                type: 'post',
+                data: { id },
+                success: function (data) {
+                    try {
+                        let content = $.parseJSON(data);
+                        if (content.code == 200) {
+                            $.toast({
+                                heading: content.heading,
+                                text: content.msg,
+                                icon: content.icon,
+                                loader: true,        // Change it to false to disable loader
+                                loaderBg: '#9EC600'  // To change the background
+                            })
+                            GetTasksList();
+                            GetLogs();
+                            GetCCs();
+                        }
+                    } catch (error) {
+                        console.log(data, error);
+                    }
+                }
+            })
+        }
+    })
 }
 function GetLogs() {
     $('#ulProjectLogs').empty();
@@ -103,17 +140,21 @@ function GetCCs() {
                     let content = $.parseJSON(data);
                     $('#accordionFeedbacksAndCCs').empty();
                     content.ccs.forEach(c => {
+                        let tasks_list = $.parseJSON(c.tasks_list);
                         let item = `
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <div class="row">
                                     <div class="col-sm-3">
-                                        <button class="btn btn-xs mt-2 float-left"><i class="fa-solid fa-trash text-danger"></i> Delete CC</button>
+                                        <button class="btn btn-secondary btn-sm mt-2" onClick="DeleteCC(${c.c_id})">
+                                            <i class="fa-solid fa-trash text-danger"></i> 
+                                            Delete CC
+                                        </button>
                                     </div>
                                     <div class="col-sm-9 text-end">
                                         <button class="accordion-button collapsed float-right" type="button" data-bs-toggle="collapse"
                                             data-bs-target="#collapse${c.c_id}" aria-expanded="true" aria-controls="collapseOne1">
-                                            <i class="fa-regular fa-clock text-warning" style="margin-right:20px;"></i>  ${c.start_date} - ${c.end_date}
+                                            <i class="fa-regular fa-clock text-warning" style="margin-right:20px;"></i>  ${c.start_date} - ${c.end_date} - [${tasks_list.length} tasks]
                                         </button>
                                     </div>
                                 </div>
@@ -140,7 +181,7 @@ function GetCCs() {
                                             </tr>
                                         </thead>
                                         <tbody id="tblCCTasksList">`;
-                        let tasks_list = $.parseJSON(c.tasks_list);
+         
                         let idx = 1;
                         tasks_list.forEach(t => {
                             item += `<tr id="${t.task_id}">
