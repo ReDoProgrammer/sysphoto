@@ -66,7 +66,7 @@ class CustomerModel extends Model
     }
 
     public function AllCustomer(){
-        return $this->__db->select($this->__table,"id,acronym");
+        return $this->__db->callStoredProcedure("CustomerBasicalAll");
     }
     public function getList($page = 1, $limit = 10, $group = '', $search = '')
     {

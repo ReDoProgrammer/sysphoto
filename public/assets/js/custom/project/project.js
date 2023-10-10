@@ -96,7 +96,7 @@ function LoadCustomers() {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     content.customers.forEach(c => {
-                        selectizeCustomer.addOption({ value: `${c.id}`, text: `${c.acronym}` });
+                        selectizeCustomer.addOption({ value: `${c.id}`, text: `${c.fullname}` });
                     })
                 }
             } catch (error) {
