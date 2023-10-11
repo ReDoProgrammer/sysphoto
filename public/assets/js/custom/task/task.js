@@ -43,7 +43,7 @@ function deleteTask(id) {
                                 loader: true,        // Change it to false to disable loader
                                 loaderBg: '#9EC600'  // To change the background
                             })
-                            GetTasksList();
+                            GetProjectDetail();
                             GetLogs();
                         }
                     } catch (error) {
@@ -199,7 +199,7 @@ $('#btnSubmitTask').click(function () {
 
                     if (content.code == 201) {
                         $('#task_modal').modal('hide');
-                        GetTasksList();
+                        GetProjectDetail();
                         GetLogs();
                     }
                 } catch (error) {
@@ -233,7 +233,7 @@ $('#btnSubmitTask').click(function () {
 
                     if (content.code == 200) {
                         $('#task_modal').modal('hide');
-                        GetTasksList();
+                        GetProjectDetail();
                         GetLogs();
                     }
                 } catch (error) {

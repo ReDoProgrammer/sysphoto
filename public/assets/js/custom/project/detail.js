@@ -2,7 +2,7 @@ var taskId = 0;
 var ccId = 0;
 
 $(document).ready(function () {
-    GetTasksList();
+    GetProjectDetail();
     GetLogs();
     GetCCs();
 })
@@ -37,7 +37,7 @@ function DeleteCC(id){
                                 loader: true,        // Change it to false to disable loader
                                 loaderBg: '#9EC600'  // To change the background
                             })
-                            GetTasksList();
+                            GetProjectDetail();
                             GetLogs();
                             GetCCs();
                         }
@@ -80,13 +80,13 @@ function GetLogs() {
         })
     }
 }
-function GetTasksList() {
+function GetProjectDetail() {
     $('#tblTasksList').empty();
 
     // Kiểm tra xem tham số "id" có tồn tại hay không
     if (idValue !== null) {
         $.ajax({
-            url: '../task/ListByProject',
+            url: '../project/getdetail',
             type: 'get',
             data: { id: idValue },
             success: function (data) {
@@ -94,7 +94,31 @@ function GetTasksList() {
                     let content = $.parseJSON(data)
                     if (content.code == 200) {
                         let idx = 1;
-                        content.tasks.forEach(t => {
+                        let p = content.project;
+                        $('#project_name').text(p.project_name);
+                        let tAs = $.parseJSON(p.status_info);
+                        let tContent = '';
+                        tAs.forEach((t,i)=>{
+                            tContent +=i!==tAs.length?`${t.quantity} ${t.status} Tasks, `:`${t.quantity} ${t.status} Tasks`;
+                        })
+                        $('#ProjectTasksAndStatus').empty();
+                        $('#ProjectTasksAndStatus').text(tContent);
+
+                        $('#DescriptionAndInstructions').empty();
+                        $('#DescriptionAndInstructions').append(`<p>${p.description}</p>`);
+                        let instructions = $.parseJSON(p.instructions_list);
+                            instructions.forEach(i=>{
+                            $('#DescriptionAndInstructions').append(`<hr/><p id="${i.id}">${i.content}</p>`);
+                        })
+
+                        $('#tdStartDate').text(p.start_date);
+                        $('#tdEndDate').text(p.end_date);
+                        $('#tdPriority').html(`<i class="fa fa-dot-circle-o text-danger">${p.priority}</i>`);
+                        $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo?p.combo:''}</i>`);
+                        $('#tdStatus').html(`<i class="fa fa-dot-circle-o ${p.status_color}">${p.status}</i>`);
+                        let tasks = $.parseJSON(p.tasks_list);
+                        tasks.forEach(t => {
+                            console.log(t);
                             $('#tblTasksList').append(`
                                                         <tr id = "${t.id}">
                                                             <td>${idx++}</td>
@@ -103,7 +127,7 @@ function GetTasksList() {
                                                             <td>${t.editor ? t.editor : '-'}</td>
                                                             <td>${t.qa ? t.qa : '-'}</td>
                                                             <td>${t.dc ? t.dc : '-'}</td>
-                                                            <td><span class="${t.status_color ? t.status_color : ''}">${t.status ? t.status : ''}</span></td>
+                                                            <td class="text-center"><span class="${t.status_color ? t.status_color : ''}">${t.status ? t.status : '-'}</span></td>
                                                             <td>
                                                                 <div class="dropdown action-label">
                                                                     <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">

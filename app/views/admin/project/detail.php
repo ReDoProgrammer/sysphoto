@@ -1,29 +1,16 @@
-<?php if (!isset($project) || empty($project)) {
-    echo '<h1 class="text-center p-3 text-danger">PROJECT NOT FOUND</h1>';
-    return;
-} ?>
 <div class="row">
     <div class="col-lg-8 col-xl-9">
         <div class="card">
             <div class="card-body">
                 <div class="project-title">
-                    <h5 class="card-title text-info fw-bold">
-                        <?php echo $project['project_name']; ?>
-                    </h5>
-                    <?php
-                    $tasks = "";
-                    $tasks_list = json_decode($project['tasks_list'], true);
-                    foreach ($tasks_list as $d) {
-                        $tasks .= $d['quantity'] . " " . $d["status"] . " TASK, ";
-                    }
-                    ?>
-                    <h6>
-                        <?php echo rtrim($tasks, ' ,'); ?>
+                    <h5 class="card-title text-info fw-bold"  id="project_name"></h5>
+                    <h6 id="ProjectTasksAndStatus">
+                        1 Done tasks, 2 Wait Tasks
                     </h6>
                 </div>
-                <?php
-                echo '<pre>' . $project['description'] . '</pre>';
-                ?>
+                <hr/>
+                <div id="DescriptionAndInstructions" class="mt-3"></div>
+                
             </div>
         </div>
 
@@ -95,37 +82,26 @@
                     <tbody>
                         <tr>
                             <td>Begin:</td>
-                            <td class="text-end">
-                                <?php echo $project['start_date']; ?>
-                            </td>
+                            <td class="text-end" id="tdStartDate"></td>
                         </tr>
                         <tr>
                             <td>Deadline:</td>
-                            <td class="text-end">
-                                <?php echo $project['end_date']; ?>
-                            </td>
+                            <td class="text-end" id="tdEndDate"></td>
                         </tr>
                         <tr>
                             <td>Priority:</td>
-                            <td class="text-end">
-                                <?php echo $project['priority'] == 1 ? '<i class="fa fa-dot-circle-o text-danger">Urgent</i>' : 'Normal'; ?>
-                            </td>
+                            <td class="text-end" id="tdPriority"></td>
                         </tr>
                         <tr>
                             <td>Combo:</td>
-                            <td class="text-end">
-                                <?php echo $project['combo_name'] ? '<i class="fa fa-dot-circle-o text-success">' . $project['combo_name'] . '</i>' : ''; ?>
-                            </td>
+                            <td class="text-end" id="tdCombo"></td>
                         </tr>
                         <tr>
                             <td>Status:</td>
-                            <td class="text-end">
-                                <?php echo '<i class="fa fa-dot-circle-o text-info">' . $project['status'] . '</i>'; ?>
-                            </td>
+                            <td class="text-end" id="tdStatus"></td>
                         </tr>
                     </tbody>
                 </table>
-
             </div>
         </div>
 

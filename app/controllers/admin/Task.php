@@ -55,7 +55,6 @@ class Task extends Controller
         $id = $_POST['id'];
         $description = $_POST['description'];
         $level = $_POST['level'];
-        $cc = $_POST['cc'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];

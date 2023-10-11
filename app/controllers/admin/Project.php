@@ -24,7 +24,7 @@ class Project extends Controller
       
         $this->data['title'] = 'Projects detail';
         $this->data['content'] = 'admin/project/detail';
-        $this->data['sub_content']['project'] =$this->project_model->ProjectDetail($id);;
+        $this->data['sub_content']=[];
         $this->render('__layouts/admin_layout', $this->data);
     }
 
