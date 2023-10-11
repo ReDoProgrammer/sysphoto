@@ -113,12 +113,11 @@ function GetProjectDetail() {
 
                         $('#tdStartDate').text(p.start_date);
                         $('#tdEndDate').text(p.end_date);
-                        $('#tdPriority').html(`<i class="fa fa-dot-circle-o text-danger">${p.priority}</i>`);
+                        $('#tdPriority').html(`${p.priority==1?'<i class="fa fa-dot-circle-o text-danger">URGEN</i>':'<i class="fa fa-dot-circle-o">NORMAL</i>'}`);
                         $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo?p.combo:''}</i>`);
                         $('#tdStatus').html(`<i class="fa fa-dot-circle-o ${p.status_color}">${p.status}</i>`);
                         let tasks = $.parseJSON(p.tasks_list);
                         tasks.forEach(t => {
-                            console.log(t);
                             $('#tblTasksList').append(`
                                                         <tr id = "${t.id}">
                                                             <td>${idx++}</td>

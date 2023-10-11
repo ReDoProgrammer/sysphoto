@@ -83,7 +83,6 @@ $('#btnSubmitTask').click(function () {
 
                 if (content.code == 201) {
                     $('#task_modal').modal('hide');
-                    getTasksList();
                 }
             } catch (error) {
                 console.log(data, error);
@@ -124,7 +123,8 @@ function LoadEditorsByLevel(level, selected = null) {
                 if (content.code == 200) {
 
                     content.editors.forEach(e => {
-                        selectizeEditor.addOption({ value: `${e.id}`, text: `${e.viettat}` });
+                        console.log(e);
+                        selectizeEditor.addOption({ value: `${e.id}`, text: `${e.acronym}` });
                     })
 
                     if (selected != null) {
@@ -150,7 +150,7 @@ function LoadQAsByLevel(level, selected = null) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     content.qas.forEach(e => {
-                        selectizeQA.addOption({ value: `${e.id}`, text: `${e.viettat}` });
+                        selectizeQA.addOption({ value: `${e.id}`, text: `${e.acronym}` });
                     })
 
                     if (selected != null) {
