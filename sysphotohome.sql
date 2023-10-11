@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 10, 2023 lúc 05:43 PM
+-- Thời gian đã tạo: Th10 11, 2023 lúc 04:59 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -193,43 +193,92 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `PrjectGetCCsWithTasks` (IN `p_proje
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGINT)   BEGIN
-	SELECT
-        p.id AS project_id,
-        p.name AS project_name,
-        p.customer_id,
-        c.acronym as customer,
-        p.priority,
-        p.status_id,
-        ps.name as status, 
-        ps.color as status_color,
-        NormalizeContent(p.description) as description,
-        MAX(i.content) as instruction,
-        DATE_FORMAT(start_date, '%d/%m/%Y %H:%i') as start_date,
-       DATE_FORMAT(end_date, '%d/%m/%Y %H:%i') as end_date,
-        p.combo_id,
-        cb.name as combo_name,
-        cb.color as combo_color, 
-        p.levels,
-        COUNT(t.id) as tasks_number,
-        CONCAT('[', GROUP_CONCAT(JSON_OBJECT(           
-            'status',ts.name, 
-            'quantity', t.quantity           
-        )), ']') AS tasks_list
+    SELECT 
+    p.id,
+    p.customer_id,
+    p.name as project_name,
+    p.description,
+    MIN(pi.content) as instruction,
+    p.levels,
+    p.priority,
+    DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') as start_date,
+    DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') as end_date,
+    p.combo_id,cb.name as combo, cb.color as combo_color,
+    p.status_id,
+    pst.name status,
+    pst.color as status_color,
+    (
+        SELECT 
+        CONCAT('[', GROUP_CONCAT(
+            JSON_OBJECT(
+                'status', status_name,
+                'quantity', status_count
+            ) SEPARATOR ','
+        ), ']')
+        FROM (
+            SELECT IFNULL(ts.name, 'null') AS status_name, SUM(quantity) AS status_count
+            FROM tasks t
+            LEFT JOIN task_statuses ts ON t.status_id = ts.id
+            WHERE t.project_id = p_id
+            GROUP BY status_name
+        ) AS status_counts
+    ) AS status_info,
+    IF(
+        COUNT(t.id) > 0,
+        CONCAT('[', GROUP_CONCAT(
+            JSON_OBJECT(
+                'id', t.id,
+                'level', lv.name,
+                'level_color', lv.color,
+                'quantity', t.quantity,
+                'status_id', t.status_id,
+                'status', ts.name,
+                'status_color', ts.color,
+                'editor', e.acronym,
+                'qa', q.acronym,
+                'dc', dc.acronym,
+                'cc_id', t.cc_id
+            ) SEPARATOR ','
+        ), ']'),
+        '[]'
+    ) AS tasks_list,
+    (
+        SELECT 
+        CONCAT('[', GROUP_CONCAT(
+            JSON_OBJECT(
+                'id', i.id,
+                'content', i.content,
+                'created_at', DATE_FORMAT(i.created_at, '%d/%m/%Y %H:%i')
+            ) SEPARATOR ','
+        ), ']')
+        FROM project_instructions i
+        WHERE i.project_id = p_id
+    ) AS instructions_list
     FROM projects p
-    JOIN customers c ON p.customer_id = c.id
-    LEFT JOIN comboes cb ON p.combo_id = cb.id
-    LEFT JOIN project_statuses ps ON p.status_id = ps.id
+    LEFT JOIN project_instructions pi ON pi.project_id = p.id
+    LEFT JOIN project_statuses pst ON p.status_id = pst.id
     LEFT JOIN tasks t ON p.id = t.project_id
-    LEFT JOIN task_statuses ts ON t.level_id = ts.id
-    JOIN project_instructions i ON i.project_id = p.id
+    LEFT JOIN users e ON t.editor_id = e.id
+    LEFT JOIN users q ON t.qa_id = q.id
+    LEFT JOIN users dc ON t.dc_id = dc.id
+    LEFT JOIN levels lv ON t.level_id = lv.id
+    LEFT JOIN task_statuses ts ON t.status_id = ts.id
+    LEFT JOIN comboes cb ON p.combo_id = cb.id
     WHERE p.id = p_id
-    GROUP BY p.id, p.name,ps.name,c.acronym;
+    GROUP BY p.id
+    ORDER BY p.id DESC;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
 	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,created_by)
     VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsertInstruction` (IN `p_project` BIGINT, IN `p_content` TEXT, IN `p_created_by` INT)   BEGIN
+	INSERT INTO project_instructions(project_id,content,created_by)
+    VALUES(p_project,p_content,p_created_by);
+    SELECT LAST_INSERT_ID() as last_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInstruction1stUpdate` (IN `p_project_id` BIGINT, IN `p_content` TEXT, IN `p_updated_by` INT)   BEGIN
@@ -466,10 +515,7 @@ CREATE TABLE `ccs` (
 --
 
 INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(5, 9, 'fasdfasasdffas\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:25', 1, '2023-10-09 01:24:25', 0, '', NULL),
-(6, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwerqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:24:59', 1, '2023-10-09 01:24:59', 0, '', NULL),
-(7, 9, 'fasdfasasdffas rewr qwerqwr weq rqwr qwedsafasfsarqwe rqwer\n', '2023-10-09 08:23:00', '2023-10-09 08:23:00', '2023-10-09 08:25:07', 1, '2023-10-09 01:25:07', 0, '', NULL),
-(15, 1, 'CC3\n', '2023-10-10 22:03:00', '2023-10-12 22:03:00', '2023-10-10 22:15:41', 1, '2023-10-10 15:15:41', 0, '', NULL);
+(1, 1, 'TEst new CC\n', '2023-10-11 15:51:00', '2023-10-12 15:51:00', '2023-10-11 16:41:48', 1, '2023-10-11 09:41:48', 0, '', NULL);
 
 --
 -- Bẫy `ccs`
@@ -798,7 +844,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '142.250.204.36', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '142.250.204.100', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -912,14 +958,8 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 8, 'TEST CHANGING NAME VIA TRIGGER', 'TEST DEMO VIA TRIGGER\n', 1, '2023-10-08 06:30:00', '2023-10-08 21:30:00', '1,4,5', '', NULL, NULL, 3, 0, '2023-10-08 12:55:21', 1, '2023-10-08 23:23:35', 1, NULL, ''),
-(2, 4, 'test new prject with procedure', 'test description\n', 1, '2023-10-08 15:30:36', '2023-10-08 15:30:36', '1,3,5', '', NULL, NULL, 2, 0, '2023-10-08 15:27:07', 1, '2023-10-08 15:41:57', 0, NULL, ''),
-(3, 1, 'test after fix datetime inputs', 'description here\n', 1, '2023-10-08 15:30:36', '2023-10-08 15:30:36', '2', '', NULL, NULL, 2, 1, '2023-10-08 15:30:36', 1, '2023-10-08 15:41:42', 0, NULL, ''),
-(4, 1, 'test after fix datetime inputs', 'description here\n', 1, '2023-10-08 15:29:00', '2023-10-08 18:29:00', '2', '', NULL, NULL, 2, 1, '2023-10-08 15:37:14', 1, NULL, 0, NULL, ''),
-(5, 1, 'test after fix datetime inputs', 'description here with fixxing datetime in php\n', 1, '2023-10-08 15:29:00', '2023-10-08 20:29:00', '2,4,6', '', NULL, NULL, 2, 0, '2023-10-08 15:37:46', 1, NULL, 0, NULL, ''),
-(6, 4, 'test auto gen task', 'test description\n', 1, '2023-10-08 12:47:00', '2023-10-08 15:47:00', '1,3,5', '', NULL, NULL, 2, 0, '2023-10-08 16:21:02', 1, NULL, 0, NULL, ''),
-(8, 4, 'auto gen task project', 'test description\n', 1, '2023-10-08 12:47:00', '2023-10-08 15:47:00', '1,3,6', '', NULL, NULL, 1, 1, '2023-10-08 16:24:38', 1, NULL, 0, NULL, ''),
-(9, 1, 'Test new project with CC', 'description \n', 1, '2023-10-09 00:35:00', '2023-10-09 10:35:00', '1', '', NULL, NULL, 2, 1, '2023-10-09 00:36:25', 1, '2023-10-09 01:04:48', 1, NULL, '');
+(1, 11, 'Test project changed', 'This is project description	\n', 1, '2023-10-11 12:54:00', '2023-10-11 17:54:00', '1,2,4', '', NULL, NULL, 1, 0, '2023-10-11 12:55:04', 1, '2023-10-11 18:26:30', 1, NULL, ''),
+(2, 16, 'test new project', 'Test project description\n', 1, '2023-10-11 18:27:00', '2023-10-11 21:27:00', '1,5', '', NULL, NULL, 3, 1, '2023-10-11 18:29:17', 1, NULL, 0, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -1111,26 +1151,46 @@ CREATE TABLE `project_instructions` (
   `created_by` int(11) NOT NULL,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
   `updated_by` int(11) NOT NULL,
-  `deleted_by` varchar(50) DEFAULT NULL COMMENT 'Người xóa '
+  `deleted_by` varchar(50) DEFAULT NULL COMMENT 'Người xóa ',
+  `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `project_instructions`
 --
 
-INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`) VALUES
-(1, 1, 'test instruction\n', '2023-10-08 12:55:21', 1, NULL, 0, NULL),
-(2, 2, 'instruction here\n', '2023-10-08 15:27:07', 1, NULL, 0, NULL),
-(3, 3, 'instruction here\n', '2023-10-08 15:30:36', 1, NULL, 0, NULL),
-(4, 4, 'instruction here\n', '2023-10-08 15:37:14', 1, NULL, 0, NULL),
-(5, 5, 'instruction here\n', '2023-10-08 15:37:46', 1, NULL, 0, NULL),
-(6, 6, 'instruction auto gen task\n', '2023-10-08 16:21:02', 1, NULL, 0, NULL),
-(7, 8, 'instruction auto gen task\n', '2023-10-08 16:24:38', 1, NULL, 0, NULL),
-(8, 9, 'blah blah blah 123434141234\n', '2023-10-09 00:36:25', 1, '2023-10-08 18:04:48', 1, NULL);
+INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(1, 1, 'This is the 1st project instruction\n', '2023-10-11 12:55:04', 1, '2023-10-11 11:26:30', 1, NULL, NULL),
+(2, 2, 'The 1st instruciton\n', '2023-10-11 18:29:17', 1, NULL, 0, NULL, NULL),
+(3, 1, 'The 2nd instruction here\n', '0000-00-00 00:00:00', 1, NULL, 0, NULL, NULL),
+(8, 1, 'The 3rd instruction\n', '0000-00-00 00:00:00', 0, NULL, 0, NULL, NULL),
+(9, 1, 'the 4th instruction\n', '2023-10-11 21:23:38', 1, NULL, 0, NULL, NULL),
+(10, 1, 'the 5th instruction\n', '2023-10-11 21:24:24', 1, NULL, 0, NULL, NULL),
+(11, 1, 'The 6th instruction\n', '2023-10-11 21:38:09', 1, NULL, 0, NULL, NULL),
+(12, 1, 'The 7th instruction\n', '2023-10-11 21:39:15', 1, NULL, 0, NULL, NULL),
+(13, 1, 'the 8th instruction\n', '2023-10-11 21:42:49', 1, NULL, 0, NULL, NULL),
+(14, 1, 'the 9th instruction\n', '2023-10-11 21:48:35', 1, NULL, 0, NULL, NULL),
+(15, 1, 'test abc xyzzzzz\n', '2023-10-11 21:54:57', 1, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
 --
+DELIMITER $$
+CREATE TRIGGER `after_instruction_inserted` AFTER INSERT ON `project_instructions` FOR EACH ROW BEGIN 
+ 	DECLARE v_ins_count INT DEFAULT 0;
+    DECLARE v_actioner varchar(100);
+    DECLARE v_content text DEFAULT '';
+    SET v_ins_count = (SELECT COUNT(id) FROM project_instructions WHERE project_id = NEW.project_id and id < NEW.id);
+    IF v_ins_count > 0 THEN
+    	SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.created_by);
+        SET v_content = CONCAT('[<span class="fw-bold text-info">', v_actioner, '</span>] <span class="text-success">INSERT NEW INSTRUCTION</span> <a href="javascript:void(0)" onClick="ViewContent(''', NEW.content, ''')">View detail</a>');
+
+    	INSERT INTO project_logs(project_id,timestamp,content)
+        VALUES(NEW.project_id,NEW.created_at,v_content);
+    END IF;
+ END
+$$
+DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_project_instruction_updated` AFTER UPDATE ON `project_instructions` FOR EACH ROW BEGIN
 	DECLARE v_content varchar(255) DEFAULT '';
@@ -1163,77 +1223,29 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
-(100, 1, '2023-10-08 23:19:52', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE CUSTOMER</span> FROM [<span class=\"text-secondary\">C122115TNH202310</span>] TO [<span class=\"text-info\">C122115T202310</span>]'),
-(101, 1, '2023-10-08 23:20:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE CUSTOMER</span> FROM [<span class=\"text-secondary\">C122115T202310</span>] TO [<span class=\"text-info\">C122115TNH202310</span>]'),
-(102, 1, '2023-10-08 23:20:26', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">TEST NAME CHANGED 123</span>] TO [<span class=\"text-info\">test</span>]'),
-(103, 1, '2023-10-08 23:21:01', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">test</span>] TO [<span class=\"text-info\">TEST CHANGING NAME VIA TRIGGER</span>]'),
-(104, 1, '2023-10-08 23:21:36', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE START DATE</span> FROM [<span class=\"text-secondary\">2023-10-08 07:50:00</span>] TO [<span class=\"text-info\">2023-10-08 06:30:00</span>]'),
-(105, 1, '2023-10-08 23:21:50', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE END DATE</span> FROM [<span class=\"text-secondary\">2023-10-08 10:50:00</span>] TO [<span class=\"text-info\">2023-10-08 21:30:00</span>]'),
-(106, 1, '2023-10-08 23:22:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">CANCEL COMBO</span> [combo 3]'),
-(107, 1, '2023-10-08 23:22:12', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">APPLY COMBO</span> [combo 2]'),
-(108, 1, '2023-10-08 23:22:25', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 2</span>] TO [<span class=\"text-info\">combo 3</span>]'),
-(109, 1, '2023-10-08 23:22:35', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">CANCEL TEMPLATES</span> [PE-STAND, PE-Drone-Basic, Re-Stand]'),
-(110, 1, '2023-10-08 23:22:46', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-info\">APPLY TEMPLATES</span> [PE-STAND]'),
-(111, 1, '2023-10-08 23:22:57', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TEMPLATES</span> FROM [<span class=\"text-secondary\">PE-STAND</span>] TO [<span class=\"text-info\">PE-STAND, Re-Stand, Re-Basic</span>]'),
-(112, 1, '2023-10-08 23:23:12', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE PRIORITY</span> TO [<span class=\"text-danger\">URGEN</span>]'),
-(113, 1, '2023-10-08 23:23:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE PRIORITY</span> TO [<span class=\"text-secondary\">NORMAL</span>]'),
-(114, 1, '2023-10-08 23:23:35', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span> FROM [<span class=\"text-secondary\">test description a badfsdfasdfasdf\n</span>] TO [<span class=\"text-info\">TEST DEMO VIA TRIGGER\n</span>]'),
-(115, 1, '2023-10-08 23:26:12', '[<span class=\"fw-bold text-info\">admin</span>]'),
-(116, 1, '2023-10-08 23:30:06', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">description 1\n</span>] TO [<span class=\"text-primary\">description 12\n</span>]'),
-(117, 1, '2023-10-08 23:30:18', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK LEVEL</span> FROM [<span class=\"text-secondary\">PE-STAND</span>] TO [<span class=\"text-primary\">Re-Stand</span>]'),
-(118, 1, '2023-10-08 23:30:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK QUANTITY</span> FROM [<span class=\"text-secondary\">5</span>] TO [<span class=\"text-primary\">4</span>]'),
-(119, 1, '2023-10-08 23:30:40', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK LEVEL</span> FROM [<span class=\"text-secondary\">Re-Stand</span>] TO [<span class=\"text-primary\">PE-STAND</span>]'),
-(120, 1, '2023-10-08 23:30:45', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">ASSIGN EDITOR</span> [<span class=\"text-warning\">chinh.nd</span>] ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
-(121, 1, '2023-10-08 23:31:00', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">UNASSIGN EDITOR</span> ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
-(122, 1, '2023-10-08 23:31:24', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">ASSIGN EDITOR</span> [<span class=\"text-warning\">chinh.nd</span>] ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
-(123, 1, '2023-10-08 23:31:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE EDITOR</span> FROM [<span class=\"text-secondary\">chinh.nd</span>] TO [<span class=\"text-info\">dat.nt</span>]  ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
-(124, 1, '2023-10-08 23:31:41', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">ASSIGN QA</span> [<span class=\"text-warning\">chu.dv</span>] ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
-(125, 1, '2023-10-08 23:31:50', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">UNASSIGN QA</span> ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
-(126, 1, '2023-10-08 23:31:56', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">ASSIGN QA</span> [<span class=\"text-warning\">dung.ha</span>] ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
-(127, 1, '2023-10-08 23:32:16', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]'),
-(128, 1, '2023-10-08 23:48:22', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 4'),
-(129, 9, '2023-10-09 00:36:25', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C122115T1202310</span>]'),
-(130, 9, '2023-10-09 00:36:25', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">PE-STAND</span>] with quantity: 1'),
-(131, 9, '2023-10-09 00:57:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">instruction\n</span>] TO [<span class=\"text-info\">instruction here\n</span>],'),
-(132, 9, '2023-10-09 00:58:22', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">instruction here\n</span>] TO [<span class=\"text-info\">blah blah blah\n</span>],'),
-(133, 9, '2023-10-09 01:04:48', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> FROM [<span class=\"text-secondary\">blah blah blah\n</span>] TO [<span class=\"text-info\">blah blah blah 123434141234\n</span>],'),
-(134, 9, '2023-10-09 22:43:25', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">VIDEO</span>] with quantity: 1'),
-(135, 9, '2023-10-09 22:43:34', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">VHS</span>] with quantity: 1'),
-(136, 9, '2023-10-09 22:43:44', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-Extreme</span>] with quantity: 1'),
-(137, 9, '2023-10-10 16:37:03', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">task description\n</span>] TO [<span class=\"text-primary\">task description 123 123\n</span>]'),
-(138, 1, '2023-10-10 18:10:35', '[admin] CREATE NEW CC FROM [<span class=\"text-warning\">10/10/2023 17:08</span>] TO [<span text-warning>10/10/2023 17:08</span>]'),
-(139, 1, '2023-10-10 18:12:06', '[admin] CREATE NEW CC FROM [<span class=\"text-warning\">10/10/2023 17:08</span>] TO [<span class=\"text-warning\">10/10/2023 17:08</span>]'),
-(140, 1, '2023-10-10 18:14:40', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 17:08</span>] TO [<span class=\"text-warning\">10/10/2023 17:08</span>]'),
-(141, 1, '2023-10-10 18:48:14', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">VHS</span>] with quantity: 1'),
-(142, 1, '2023-10-10 18:49:41', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
-(143, 1, '2023-10-10 18:50:01', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
-(144, 1, '2023-10-10 18:50:39', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
-(145, 1, '2023-10-10 18:52:35', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-Extreme</span>] with quantity: 3'),
-(146, 1, '2023-10-10 18:53:03', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"text-primary\">Re-ADV</span>] with quantity: 1'),
-(147, 1, '2023-10-10 19:01:01', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
-(148, 1, '2023-10-10 19:01:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
-(149, 1, '2023-10-10 20:14:13', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
-(150, 1, '2023-10-10 20:19:13', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
-(151, 1, '2023-10-10 20:19:19', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
-(152, 1, '2023-10-10 22:04:27', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-Basic]'),
-(153, 1, '2023-10-10 22:04:33', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-ADV]'),
-(154, 1, '2023-10-10 22:04:38', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-Extreme]'),
-(155, 1, '2023-10-10 22:04:45', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-ADV]'),
-(156, 1, '2023-10-10 22:05:19', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(157, 1, '2023-10-10 22:06:33', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(158, 1, '2023-10-10 22:10:00', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
-(159, 1, '2023-10-10 22:10:11', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-ADV]'),
-(160, 1, '2023-10-10 22:10:16', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[PE-DTE]'),
-(161, 1, '2023-10-10 22:13:56', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(162, 1, '2023-10-10 22:14:01', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[Re-Extreme]'),
-(163, 1, '2023-10-10 22:14:01', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM[<span class=\"fw-bold\">10/10/2023 17:08</span>] TO [<span class=\"fw-bold\">10/10/2023 17:08</span>]'),
-(164, 1, '2023-10-10 22:15:06', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 22:03</span>] TO [<span class=\"text-warning\">10/10/2023 22:03</span>]'),
-(165, 1, '2023-10-10 22:15:22', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 22:03</span>] TO [<span class=\"text-warning\">11/10/2023 22:03</span>]'),
-(166, 1, '2023-10-10 22:15:41', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">10/10/2023 22:03</span>] TO [<span class=\"text-warning\">12/10/2023 22:03</span>]'),
-(167, 1, '2023-10-10 22:27:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM [<span class=\"text-secondary\">10/10/2023 22:03</span>] TO [<span class=\"text-secondary\">10/10/2023 22:03</span>]'),
-(168, 1, '2023-10-10 22:27:58', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">VIDEO</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(169, 1, '2023-10-10 22:43:05', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC TASK </span>[VIDEO]'),
-(170, 1, '2023-10-10 22:43:05', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE CC</span> FROM [<span class=\"text-secondary\">10/10/2023 22:03</span>] TO [<span class=\"text-secondary\">11/10/2023 22:03</span>]');
+(1, 1, '2023-10-11 12:55:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(2, 1, '2023-10-11 12:55:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(3, 1, '2023-10-11 12:55:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(4, 1, '2023-10-11 12:55:04', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-JA</span>]'),
+(5, 1, '2023-10-11 13:35:07', '[<span class=\"fw-bold text-info\">tuan.bv</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(6, 1, '2023-10-11 13:36:42', '[<span class=\"fw-bold text-info\">hung.bv</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">10</span>]'),
+(7, 1, '2023-10-11 16:41:48', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">11/10/2023 15:51</span>] TO [<span class=\"text-warning\">12/10/2023 15:51</span>]'),
+(8, 1, '2023-10-11 16:42:11', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
+(9, 1, '2023-10-11 16:50:34', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">5</span>]'),
+(10, 1, '2023-10-11 16:50:50', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">Tassk demo \n</span>] TO [<span class=\"text-primary\">Tassk demo  123\n</span>]'),
+(11, 1, '2023-10-11 16:52:35', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]'),
+(12, 1, '2023-10-11 16:52:41', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]'),
+(13, 1, '2023-10-11 16:57:40', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(14, 1, '2023-10-11 18:23:28', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [<span class=\"fw-bold\">5</span>]'),
+(15, 1, '2023-10-11 18:26:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">Test project</span>] TO [<span class=\"text-info\">Test project changed</span>]'),
+(16, 2, '2023-10-11 18:29:17', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(17, 2, '2023-10-11 18:29:17', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
+(18, 2, '2023-10-11 18:29:17', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C481615-TSTES</span>]'),
+(19, 1, '2023-10-11 21:24:24', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(the 5th instruction\n)\">View detail</a>'),
+(20, 1, '2023-10-11 21:39:15', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\"The 7th instruction\n\")\">View detail</a>'),
+(21, 1, '2023-10-11 21:42:49', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\"the 8th instruction\n\")\">View detail</a>'),
+(22, 1, '2023-10-11 21:48:35', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(the 9th instruction\n)\">View detail</a>'),
+(23, 1, '2023-10-11 21:54:57', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'test abc xyzzzzz\n\')\">View detail</a>');
 
 -- --------------------------------------------------------
 
@@ -1256,7 +1268,7 @@ CREATE TABLE `project_statuses` (
 --
 
 INSERT INTO `project_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'wait', 'badge badge-secondary', '0000-00-00 00:00:00', 0, NULL, 0),
+(1, 'wait', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
 (2, 'Processing', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
 (3, 'Sent', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
 (4, 'Paid', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
@@ -1309,30 +1321,15 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 1, 'description 12\n', 0, 42, '2023-10-08 16:31:56', 1, 0, 49, '2023-10-08 16:31:56', 1, 0, 0, 0, NULL, 0, 1, 0, 0, 4, 0, 0, 1, '', '2023-10-08 12:55:21', 1, '2023-10-08 16:31:56', 1, NULL, NULL),
-(4, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
-(5, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
-(6, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:27:07', 1, '2023-10-08 08:27:07', 0, NULL, NULL),
-(7, 3, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:30:36', 1, '2023-10-08 08:30:36', 0, NULL, NULL),
-(8, 4, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:14', 1, '2023-10-08 08:37:14', 0, NULL, NULL),
-(9, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
-(10, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
-(11, 5, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-08 15:37:46', 1, '2023-10-08 08:37:46', 0, NULL, NULL),
-(12, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
-(13, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
-(14, 6, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 0, 1, 0, 0, 1, '', '2023-10-08 16:21:02', 1, '2023-10-08 09:21:02', 0, NULL, NULL),
-(15, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
-(16, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
-(17, 8, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 1, 0, 1, 0, 0, 1, '', '2023-10-08 16:24:38', 1, '2023-10-08 09:24:38', 0, NULL, NULL),
-(18, 1, 'description 12\n', 0, 42, NULL, 0, 0, 49, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 4, 0, 0, 1, '', '2023-10-08 23:48:22', 1, '2023-10-08 16:48:22', 0, NULL, NULL),
-(19, 9, 'task description 123 123\n', 0, 0, '2023-10-10 09:37:03', 0, 0, 0, '2023-10-10 09:37:03', 0, 0, 0, 0, NULL, 0, 1, 1, 5, 1, 0, 0, 1, '', '2023-10-09 00:36:25', 1, '2023-10-10 09:37:03', 1, NULL, NULL),
-(20, 9, 'task test cc\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 10, 0, 0, 1, 0, 0, 1, '', '2023-10-09 22:43:25', 1, '2023-10-09 15:43:25', 0, NULL, NULL),
-(21, 9, 'task test cc 2\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 9, 0, 6, 1, 0, 0, 1, '', '2023-10-09 22:43:34', 1, '2023-10-09 15:46:49', 0, NULL, NULL),
-(22, 9, 'task test cc 2\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 6, 1, 0, 0, 1, '', '2023-10-09 22:43:44', 1, '2023-10-09 15:48:25', 0, NULL, NULL),
-(23, 1, 'Task created before creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 9, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:48:14', 1, '2023-10-10 11:48:14', 0, NULL, NULL),
-(24, 1, 'Task created before creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:49:41', 1, '2023-10-10 11:49:41', 0, NULL, NULL),
-(26, 1, 'Task created after creating cc task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 1, 0, 0, 1, '', '2023-10-10 18:50:39', 1, '2023-10-10 11:50:39', 0, NULL, NULL),
-(29, 1, 'Task normal\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 8, 0, 0, 3, 0, 0, 1, '', '2023-10-10 19:01:01', 1, '2023-10-10 12:01:01', 0, NULL, NULL);
+(3, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 1, 0, 1, 0, 0, 1, '', '2023-10-11 12:55:04', 1, '2023-10-11 05:55:04', 0, NULL, NULL),
+(4, 1, 'test task insert suddently', 1, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 13:35:07', 14, '2023-10-11 06:35:07', 0, NULL, NULL),
+(5, 1, 'test insert suddently', 2, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 10, 0, 0, 1, '', '2023-10-11 13:36:42', 23, '2023-10-11 06:36:42', 0, NULL, NULL),
+(6, 1, 'CC Task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 1, 3, 0, 0, 1, '', '2023-10-11 16:42:11', 1, '2023-10-11 09:42:11', 0, NULL, NULL),
+(7, 1, 'Tassk demo  123\n', 0, 43, '2023-10-11 09:52:03', 1, 0, 9, '2023-10-11 09:52:03', 1, 0, 0, 0, NULL, 0, 1, 0, 0, 5, 0, 0, 1, '', '2023-10-11 16:50:34', 1, '2023-10-11 09:52:03', 1, NULL, NULL),
+(8, 1, '\n', 0, 42, NULL, 0, 0, 9, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 16:57:40', 1, '2023-10-11 09:57:40', 0, NULL, NULL),
+(9, 1, '\n', 0, 49, NULL, 0, 0, 49, NULL, 0, 0, 0, 0, NULL, 0, 8, 0, 0, 5, 0, 0, 1, '', '2023-10-11 18:23:28', 1, '2023-10-11 11:23:28', 0, NULL, NULL),
+(10, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-11 18:29:17', 1, '2023-10-11 11:29:17', 0, NULL, NULL),
+(11, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 1, 0, 1, 0, 0, 1, '', '2023-10-11 18:29:17', 1, '2023-10-11 11:29:17', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -1395,7 +1392,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     -- description
     IF(OLD.description <> NEW.description) THEN
     	SET v_changes = TRUE;
-    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> FROM [<span class="text-secondary">', OLD.description, '</span>] TO [<span class="text-primary">', NEW.description, '</span>],');
+    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(FROM:<hr/>',OLD.description,'<br/><hr/>TO:',NEW.description,')">View detail</a>,');
          SET v_content = CONCAT(v_content,' ',v_action);
     END IF;
     -- //end description
@@ -1537,7 +1534,7 @@ CREATE TABLE `task_statuses` (
 
 INSERT INTO `task_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
 (1, 'Done', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
-(2, 'Reject', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0),
+(2, 'Reject', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
 (3, 'Fixed', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
 (4, 'QA-Done', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
 (5, 'DC-RJ', 'badge badge-secondary', '0000-00-00 00:00:00', 0, NULL, 0),
@@ -1841,7 +1838,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -1931,19 +1928,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=171;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1955,7 +1952,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

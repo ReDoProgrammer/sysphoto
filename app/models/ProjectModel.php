@@ -72,4 +72,14 @@
             );
             return json_encode($data);
         }
+
+        public function AddInstruction($id,$instruction){
+            $user = unserialize($_SESSION['user']);
+            $params = [
+                'p_project'=>$id,
+                'p_content'=>$instruction,
+                'p_created'=>$user->id
+            ];
+            return $this->__db->executeStoredProcedure("ProjectInsertInstruction",$params);
+        }
     }

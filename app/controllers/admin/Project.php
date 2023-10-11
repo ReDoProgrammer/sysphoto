@@ -9,7 +9,7 @@ class Project extends Controller
         $this->project_model = $this->model('ProjectModel');
         $this->project_instruction_model = $this->model('ProjectInstructionModel');
     }
-   
+
     public function index()
     {
         //renderview
@@ -21,16 +21,16 @@ class Project extends Controller
     public function detail()
     {
         $id = $_GET['id'];
-      
+
         $this->data['title'] = 'Projects detail';
         $this->data['content'] = 'admin/project/detail';
-        $this->data['sub_content']=[];
+        $this->data['sub_content'] = [];
         $this->render('__layouts/admin_layout', $this->data);
     }
 
     public function create()
     {
-       
+
         $customer = $_POST['customer'];
         $name = $_POST['name'];
 
@@ -41,13 +41,13 @@ class Project extends Controller
         $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
-        $instruction = $_POST['instruction'];       
+        $instruction = $_POST['instruction'];
 
-        $result = $this->project_model->CreateProject($customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description);
+        $result = $this->project_model->CreateProject($customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
         if ($result['last_id'] > 0) {
             if (!empty(trim($instruction))) {
                 //thêm instruction vào csdl
-                $this->project_instruction_model->InsertInstruction($result['last_id'],$instruction);
+                $this->project_instruction_model->InsertInstruction($result['last_id'], $instruction);
             }
             $data = array(
                 'code' => 201,
@@ -79,12 +79,12 @@ class Project extends Controller
         $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
-        $instruction = $_POST['instruction'];     
-        
-        $result = $this->project_model->UpdateProject($id,$customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description);
+        $instruction = $_POST['instruction'];
+
+        $result = $this->project_model->UpdateProject($id, $customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
 
         if ($result) {
-            $this->project_instruction_model->UpdateInstruction($id,$instruction);
+            $this->project_instruction_model->UpdateInstruction($id, $instruction);
             $data = array(
                 'code' => 200,
                 'msg' => 'The project has been updated.',
@@ -119,6 +119,29 @@ class Project extends Controller
                 'msg' => 'Delete project failed.',
                 'icon' => 'warning',
                 'heading' => 'OPPP!!'
+            );
+        }
+        echo json_encode($data);
+    }
+
+    public function addinstruction(){
+        $id = $_POST['id'];
+        $instruction = $_POST['instruction'];
+        $result = $this->project_model->AddInstruction($id,$instruction);
+        if($result['last_id']>0){
+            $data = array(
+                'code' => 201,
+                'msg' => 'Instruction has been inserted successfully!',
+                'heading' => 'SUCCESSFULLY',
+                'icon' => 'success'
+            );
+            
+        }else{
+            $data = array(
+                'code' => 204,
+                'msg' => 'Insert instruction failed!',
+                'heading' => 'FAILED',
+                'icon' => 'danger'
             );
         }
         echo json_encode($data);
@@ -162,5 +185,5 @@ class Project extends Controller
         echo $data;
     }
 
-    
+
 }

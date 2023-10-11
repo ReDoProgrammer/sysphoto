@@ -65,7 +65,6 @@ function editTask(id) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     let t = content.task;
-                    console.log(t);
                     qDescription.setText(t.description?t.description:'');
                     $('#slLevels').val(t.level_id);
                     LoadEditorsByLevel(t.level_id, t.editor_id);

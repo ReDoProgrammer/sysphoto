@@ -86,6 +86,7 @@
 include_once 'modal_project.php';
 include_once 'modal_task.php';
 include_once 'modal_cc.php';
+include_once 'modal_instruction.php';
 
 ?>
 
