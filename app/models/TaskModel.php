@@ -81,4 +81,9 @@ class TaskModel extends Model
    
         return $this->__db->select($this->__table." t",$columns,$join,$where,[],1,0, $orderby);
     }
+    public function EditorGetTask(){
+        $user = unserialize($_SESSION['user']);
+        $params = ['p_editor'=>$user->id];
+        return $this->__db->executeStoredProcedure("EditorGetTask",$params);
+    }
 }

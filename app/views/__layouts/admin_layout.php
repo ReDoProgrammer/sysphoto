@@ -6,11 +6,11 @@
 if (isset($_SESSION['user'])) {
     $user = unserialize($_SESSION['user']);
     if ($user->role != 1) {
-        header('Location: login');
+        header('Location: '. _WEB_ROOT.'/admin/login');
         exit;
     }
 } else {
-    header('Location: login');
+    header('Location: '. _WEB_ROOT.'/admin/login');
     exit;
 }
 $this->render('__Layouts/blocks/head');

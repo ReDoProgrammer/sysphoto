@@ -8,8 +8,6 @@ class Dashboard  extends Controller
     }
     public function index()
     {
-      
-      
         $this->data['title'] = 'Admin Dashboard';
         $this->data['sub_content']['product'] = [];
          $this->data['content'] ='admin/dashboard';

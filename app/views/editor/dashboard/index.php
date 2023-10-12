@@ -1,0 +1,1 @@
+<h1>Editor dasboard index</h1>

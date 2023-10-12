@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 11, 2023 lúc 04:59 PM
+-- Thời gian đã tạo: Th10 12, 2023 lúc 05:34 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -156,6 +156,53 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerUpdate` (IN `p_id` BIGINT, 
             SELECT ROW_COUNT() AS rows_changed;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT)   BEGIN
+    DECLARE v_levels VARCHAR(100) DEFAULT '';
+    DECLARE v_processing_tasks_count INT DEFAULT 0;
+    DECLARE v_count_available_task INT DEFAULT 0;
+
+
+    IF NOT EXISTS(SELECT * FROM users e JOIN employee_groups g ON e.editor_group_id = g.id WHERE e.id = p_editor)  THEN
+        SELECT 'You have not been assigned levels to access tasks. Please contact your administrator.' as msg;
+    ELSE
+        SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
+            WHERE editor_id = p_editor
+            AND FIND_IN_SET(status_id, '0,2,5') > 0);
+        IF v_processing_tasks_count > 0 THEN
+            SELECT 'You cannot get more tasks until your current task has been submitted.' as msg;
+        ELSE
+            SET v_levels = (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_editor));
+            SET v_count_available_task = (
+                SELECT  COUNT(t.id)
+                FROM tasks t
+                INNER JOIN projects p ON t.project_id = p.id
+                WHERE t.editor_id = 0
+                AND FIND_IN_SET(t.status_id, v_levels) > 0
+                ORDER BY p.end_date
+                LIMIT 1
+            );
+            IF v_count_available_task > 0 THEN
+                UPDATE tasks
+                SET editor_id = p_editor, editor_timestamp = NOW(), updated_by = p_editor, updated_at = NOW()
+                WHERE id = (SELECT  t.id
+                                    FROM tasks t
+                                    INNER JOIN projects p ON t.project_id = p.id
+                                    WHERE t.editor_id = 0
+                                    AND FIND_IN_SET(t.status_id, v_levels) > 0
+                                    ORDER BY p.end_date
+                                    LIMIT 1);
+                IF ROW_COUNT() > 0 THEN
+                    SELECT 'You have successfully obtained the task.' as msg;
+                ELSE
+                    SELECT 'Unable to fetch additional tasks.' as msg;
+                END IF;
+            ELSE
+                SELECT 'No available task found.' as msg;
+            END IF;
+        END IF;
+    END IF;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `PrjectGetCCsWithTasks` (IN `p_project` BIGINT)   BEGIN
     SELECT 
         c.id AS c_id,
@@ -273,12 +320,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` 
 	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,created_by)
     VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsertInstruction` (IN `p_project` BIGINT, IN `p_content` TEXT, IN `p_created_by` INT)   BEGIN
-	INSERT INTO project_instructions(project_id,content,created_by)
-    VALUES(p_project,p_content,p_created_by);
-    SELECT LAST_INSERT_ID() as last_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInstruction1stUpdate` (IN `p_project_id` BIGINT, IN `p_content` TEXT, IN `p_updated_by` INT)   BEGIN
@@ -404,6 +445,60 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskUpdate` (IN `p_id` BIGINT, IN `
         updated_at = NOW(), updated_by = p_updated_by
     WHERE id = p_id;
     SELECT ROW_COUNT() as updated_rows;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UserLogin` (IN `p_email` VARCHAR(200), IN `p_password` VARCHAR(200), IN `p_role` INT, IN `p_ip` VARCHAR(50))   BEGIN
+	DECLARE v_count_users INT DEFAULT 0;
+    SET v_count_users = (SELECT COUNT(*) FROM users WHERE email = p_email);
+    IF v_count_users > 0 THEN
+    	SET v_count_users = (SELECT COUNT(*) FROM users WHERE email = p_email AND password = MD5(p_password));
+        IF v_count_users > 0 THEN
+        	IF EXISTS(SELECT * FROM users u INNER JOIN user_types ut ON u.type_id = ut.id WHERE u.email = p_email) THEN
+            	IF (SELECT riv FROM user_groups WHERE id = (SELECT group_id FROM users WHERE email = p_email)) = 1 THEN
+                	IF EXISTS(SELECT 1 FROM ips WHERE address = p_ip) THEN
+                    	SELECT JSON_OBJECT(
+                        'code',200,
+                        'msg',CONCAT('Login successfully with currently IP address: ',p_ip),
+                        'icon','success',
+                        'heading','SUCCESSFULLY',
+                        'id', u.id,
+                        'fullname', u.fullname,
+                        'acronym', u.acronym,
+                        'email', u.email,
+                        'type_id', u.type_id,
+                        'task_getable', u.task_getable
+                    ) AS result
+                    FROM users u
+                    WHERE email = p_email;
+                    ELSE
+                    	SELECT JSON_OBJECT('code', '204', 'msg', CONCAT('Your IP address is: ',p_ip,'. You are currently out of the company.'),'icon','danger','heading','No IP address match') AS result;
+                    END IF;
+                ELSE
+                	SELECT JSON_OBJECT(
+                        'code',200,
+                        'msg','Login successfully',
+                        'icon','success',
+                        'heading','SUCCESSFULLY',
+                        'id', u.id,
+                        'fullname', u.fullname,
+                        'acronym', u.acronym,
+                        'email', u.email,
+                        'type_id', u.type_id,
+                        'task_getable', u.task_getable
+                    ) AS result
+                    FROM users u
+                    WHERE email = p_email;
+
+                END IF;
+            ELSE
+            	SELECT JSON_OBJECT('code', '403', 'msg', 'You have no rule to access this module.','icon','danger','heading','Forbidden') AS result;	
+            END IF;
+        ELSE
+        	SELECT JSON_OBJECT('code', '401', 'msg', 'The password does not match.','icon','danger','heading','Unauthorized') AS result;
+        END IF;
+    ELSE
+    	SELECT JSON_OBJECT('code', '404', 'msg', 'The email does not exist in the system.','icon','danger','heading','Not Found') AS result;
+    END IF;
 END$$
 
 --
@@ -844,7 +939,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '142.250.204.100', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '172.217.31.4', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1170,7 +1265,10 @@ INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`,
 (12, 1, 'The 7th instruction\n', '2023-10-11 21:39:15', 1, NULL, 0, NULL, NULL),
 (13, 1, 'the 8th instruction\n', '2023-10-11 21:42:49', 1, NULL, 0, NULL, NULL),
 (14, 1, 'the 9th instruction\n', '2023-10-11 21:48:35', 1, NULL, 0, NULL, NULL),
-(15, 1, 'test abc xyzzzzz\n', '2023-10-11 21:54:57', 1, NULL, 0, NULL, NULL);
+(15, 1, 'test abc xyzzzzz\n', '2023-10-11 21:54:57', 1, NULL, 0, NULL, NULL),
+(16, 1, 'Test instruciton\n', '2023-10-12 11:43:03', 1, NULL, 0, NULL, NULL),
+(17, 1, 'Test instruction\n', '2023-10-12 11:54:54', 1, NULL, 0, NULL, NULL),
+(18, 1, 'test instruction 222\n', '2023-10-12 12:24:11', 1, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -1235,17 +1333,9 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 (10, 1, '2023-10-11 16:50:50', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">Tassk demo \n</span>] TO [<span class=\"text-primary\">Tassk demo  123\n</span>]'),
 (11, 1, '2023-10-11 16:52:35', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]'),
 (12, 1, '2023-10-11 16:52:41', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]'),
-(13, 1, '2023-10-11 16:57:40', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(14, 1, '2023-10-11 18:23:28', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [<span class=\"fw-bold\">5</span>]'),
-(15, 1, '2023-10-11 18:26:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">Test project</span>] TO [<span class=\"text-info\">Test project changed</span>]'),
-(16, 2, '2023-10-11 18:29:17', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(17, 2, '2023-10-11 18:29:17', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(18, 2, '2023-10-11 18:29:17', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C481615-TSTES</span>]'),
-(19, 1, '2023-10-11 21:24:24', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(the 5th instruction\n)\">View detail</a>'),
-(20, 1, '2023-10-11 21:39:15', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\"The 7th instruction\n\")\">View detail</a>'),
-(21, 1, '2023-10-11 21:42:49', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\"the 8th instruction\n\")\">View detail</a>'),
-(22, 1, '2023-10-11 21:48:35', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(the 9th instruction\n)\">View detail</a>'),
-(23, 1, '2023-10-11 21:54:57', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'test abc xyzzzzz\n\')\">View detail</a>');
+(25, 1, '2023-10-12 11:54:54', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'Test instruction\n\')\">View detail</a>'),
+(26, 1, '2023-10-12 12:24:11', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'test instruction 222\n\')\">View detail</a>'),
+(27, 1, '2023-10-12 18:51:31', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]');
 
 -- --------------------------------------------------------
 
@@ -1322,7 +1412,7 @@ CREATE TABLE `tasks` (
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (3, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 1, 0, 1, 0, 0, 1, '', '2023-10-11 12:55:04', 1, '2023-10-11 05:55:04', 0, NULL, NULL),
-(4, 1, 'test task insert suddently', 1, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 13:35:07', 14, '2023-10-11 06:35:07', 0, NULL, NULL),
+(4, 1, 'test task insert suddently', 1, 4, '2023-10-12 11:51:31', 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 13:35:07', 14, '2023-10-12 11:51:31', 4, NULL, NULL),
 (5, 1, 'test insert suddently', 2, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 10, 0, 0, 1, '', '2023-10-11 13:36:42', 23, '2023-10-11 06:36:42', 0, NULL, NULL),
 (6, 1, 'CC Task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 1, 3, 0, 0, 1, '', '2023-10-11 16:42:11', 1, '2023-10-11 09:42:11', 0, NULL, NULL),
 (7, 1, 'Tassk demo  123\n', 0, 43, '2023-10-11 09:52:03', 1, 0, 9, '2023-10-11 09:52:03', 1, 0, 0, 0, NULL, 0, 1, 0, 0, 5, 0, 0, 1, '', '2023-10-11 16:50:34', 1, '2023-10-11 09:52:03', 1, NULL, NULL),
@@ -1561,6 +1651,7 @@ CREATE TABLE `users` (
   `avatar` text NOT NULL,
   `task_getable` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu được get task hay không. Áp dụng cho cả Editor và QA',
   `status` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Trạng thái hoạt động của tài khoản. 0 hoặc 1',
+  `group_id` int(10) NOT NULL COMMENT 'Tham chiếu tới group user. exp: nhân viên chính thức, cộng tác viên',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) NOT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -1571,61 +1662,89 @@ CREATE TABLE `users` (
 -- Đang đổ dữ liệu cho bảng `users`
 --
 
-INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`, `editor_group_id`, `qa_group_id`, `avatar`, `task_getable`, `status`, `created_at`, `created_by`, `updated_at`, `update_by`) VALUES
-(1, 'Administrator', 'admin', 'admin@admin.com', '2db5228517bf8473a1dda3cab7cb4b8c', 1, 0, 0, '', 0, 0, '2020-11-26 03:57:04', 0, NULL, 0),
-(2, 'Nguyễn Hoàng Yến', 'Yen.nh', 'sale1@photohome.com.vn', '81dc9bdb52d04dc20036dbd8313ed055', 2, 0, 0, '', 0, 0, '2023-08-20 03:55:42', 0, NULL, 0),
-(3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, '2023-08-20 03:57:13', 0, NULL, 0),
-(4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 1, 0, '', 1, 0, '2023-08-20 04:40:37', 0, NULL, 0),
-(5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '37f075e83964183d460c4eca59d27d0b', 2, 0, 0, '', 0, 0, '2023-08-20 09:40:39', 0, NULL, 0),
-(6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, '2023-08-25 04:19:50', 0, NULL, 0),
-(7, 'Trần Tú Thành', 'Thanh.tt', 'Thanh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, '2023-08-25 04:36:12', 0, NULL, 0),
-(8, 'Trần Hồng Nhung', 'nhung.th', 'nhung.thphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, '2023-09-04 14:41:06', 0, NULL, 0),
-(9, 'Phạm Năng Bình', 'binh.pn', 'binh@photohome.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, '2023-09-05 08:00:36', 0, NULL, 0),
-(10, 'Bùi Đức Hiếu', 'hieu.bd', 'hieu.bdphotohome@gmai.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:52:26', 0, NULL, 0),
-(11, 'Phạm Phương Nam', 'nam.pp', 'nam.ppphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:53:05', 0, NULL, 0),
-(12, 'Nguyễn Đức Việt', 'viet.nd', 'viet.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:53:39', 0, NULL, 0),
-(13, 'Vũ văn Đạt', 'dat.vv', 'dat.vvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:54:18', 0, NULL, 0),
-(14, 'Bùi Văn Tuấn', 'tuan.bv', 'tuan.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:54:50', 0, NULL, 0),
-(15, 'Vi Đức Trịnh', 'trinh.vd', 'trinh.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:55:23', 0, NULL, 0),
-(16, 'Phùng Minh Phong', 'phong.pm', 'phong.pmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:55:56', 0, NULL, 0),
-(17, 'Nguyễn Hồng Sơn', 'son.nh', 'son.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:56:33', 0, NULL, 0),
-(18, 'Vũ Đức Thắng', 'thang.vd', 'thang.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:57:58', 0, NULL, 0),
-(19, 'Chu Thị Thúy', 'thuy.ct', 'thuy.ctphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:58:36', 0, NULL, 0),
-(20, 'Trần Văn Đoàn', 'doan.tv', 'doan.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-09 16:59:01', 0, NULL, 0),
-(21, 'Vũ Hồng Sơn', 'son.vh', 'son.vhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, '2023-09-10 02:40:43', 0, NULL, 0),
-(22, 'Nguyễn Tuấn Nam', 'nam.nt', 'nam.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:12:02', 0, NULL, 0),
-(23, 'Bùi Văn Hưng', 'hung.bv', 'hung.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:12:26', 0, NULL, 0),
-(24, 'Bùi Ngọc Hoàng', 'hoang.bn', 'hoang.bnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:12:55', 0, NULL, 0),
-(25, 'Nguyễn Quốc Cường', 'cuong.nq', 'cuong.nqphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:13:21', 0, NULL, 0),
-(26, 'Phùng Hữu Tình', 'tinh.ph', 'tinh.phphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:14:41', 0, NULL, 0),
-(27, 'Phan Văn Thiêm', 'thiem.pv', 'thiem.pvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:15:05', 0, NULL, 0),
-(28, 'Nguyễn Việt Hoàng', 'hoang.nv', 'hoang.nvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:15:33', 0, NULL, 0),
-(29, 'Nguyễn Duy Tú', 'tu.nd', 'tu.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:15:54', 0, NULL, 0),
-(30, 'Nguyễn Đức Chính', 'chinh.nd', 'chinh.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:16:21', 0, NULL, 0),
-(31, 'Dương Văn Hưng', 'hung.dv', 'hung.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:16:52', 0, NULL, 0),
-(32, 'Dương nguyễn kiên', 'kien.dn', 'kien.dnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:17:14', 0, NULL, 0),
-(33, 'Bùi Thị Hoa', 'hoa.bt', 'hoa.btphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:17:34', 0, NULL, 0),
-(34, 'Phạm Thị thùy Trang', 'trang.pt', 'trang.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:18:03', 0, NULL, 0),
-(35, 'Nguyễn Thị Thu', 'thu.nt', 'thu.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:18:26', 0, NULL, 0),
-(36, 'Lê Thu Hiên', 'hien.lt', 'hien.ltphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:18:53', 0, NULL, 0),
-(37, 'Phạm Thúy Hảo', 'hao.pt', 'hoa.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:19:15', 0, NULL, 0),
-(38, 'Hoàng Thị Thanh Lam', 'lam.ht', 'Lam.htphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:19:40', 0, NULL, 0),
-(39, 'Đinh Thị Minh Thi', 'thi.dt', 'thi.dmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:20:06', 0, NULL, 0),
-(40, 'Trần Mạnh Hùng', 'hung.tm', 'hung.tmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:20:28', 0, NULL, 0),
-(41, 'Trần Văn Chung', 'chung.tv', 'chung.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:20:51', 0, NULL, 0),
-(42, 'Nguyễn Tuấn Đạt', 'dat.nt', 'dat.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:21:14', 0, NULL, 0),
-(43, 'Đặng Đức Anh', 'anh.dd', 'anh.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:21:36', 0, NULL, 0),
-(44, 'Lê Minh Thành', 'thanh.lm', 'thanh.lmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:22:09', 0, NULL, 0),
-(45, 'Cấn Việt Ánh', 'anh.cv', 'anh.cvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:22:28', 0, NULL, 0),
-(46, 'Nguyễn Công Thành', 'thanh.nc', 'thanh.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:22:55', 0, NULL, 0),
-(47, 'Đinh Công Hưng', 'hung.dc', 'hung.dcphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:23:17', 0, NULL, 0),
-(48, 'Nguyễn Công Lực', 'luc.nc', 'luc.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, '2023-09-11 04:23:38', 0, NULL, 0),
-(49, 'Hoàng Anh Dũng', 'dung.ha', 'dung.haphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, '2023-09-11 04:51:45', 0, NULL, 0),
-(50, 'Đỗ Văn Chủ', 'chu.dv', 'chu.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, '2023-09-11 05:01:17', 0, NULL, 0),
-(51, 'Đỗ Tiến Duy', 'duy.dd', 'duy.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, '2023-09-11 05:01:50', 0, NULL, 0),
-(52, 'Trần Xuân Thịnh', 'thinh.tx', 'thinh.txphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, '2023-09-12 05:07:42', 0, NULL, 0),
-(53, 'Phạm Thị Dung', 'dung.pt', 'dung.pt@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, '2023-09-13 04:00:12', 0, NULL, 0),
-(54, 'Lê Minh Quân', 'Quan.lm', 'Quan.lm@photohome.com', 'cdf28f8b7d14ab02d12a2329d71e4079', 1, 0, 0, '', 0, 0, '2023-09-14 07:07:22', 0, NULL, 0);
+INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`, `editor_group_id`, `qa_group_id`, `avatar`, `task_getable`, `status`, `group_id`, `created_at`, `created_by`, `updated_at`, `update_by`) VALUES
+(1, 'Administrator', 'admin', 'admin@admin.com', '2db5228517bf8473a1dda3cab7cb4b8c', 1, 0, 0, '', 0, 0, 4, '2020-11-26 03:57:04', 0, NULL, 0),
+(2, 'Nguyễn Hoàng Yến', 'Yen.nh', 'sale1@photohome.com.vn', '81dc9bdb52d04dc20036dbd8313ed055', 2, 0, 0, '', 0, 0, 1, '2023-08-20 03:55:42', 0, NULL, 0),
+(3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, 1, '2023-08-20 03:57:13', 0, NULL, 0),
+(4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 1, 0, '', 1, 0, 1, '2023-08-20 04:40:37', 0, NULL, 0),
+(5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '37f075e83964183d460c4eca59d27d0b', 2, 0, 0, '', 0, 0, 1, '2023-08-20 09:40:39', 0, NULL, 0),
+(6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:19:50', 0, NULL, 0),
+(7, 'Trần Tú Thành', 'Thanh.tt', 'Thanh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:36:12', 0, NULL, 0),
+(8, 'Trần Hồng Nhung', 'nhung.th', 'nhung.thphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-04 14:41:06', 0, NULL, 0),
+(9, 'Phạm Năng Bình', 'binh.pn', 'binh@photohome.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-05 08:00:36', 0, NULL, 0),
+(10, 'Bùi Đức Hiếu', 'hieu.bd', 'hieu.bdphotohome@gmai.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:52:26', 0, NULL, 0),
+(11, 'Phạm Phương Nam', 'nam.pp', 'nam.ppphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:53:05', 0, NULL, 0),
+(12, 'Nguyễn Đức Việt', 'viet.nd', 'viet.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:53:39', 0, NULL, 0),
+(13, 'Vũ văn Đạt', 'dat.vv', 'dat.vvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:54:18', 0, NULL, 0),
+(14, 'Bùi Văn Tuấn', 'tuan.bv', 'tuan.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:54:50', 0, NULL, 0),
+(15, 'Vi Đức Trịnh', 'trinh.vd', 'trinh.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:55:23', 0, NULL, 0),
+(16, 'Phùng Minh Phong', 'phong.pm', 'phong.pmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:55:56', 0, NULL, 0),
+(17, 'Nguyễn Hồng Sơn', 'son.nh', 'son.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:56:33', 0, NULL, 0),
+(18, 'Vũ Đức Thắng', 'thang.vd', 'thang.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:57:58', 0, NULL, 0),
+(19, 'Chu Thị Thúy', 'thuy.ct', 'thuy.ctphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:58:36', 0, NULL, 0),
+(20, 'Trần Văn Đoàn', 'doan.tv', 'doan.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:59:01', 0, NULL, 0),
+(21, 'Vũ Hồng Sơn', 'son.vh', 'son.vhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-10 02:40:43', 0, NULL, 0),
+(22, 'Nguyễn Tuấn Nam', 'nam.nt', 'nam.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:02', 0, NULL, 0),
+(23, 'Bùi Văn Hưng', 'hung.bv', 'hung.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:26', 0, NULL, 0),
+(24, 'Bùi Ngọc Hoàng', 'hoang.bn', 'hoang.bnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:55', 0, NULL, 0),
+(25, 'Nguyễn Quốc Cường', 'cuong.nq', 'cuong.nqphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:13:21', 0, NULL, 0),
+(26, 'Phùng Hữu Tình', 'tinh.ph', 'tinh.phphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:14:41', 0, NULL, 0),
+(27, 'Phan Văn Thiêm', 'thiem.pv', 'thiem.pvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:15:05', 0, NULL, 0),
+(28, 'Nguyễn Việt Hoàng', 'hoang.nv', 'hoang.nvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:15:33', 0, NULL, 0),
+(29, 'Nguyễn Duy Tú', 'tu.nd', 'tu.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:15:54', 0, NULL, 0),
+(30, 'Nguyễn Đức Chính', 'chinh.nd', 'chinh.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:16:21', 0, NULL, 0),
+(31, 'Dương Văn Hưng', 'hung.dv', 'hung.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:16:52', 0, NULL, 0),
+(32, 'Dương nguyễn kiên', 'kien.dn', 'kien.dnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:17:14', 0, NULL, 0),
+(33, 'Bùi Thị Hoa', 'hoa.bt', 'hoa.btphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:17:34', 0, NULL, 0),
+(34, 'Phạm Thị thùy Trang', 'trang.pt', 'trang.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:18:03', 0, NULL, 0),
+(35, 'Nguyễn Thị Thu', 'thu.nt', 'thu.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:18:26', 0, NULL, 0),
+(36, 'Lê Thu Hiên', 'hien.lt', 'hien.ltphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:18:53', 0, NULL, 0),
+(37, 'Phạm Thúy Hảo', 'hao.pt', 'hoa.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:19:15', 0, NULL, 0),
+(38, 'Hoàng Thị Thanh Lam', 'lam.ht', 'Lam.htphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:19:40', 0, NULL, 0),
+(39, 'Đinh Thị Minh Thi', 'thi.dt', 'thi.dmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:20:06', 0, NULL, 0),
+(40, 'Trần Mạnh Hùng', 'hung.tm', 'hung.tmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:20:28', 0, NULL, 0),
+(41, 'Trần Văn Chung', 'chung.tv', 'chung.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:20:51', 0, NULL, 0),
+(42, 'Nguyễn Tuấn Đạt', 'dat.nt', 'dat.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:21:14', 0, NULL, 0),
+(43, 'Đặng Đức Anh', 'anh.dd', 'anh.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:21:36', 0, NULL, 0),
+(44, 'Lê Minh Thành', 'thanh.lm', 'thanh.lmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:22:09', 0, NULL, 0),
+(45, 'Cấn Việt Ánh', 'anh.cv', 'anh.cvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:22:28', 0, NULL, 0),
+(46, 'Nguyễn Công Thành', 'thanh.nc', 'thanh.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:22:55', 0, NULL, 0),
+(47, 'Đinh Công Hưng', 'hung.dc', 'hung.dcphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:23:17', 0, NULL, 0),
+(48, 'Nguyễn Công Lực', 'luc.nc', 'luc.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:23:38', 0, NULL, 0),
+(49, 'Hoàng Anh Dũng', 'dung.ha', 'dung.haphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-11 04:51:45', 0, NULL, 0),
+(50, 'Đỗ Văn Chủ', 'chu.dv', 'chu.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-11 05:01:17', 0, NULL, 0),
+(51, 'Đỗ Tiến Duy', 'duy.dd', 'duy.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-11 05:01:50', 0, NULL, 0),
+(52, 'Trần Xuân Thịnh', 'thinh.tx', 'thinh.txphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-12 05:07:42', 0, NULL, 0),
+(53, 'Phạm Thị Dung', 'dung.pt', 'dung.pt@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-13 04:00:12', 0, NULL, 0),
+(54, 'Lê Minh Quân', 'Quan.lm', 'Quan.lm@photohome.com', 'cdf28f8b7d14ab02d12a2329d71e4079', 1, 0, 0, '', 0, 0, 1, '2023-09-14 07:07:22', 0, NULL, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `user_groups`
+--
+
+CREATE TABLE `user_groups` (
+  `id` int(11) NOT NULL,
+  `name` varchar(250) NOT NULL,
+  `riv` tinyint(4) NOT NULL COMMENT 'request for IP address verification: ràng buộc check ip address',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(11) NOT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `updated_by` int(11) NOT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `deleted_by` varchar(30) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `user_groups`
+--
+
+INSERT INTO `user_groups` (`id`, `name`, `riv`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(1, 'Full-time employee', 1, '2023-10-12 12:02:31', 0, NULL, 0, NULL, ''),
+(2, 'Part-time employee', 0, '2023-10-12 12:02:31', 1, NULL, 0, NULL, ''),
+(3, 'Supervisor', 0, '2023-10-12 12:03:52', 1, NULL, 0, NULL, ''),
+(4, 'Administrator', 1, '2023-10-12 12:04:51', 1, NULL, 0, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -1816,6 +1935,13 @@ ALTER TABLE `task_statuses`
 -- Chỉ mục cho bảng `users`
 --
 ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `group_id` (`group_id`);
+
+--
+-- Chỉ mục cho bảng `user_groups`
+--
+ALTER TABLE `user_groups`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -1934,13 +2060,13 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -1965,6 +2091,12 @@ ALTER TABLE `task_statuses`
 --
 ALTER TABLE `users`
   MODIFY `id` int(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+
+--
+-- AUTO_INCREMENT cho bảng `user_groups`
+--
+ALTER TABLE `user_groups`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `user_productivities`
@@ -2020,6 +2152,12 @@ ALTER TABLE `tasks`
   ADD CONSTRAINT `tasks_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `tasks_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `tasks_ibfk_5` FOREIGN KEY (`level_id`) REFERENCES `levels` (`id`);
+
+--
+-- Các ràng buộc cho bảng `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `user_groups` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

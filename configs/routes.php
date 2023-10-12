@@ -5,10 +5,9 @@
      * Đường dẫn ảo => Đường dẫn thật
      */
     $routes['admin/login'] = 'admin/employee/login';
-    // $routes['admin'] = 'admin/dashboard';
-    $routes['admin/home'] = 'admin/dashboard';
-    $routes['admin/du-an'] = 'admin/project';
 
+
+    $routes['editor/login']='editor/auth/login';
 
 
     $routes['trang-chu'] = 'home';

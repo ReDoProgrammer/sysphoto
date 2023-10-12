@@ -3,7 +3,7 @@
 <?php
 if (isset($_SESSION['user'])) {
     $user = unserialize($_SESSION['user']);
-    header('Location: '. _WEB_ROOT.'/login/home');
+    header('Location: '. _WEB_ROOT.'/editor/home');
     exit;
 } 
 $this->render('__Layouts/blocks/head');
@@ -22,7 +22,7 @@ $this->render('__Layouts/blocks/head');
                 <div class="account-box">
                     <div class="account-wrapper">
                         <h3 class="account-title">Login</h3>
-                        <p class="account-subtitle">Access to our dashboard</p>
+                        <p class="account-subtitle">Access as an Editor</p>
 
                         <!-- Account Form -->
                         <div>
@@ -72,7 +72,7 @@ $this->render('__Layouts/blocks/head');
     <!-- Custom JS -->
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.js"></script>
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.js"></script>
-    <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/employee.js"></script>
+    <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/editor/auth/auth.js"></script>
 
 </body>
 

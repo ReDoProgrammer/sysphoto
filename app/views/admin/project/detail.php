@@ -9,7 +9,7 @@
                     </h6>
                 </div>
                 <hr/>
-                <div id="DescriptionAndInstructions" class="mt-3"></div>
+                <div id="DescriptionAndInstructions" class="mt-3" style="max-height:200px; padding-left:20px; overflow-y: auto;border: 1px solid #ccc; "></div>
                 
             </div>
         </div>

@@ -80,6 +80,6 @@
                 'p_content'=>$instruction,
                 'p_created'=>$user->id
             ];
-            return $this->__db->executeStoredProcedure("ProjectInsertInstruction",$params);
+            return $this->__db->executeStoredProcedure("ProjectInstructionInsert",$params);
         }
     }
