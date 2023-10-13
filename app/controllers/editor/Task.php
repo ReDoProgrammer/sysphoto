@@ -1,9 +1,9 @@
 <?php
-    class Task extends Controller{
+    class Task extends EditorController{
         private $__task_model;
 
         function  __construct(){
-            $this->__task_model = "TaskModel";
+            $this->__task_model = $this->model("TaskModel");
         }
         public function index(){
             $this->data['title'] = 'Tasks List';

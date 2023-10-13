@@ -1,9 +1,7 @@
 <?php
     class  TaskStatusModel extends Model{
-        protected $__table = 'status_task';
-        public function getList(){      
-            $orderby = " id DESC";      
-            $data = $this->__db->select($this->__table,"*","","",[],1,0,$orderby);
-            return $data;
+        protected $__table = 'task_statuses';
+        public function AllTaskStatuses(){      
+            return $this->__db->callStoredProcedure("TaskStatusAll");
         }
     }

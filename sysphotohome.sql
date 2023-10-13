@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 13, 2023 lúc 07:45 AM
+-- Thời gian đã tạo: Th10 13, 2023 lúc 10:50 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -433,6 +433,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGetByProject` (IN `p_id` BIGIN
     LEFT JOIN users e ON t.editor_id =e.id
     LEFT JOIN users q ON t.qa_id = q.id
     WHERE t.project_id = p_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskStatusAll` ()   BEGIN
+	SELECT * FROM task_statuses ORDER BY id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskUpdate` (IN `p_id` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_assign_editor` TINYINT, IN `p_qa` INT, IN `p_assign_qa` TINYINT, IN `p_quantity` INT, IN `p_level` INT, IN `p_updated_by` INT)   BEGIN
@@ -1627,15 +1631,15 @@ CREATE TABLE `task_statuses` (
 --
 
 INSERT INTO `task_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'Done', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
-(2, 'Reject', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
-(3, 'Fixed', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
-(4, 'QA-Done', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(5, 'DC-RJ', 'badge badge-secondary', '0000-00-00 00:00:00', 0, NULL, 0),
-(6, 'OK-DC', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
-(7, 'Upload', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(8, 'DC-FIX', 'badge badge-ligh', '0000-00-00 00:00:00', 0, NULL, 0),
-(9, 'Wait', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0);
+(1, 'Done', 'badge badge-success', '2023-10-13 08:37:09', 1, NULL, 0),
+(2, 'Reject', 'badge badge-danger', '2023-10-13 08:37:09', 1, NULL, 0),
+(3, 'Fixed', 'badge badge-info', '2023-10-13 08:37:09', 1, NULL, 0),
+(4, 'QA-Done', 'badge badge-warning', '2023-10-13 08:37:09', 1, NULL, 0),
+(5, 'DC-RJ', 'badge badge-secondary', '2023-10-13 08:37:09', 1, NULL, 0),
+(6, 'OK-DC', 'badge badge-danger', '2023-10-13 08:37:09', 1, NULL, 0),
+(7, 'Upload', 'badge badge-warning', '2023-10-13 08:37:09', 1, NULL, 0),
+(8, 'DC-FIX', 'badge badge-ligh', '2023-10-13 08:37:09', 1, NULL, 0),
+(9, 'Wait', 'badge badge-dark', '2023-10-13 08:37:09', 1, NULL, 0);
 
 -- --------------------------------------------------------
 
