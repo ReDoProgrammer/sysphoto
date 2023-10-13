@@ -26,13 +26,21 @@ $('#btnLogin').click(function () {
         type: 'post',
         data: { email, password },
         success: function (data) {
-            console.log(data);
-            // try {
-            //     let auth = $.parseJSON(data);
-                
-            // } catch (error) {
-            //     console.log(data, error);
-            // }
+            try {
+                let auth = JSON.parse(data);
+                console.log(auth);
+                if (auth.code == 200) {
+                    $(location).prop('href', 'home')
+                }
+                $.toast({
+                    heading: auth.heading,
+                    text: auth.msg,
+                    showHideTransition: 'fade',
+                    icon: auth.icon
+                })
+            } catch (error) {
+                console.log(data, error);
+            }
         }
     })
 

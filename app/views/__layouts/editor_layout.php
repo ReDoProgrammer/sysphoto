@@ -10,11 +10,7 @@ $this->render('__Layouts/blocks/footer');
 <body>
     <!-- Main Wrapper -->
     <div class="main-wrapper">
-
-        <?php
-        $this->render('__Layouts/blocks/editor/header');
-        // $this->render('__Layouts/blocks/editor/sidebar');
-        ?>
+        <?php $this->render('__Layouts/blocks/editor/header');?>
         <!-- Page Content -->
         <div class="content container-fluid pb-0" style="margin-top:100px;">
 

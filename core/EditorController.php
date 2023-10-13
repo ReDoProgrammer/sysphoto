@@ -9,7 +9,7 @@ class EditorController extends Controller
 
         if (isset($_SESSION['user'])) {
             $user = unserialize($_SESSION['user']);
-            if ($user->role != 1 && $user->role != 6) {
+            if ($user->role_id != 6) {
                 header('Location: ' . _WEB_ROOT . '/editor/login');
                 exit;
             }

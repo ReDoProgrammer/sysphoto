@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<?php
-if (isset($_SESSION['user'])) {
-    $user = unserialize($_SESSION['user']);
-    header('Location: '. _WEB_ROOT.'/editor/home');
-    exit;
-} 
-$this->render('__Layouts/blocks/head');
-?>
+<?php $this->render('__Layouts/blocks/head'); ?>
 <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.css">
 <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.css">
 
@@ -49,7 +42,8 @@ $this->render('__Layouts/blocks/head');
                                 </div>
                             </div>
                             <div class="input-block mb-3 text-center">
-                                <button class="btn btn-primary account-btn" type="submit" id="btnLogin">Admin Login</button>
+                                <button class="btn btn-primary account-btn" type="submit" id="btnLogin">Admin
+                                    Login</button>
                             </div>
                         </div>
                         <!-- /Account Form -->
@@ -66,7 +60,7 @@ $this->render('__Layouts/blocks/head');
 
     <!-- Bootstrap Core JS -->
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/bootstrap.bundle.min.js"></script>
-    
+
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/app.js"></script>
 
     <!-- Custom JS -->

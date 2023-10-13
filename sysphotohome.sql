@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 12, 2023 lúc 05:34 PM
+-- Thời gian đã tạo: Th10 13, 2023 lúc 07:45 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -453,7 +453,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `UserLogin` (IN `p_email` VARCHAR(20
     IF v_count_users > 0 THEN
     	SET v_count_users = (SELECT COUNT(*) FROM users WHERE email = p_email AND password = MD5(p_password));
         IF v_count_users > 0 THEN
-        	IF EXISTS(SELECT * FROM users u INNER JOIN user_types ut ON u.type_id = ut.id WHERE u.email = p_email) THEN
+        	IF EXISTS(SELECT * FROM users u INNER JOIN user_types ut ON u.type_id = ut.id WHERE u.email = p_email AND u.type_id = p_role) THEN
             	IF (SELECT riv FROM user_groups WHERE id = (SELECT group_id FROM users WHERE email = p_email)) = 1 THEN
                 	IF EXISTS(SELECT 1 FROM ips WHERE address = p_ip) THEN
                     	SELECT JSON_OBJECT(
@@ -465,10 +465,12 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `UserLogin` (IN `p_email` VARCHAR(20
                         'fullname', u.fullname,
                         'acronym', u.acronym,
                         'email', u.email,
-                        'type_id', u.type_id,
-                        'task_getable', u.task_getable
+                        'role_id', u.type_id,
+                        'role_name', ut.name,
+                        'task_getable',u.task_getable
                     ) AS result
                     FROM users u
+                    JOIN user_types ut ON u.type_id = ut.id
                     WHERE email = p_email;
                     ELSE
                     	SELECT JSON_OBJECT('code', '204', 'msg', CONCAT('Your IP address is: ',p_ip,'. You are currently out of the company.'),'icon','danger','heading','No IP address match') AS result;
@@ -483,10 +485,12 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `UserLogin` (IN `p_email` VARCHAR(20
                         'fullname', u.fullname,
                         'acronym', u.acronym,
                         'email', u.email,
-                        'type_id', u.type_id,
-                        'task_getable', u.task_getable
+                        'role_id', u.type_id,
+                        'role_name', ut.name,
+                        'task_getable',u.task_getable
                     ) AS result
                     FROM users u
+                    JOIN user_types ut ON u.type_id =ut.id
                     WHERE email = p_email;
 
                 END IF;
@@ -939,7 +943,7 @@ INSERT INTO `ips` (`id`, `address`, `remark`, `status`, `created_at`, `created_b
 (5, '113.178.40.243', 'Ip wifi công ty', 1, '2023-09-16 13:09:09', 0, NULL, 0),
 (6, '171.231.0.247', 'Ip anh thiện', 1, '2023-09-16 13:09:41', 0, NULL, 0),
 (7, '42.1.77.147', 'Ip Css thành', 1, '2023-09-16 13:10:13', 0, NULL, 0),
-(8, '172.217.31.4', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
+(8, '142.250.66.100', 'IP CSS thành', 1, '2023-09-16 13:10:41', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1666,7 +1670,7 @@ INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`
 (1, 'Administrator', 'admin', 'admin@admin.com', '2db5228517bf8473a1dda3cab7cb4b8c', 1, 0, 0, '', 0, 0, 4, '2020-11-26 03:57:04', 0, NULL, 0),
 (2, 'Nguyễn Hoàng Yến', 'Yen.nh', 'sale1@photohome.com.vn', '81dc9bdb52d04dc20036dbd8313ed055', 2, 0, 0, '', 0, 0, 1, '2023-08-20 03:55:42', 0, NULL, 0),
 (3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, 1, '2023-08-20 03:57:13', 0, NULL, 0),
-(4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 1, 0, '', 1, 0, 1, '2023-08-20 04:40:37', 0, NULL, 0),
+(4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 5, 6, '', 1, 0, 2, '2023-08-20 04:40:37', 0, NULL, 0),
 (5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '37f075e83964183d460c4eca59d27d0b', 2, 0, 0, '', 0, 0, 1, '2023-08-20 09:40:39', 0, NULL, 0),
 (6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:19:50', 0, NULL, 0),
 (7, 'Trần Tú Thành', 'Thanh.tt', 'Thanh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:36:12', 0, NULL, 0),
