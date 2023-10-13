@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 13, 2023 lúc 10:50 AM
+-- Thời gian đã tạo: Th10 13, 2023 lúc 08:42 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -433,6 +433,63 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGetByProject` (IN `p_id` BIGIN
     LEFT JOIN users e ON t.editor_id =e.id
     LEFT JOIN users q ON t.qa_id = q.id
     WHERE t.project_id = p_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_date` TIMESTAMP, IN `p_to_date` TIMESTAMP, IN `p_status` INT, IN `p_page` INT, IN `p_limit` INT, IN `p_actioner` INT, IN `p_role` INT)   BEGIN
+    DECLARE v_sql VARCHAR(5000);
+    DECLARE v_pages INT DEFAULT 0;
+
+    SET v_sql = "SELECT t.id,lv.name,t.quantity, t.editor_assigned,t.qa_assigned, 
+                    ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,t.pay,t.pay_remark,
+                    e.acronym as editor, DATE_FORMAT(t.editor_timestamp,'%d/%m/%Y %H:%m') as editor_timestamp,
+                    qa.acronym as qa, DATE_FORMAT(t.qa_timestamp,'%d/%m/%Y %H:%m') as qa_timestamp,
+                    dc.acronym as dc, DATE_FORMAT(t.dc_timestamp,'%d/%m/%Y %H:%m') as dc_timestamp
+                FROM tasks t
+                JOIN levels lv ON t.level_id = lv.id
+                JOIN projects p ON t.project_id = p.id
+                LEFT JOIN users e ON t.editor_id = e.id
+                LEFT JOIN users qa ON t.qa_id = qa.id
+                LEFT JOIN users dc ON t.dc_id = dc.id
+                LEFT JOIN task_statuses ts ON t.status_id = ts.id ";
+
+    SET v_sql = CONCAT(v_sql, "WHERE p.end_date >= '", p_from_date, "' AND p.end_date <= '", p_to_date, "'");
+
+    IF p_status > 0 THEN
+        SET v_sql = CONCAT(v_sql, " AND t.status_id = ", p_status);
+    END IF;
+
+    CASE
+        WHEN p_role = 5 THEN -- QA
+            SET v_sql = CONCAT(v_sql, " AND t.qa_id = ", p_actioner);
+        WHEN p_role = 6 THEN -- Editor
+            SET v_sql = CONCAT(v_sql, " AND t.editor_id = ", p_actioner);
+        WHEN p_role = 7 THEN -- DC
+            SET v_sql = CONCAT(v_sql, " AND t.dc_id = ", p_actioner);
+    END CASE;
+
+    IF p_limit > 0 THEN
+        SET v_sql = CONCAT(v_sql, " LIMIT ", p_limit, " OFFSET ", (p_page - 1) * p_limit);
+    END IF;
+
+    -- Create a temporary table to store the results
+    CREATE TEMPORARY TABLE IF NOT EXISTS temp_results (count INT);
+
+    -- Prepare and execute the count query to fetch the total count
+    SET @v_sql = v_sql;
+    SET @v_sql_count = CONCAT('SELECT COUNT(*) FROM (', @v_sql, ') AS subquery');
+    INSERT INTO temp_results (count) SELECT COUNT(*) FROM (SELECT 1) AS subquery;
+    SELECT count INTO v_pages FROM temp_results;
+    IF p_limit > 0 THEN
+    	SELECT CEILING(v_pages / p_limit) AS pages;
+    END IF;
+    -- Drop the temporary table
+    DROP TEMPORARY TABLE IF EXISTS temp_results;
+
+    -- Prepare and execute the main query
+    PREPARE stmt FROM @v_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskStatusAll` ()   BEGIN
@@ -1797,7 +1854,8 @@ INSERT INTO `user_types` (`id`, `name`, `wage`, `group`, `created_at`, `created_
 (3, 'CSS', 0, '', '0000-00-00 00:00:00', 0, NULL, 0),
 (4, 'TLA', 0, '', '0000-00-00 00:00:00', 0, NULL, 0),
 (5, 'QA', 0, '', '0000-00-00 00:00:00', 0, NULL, 0),
-(6, 'EDITOR', 0, '', '0000-00-00 00:00:00', 0, NULL, 0);
+(6, 'EDITOR', 0, '', '0000-00-00 00:00:00', 0, NULL, 0),
+(7, 'DC', 20, '', '2023-10-13 17:21:51', 1, NULL, 0);
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -2116,7 +2174,7 @@ ALTER TABLE `user_productivities`
 -- AUTO_INCREMENT cho bảng `user_types`
 --
 ALTER TABLE `user_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- Các ràng buộc cho các bảng đã đổ

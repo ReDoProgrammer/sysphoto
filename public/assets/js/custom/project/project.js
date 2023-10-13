@@ -244,13 +244,13 @@ $('#btnSubmitNewInstruction').click(function () {
     }
 
     $.ajax({
-        url:'project/addinstruction',
-        type:'post',
-        data:{
-            id:pId,
+        url: 'project/addinstruction',
+        type: 'post',
+        data: {
+            id: pId,
             instruction
         },
-        success:function(data){
+        success: function (data) {
             try {
                 content = $.parseJSON(data);
                 if (content.code == 201) {

@@ -86,4 +86,17 @@ class TaskModel extends Model
         $params = ['p_editor'=>$user->id];
         return $this->__db->executeStoredProcedure("EditorGetTask",$params);
     }
+    public function GetOwnerTasks($from_date,$to_date,$status,$page=1,$limit=0){
+        $user = unserialize($_SESSION['user']);
+        $params = [
+            'p_from_date'=>$from_date,
+            'p_to_date'=>$to_date,
+            'p_status'=>$status,
+            'p_page'=>$page,
+            'p_limit'=>$limit,
+            'p_actioner'=>$user->id,
+            'p_role'=>$user->role_id
+        ];
+        return $this->__db->executeStoredProcedure("TasksGottenByOwner",$params);
+    }
 }
