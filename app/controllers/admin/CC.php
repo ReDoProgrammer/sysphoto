@@ -1,10 +1,11 @@
 <?php
 
-class CC extends Controller
+class CC extends AdminController
 {
     public $cc_model;
     function __construct()
     {
+        parent::__construct();
         $this->cc_model = $this->model('CCModel');
     }
 

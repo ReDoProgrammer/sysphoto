@@ -1,9 +1,10 @@
 <?php
-class Task extends Controller
+class Task extends AdminController
 {
     public $task_model;
     function __construct()
     {
+        parent::__construct();
         $this->task_model = $this->model('TaskModel');
     }
     public function index()

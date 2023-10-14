@@ -1,11 +1,12 @@
 <?php
 
-class Customer extends Controller
+class Customer extends AdminController
 {
     public $customer_model;
 
     function __construct()
     {
+        parent::__construct();
         $this->customer_model = $this->model('CustomerModel');
         $this->customer_group_model = $this->model('CustomerGroupModel');
     }

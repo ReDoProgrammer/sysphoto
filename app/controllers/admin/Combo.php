@@ -1,10 +1,11 @@
 <?php
 
-class Combo extends Controller
+class Combo extends AdminController
 {
     public $combo_model;
     function __construct()
     {
+        parent::__construct();
         $this->combo_model = $this->model('ComboModel');
     }
     public function index()

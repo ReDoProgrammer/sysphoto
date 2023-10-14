@@ -1,11 +1,12 @@
 <?php
 
-class Project extends Controller
+class Project extends AdminController
 {
     public $project_model;
     public $project_instruction_model;
     function __construct()
     {
+        parent::__construct();
         $this->project_model = $this->model('ProjectModel');
         $this->project_instruction_model = $this->model('ProjectInstructionModel');
     }

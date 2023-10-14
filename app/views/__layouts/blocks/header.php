@@ -201,7 +201,7 @@
                     <?php
                         if (isset($_SESSION['user'])) {
                             $user = unserialize($_SESSION['user']);                             
-                            echo '<span class="fw-bold text-info">'.$user->roleName.'</span> '.$user->firstname;
+                            echo '<span class="fw-bold text-info">'.$user->role_name.'</span> '.$user->fullname;
                         }else{
                             echo 'Hello World';
                         }

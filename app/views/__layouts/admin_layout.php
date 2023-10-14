@@ -2,23 +2,8 @@
 <html lang="en">
 
 <?php
-
-if (isset($_SESSION['user'])) {
-    $user = unserialize($_SESSION['user']);
-    if ($user->role != 1) {
-        header('Location: '. _WEB_ROOT.'/admin/login');
-        exit;
-    }
-} else {
-    header('Location: '. _WEB_ROOT.'/admin/login');
-    exit;
-}
 $this->render('__Layouts/blocks/head');
 $this->render('__Layouts/blocks/footer');
-
-
-
-
 ?>
 
 <body>

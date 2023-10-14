@@ -1,11 +1,12 @@
 <?php
 
-class Employee extends Controller
+class Employee extends AdminController
 {
     public $employee_model;
-    private $__role = [1];
+    
     function __construct()
     {
+        parent::__construct();
         $this->employee_model = $this->model('EmployeeModel');
     }
 
@@ -34,22 +35,13 @@ class Employee extends Controller
     }
 
 
-    function login()
-    {
-        $this->render('admin/employee/login');
-    }
+   
     function profile()
     {
 
     }
 
-    function authLogin()
-    {
-        $email = $_POST['email'];
-        $password = $_POST['password'];
-        echo $this->employee_model->Login($email, $password, $this->__role);
-
-    }
+   
     public function index()
     {
         //renderview          

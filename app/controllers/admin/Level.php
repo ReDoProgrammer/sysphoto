@@ -1,10 +1,11 @@
 <?php
 
-class Level extends Controller
+class Level extends AdminController
 {
     public $level_model;
     function __construct()
     {
+        parent::__construct();
         $this->level_model = $this->model('LevelModel');
     }
     public function index()

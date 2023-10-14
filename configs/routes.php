@@ -4,7 +4,7 @@
     /**
      * Đường dẫn ảo => Đường dẫn thật
      */
-    $routes['admin/login'] = 'admin/employee/login';
+    $routes['admin/login'] = 'admin/auth/login';
 
 
     $routes['editor/login']='editor/auth/login';

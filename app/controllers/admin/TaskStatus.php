@@ -1,8 +1,9 @@
 <?php
-    class TaskStatus extends Controller{
+    class TaskStatus extends AdminController{
         public $taskstatus_model;
         function __construct()
         {
+            parent::__construct();
             $this->taskstatus_model = $this->model('TaskStatusModel');
         }
         

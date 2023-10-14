@@ -1,5 +1,8 @@
 <?php
     class Home extends  EditorController{
+        function __construct(){
+            parent::__construct();
+        }
         public function index()
         {
             $this->data['title'] = 'Editor Dashboard';

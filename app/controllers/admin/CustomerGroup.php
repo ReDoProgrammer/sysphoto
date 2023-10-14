@@ -1,9 +1,10 @@
 <?php
-class CustomerGroup extends Controller
+class CustomerGroup extends AdminController
 {
     public $customer_group_model;
     function __construct()
     {
+        parent::__construct();
         $this->customer_group_model = $this->model('CustomerGroupModel');
     }
     public function list()

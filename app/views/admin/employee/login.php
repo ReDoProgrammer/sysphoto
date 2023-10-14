@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-if (isset($_SESSION['user'])) {
-    $user = unserialize($_SESSION['user']);
-    header('Location: '. _WEB_ROOT.'/login/home');
-    exit;
-} 
 $this->render('__Layouts/blocks/head');
 ?>
 <link rel="stylesheet" href="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.css">
@@ -22,7 +17,7 @@ $this->render('__Layouts/blocks/head');
                 <div class="account-box">
                     <div class="account-wrapper">
                         <h3 class="account-title">Login</h3>
-                        <p class="account-subtitle">Access to our dashboard</p>
+                        <p class="account-subtitle">Access as an Administrator</p>
 
                         <!-- Account Form -->
                         <div>

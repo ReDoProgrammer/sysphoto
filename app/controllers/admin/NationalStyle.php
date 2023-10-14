@@ -1,10 +1,11 @@
 <?php
 
-class NationalStyle extends Controller
+class NationalStyle extends AdminController
 {
     public $nationalstyle_model;
     function __construct()
     {
+        parent::__construct();
         $this->nationalstyle_model = $this->model('NationalStyleModel');
     }
     public function index()

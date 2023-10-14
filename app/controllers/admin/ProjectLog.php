@@ -1,10 +1,11 @@
 <?php
 
-class ProjectLog extends Controller
+class ProjectLog extends AdminController
 {
     public $projectlog_model;
     function __construct()
     {
+        parent::__construct();
         $this->projectlog_model = $this->model('ProjectLogModel');
     }
 

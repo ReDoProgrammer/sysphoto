@@ -1,10 +1,11 @@
 <?php
 
-class Cloud extends Controller
+class Cloud extends AdminController
 {
     public $cloud_model;
     function __construct()
     {
+        parent::__construct();
         $this->cloud_model = $this->model('CloudModel');
     }
     public function index()

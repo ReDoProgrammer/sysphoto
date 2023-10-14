@@ -1,10 +1,11 @@
 <?php
 
-class ColorMode extends Controller
+class ColorMode extends AdminController
 {
     public $colormode_model;
     function __construct()
     {
+        parent::__construct();
         $this->colormode_model = $this->model('ColorModeModel');
     }
     public function index()

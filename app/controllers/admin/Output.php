@@ -1,10 +1,11 @@
 <?php
 
-class Output extends Controller
+class Output extends AdminController
 {
     public $output_model;
     function __construct()
     {
+        parent::__construct();
         $this->output_model = $this->model('OutputModel');
     }
     public function index()

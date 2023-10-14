@@ -1,9 +1,10 @@
 <?php
-class Dashboard  extends Controller
+class Dashboard  extends AdminController
 {
     public $home_model;
     function __construct()
     {
+        parent::__construct();
         $this->home_model = $this->model('ProjectModel');
     }
     public function index()
