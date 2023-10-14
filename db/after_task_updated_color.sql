@@ -24,7 +24,7 @@ BEGIN
     -- description
     IF(OLD.description <> NEW.description) THEN
     	SET v_changes = TRUE;
-    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(FROM:<hr/>',OLD.description,'<br/><hr/>TO:',NEW.description,')">View detail</a>,');
+    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(\'FROM:<hr/>',OLD.description,'<br/><hr/>TO:',NEW.description,'\')">View detail</a>,');
          SET v_content = CONCAT(v_content,' ',v_action);
     END IF;
     -- //end description
@@ -46,6 +46,15 @@ BEGIN
         SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
         
          SET v_action = CONCAT('<span class="text-warning">CHANGE TASK STATUS</span> FROM [<span class="text-secondary">', v_old_status, '</span>] TO [<span class="text-primary">', v_new_status, '</span>],');
+         
+           -- editor url
+           IF OLD.editor_url <> NEW.editor_url AND  IsURL(NEW.editor_url) THEN
+                SET v_action = (SELECT TRIM(TRAILING ',' FROM v_action));                 
+                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>, ');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+           END IF;
+        -- //editor url
+    
         SET v_content = CONCAT(v_content,' ',v_action); 
     END IF;
     -- //end status
@@ -74,6 +83,8 @@ BEGIN
       	END IF;       
     END IF; 
     -- //EDITOR
+    
+ 
     
     
     -- QA
@@ -134,11 +145,26 @@ BEGIN
     END IF;
     -- //end quantity
     
+    -- paid
+    	IF OLD.pay <> NEW.pay THEN
+        	SET v_changes = TRUE;
+        	IF NEW.pay = 1 THEN            	
+        		SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-secondary">FALSE</span>] TO [<span class="text-primary">TRUE</span>],');
+            ELSE
+            	SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-primary">TRUE</span>] TO [<span class="text-secondary">FALSE</span>],');
+            END IF;
+            SET v_content = CONCAT(v_content,' ',v_action); 
+        END IF;
+    -- //paid
+    
+
+    
     -- insert logs
     IF v_changes = TRUE THEN
     	SET v_content = (SELECT TRIM(TRAILING ',' FROM v_content));
-        INSERT INTO project_logs(project_id, timestamp, content)
-        VALUES(OLD.project_id, NEW.updated_at, v_content);
+        
+        INSERT INTO project_logs(project_id,task_id, timestamp, content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_content);
     END IF;
 END; //
 DELIMITER ;

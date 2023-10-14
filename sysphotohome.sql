@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 14, 2023 lúc 12:08 PM
+-- Thời gian đã tạo: Th10 14, 2023 lúc 04:59 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -509,7 +509,7 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskUpdate` (IN `p_id` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_assign_editor` TINYINT, IN `p_qa` INT, IN `p_assign_qa` TINYINT, IN `p_quantity` INT, IN `p_level` INT, IN `p_updated_by` INT)   BEGIN
 	UPDATE tasks
     SET
-    	description = p_description,
+    	description = NormalizeContent(p_description),
         editor_id = p_editor, editor_timestamp = NOW(),editor_assigned = p_assign_editor,
         qa_id = p_qa, qa_timestamp = NOW(), qa_assigned = p_assign_qa,
         quantity = p_quantity,level_id = p_level,
@@ -606,6 +606,17 @@ CREATE DEFINER=`root`@`localhost` FUNCTION `GetInitials` (`p_name` VARCHAR(255))
     RETURN result;
 END$$
 
+CREATE DEFINER=`root`@`localhost` FUNCTION `IsURL` (`url` VARCHAR(255)) RETURNS TINYINT(1)  BEGIN
+  DECLARE url_pattern VARCHAR(255);
+  SET url_pattern = '^(http|https)://[a-zA-Z0-9\\-\\.]+\\.[a-zA-Z]{2,}(\\S*)?$';
+  
+  IF url REGEXP url_pattern THEN
+    RETURN TRUE;
+  ELSE
+    RETURN FALSE;
+  END IF;
+END$$
+
 CREATE DEFINER=`root`@`localhost` FUNCTION `NormalizeContent` (`input_text` TEXT) RETURNS TEXT CHARSET utf8mb4 COLLATE utf8mb4_general_ci  BEGIN
 	-- hàm chuẩn hóa content
     DECLARE output_text TEXT;
@@ -681,20 +692,12 @@ CREATE TABLE `ccs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `ccs`
---
-
-INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(1, 1, 'TEst new CC\n', '2023-10-11 15:51:00', '2023-10-12 15:51:00', '2023-10-11 16:41:48', 1, '2023-10-11 09:41:48', 0, '', NULL),
-(3, 4, 'ccc\n', '2023-10-14 16:15:00', '2023-10-14 16:15:00', '2023-10-14 17:05:04', 1, '2023-10-14 10:05:04', 0, '', NULL);
-
---
 -- Bẫy `ccs`
 --
 DELIMITER $$
 CREATE TRIGGER `after_cc_deleted` AFTER DELETE ON `ccs` FOR EACH ROW BEGIN
-	INSERT INTO project_logs(project_id,timestamp,content)
-    VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE CC</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-secondary">',DATE_FORMAT(OLD.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
+	INSERT INTO project_logs(project_id,cc_id,timestamp,content)
+    VALUES(OLD.project_id,OLD.id,OLD.deleted_at,CONCAT('[<span class="fw-bold text-info">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE CC</span> FROM [',DATE_FORMAT(OLD.start_date, '%d/%m/%Y %H:%i'),'] TO [',DATE_FORMAT(OLD.end_date, '%d/%m/%Y %H:%i'),']'));
 END
 $$
 DELIMITER ;
@@ -703,18 +706,15 @@ CREATE TRIGGER `after_cc_inserted` AFTER INSERT ON `ccs` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);    
     SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM tasks WHERE id = NEW.id));
     
-    INSERT INTO project_logs(project_id,timestamp,content)
-    VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">CREATE NEW CC</span> FROM [<span class="text-warning">',DATE_FORMAT(NEW.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-warning">',DATE_FORMAT(NEW.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
+    INSERT INTO project_logs(project_id,cc_id,timestamp,content)
+    VALUES(NEW.project_id,NEW.id,NEW.created_at,CONCAT('[<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">CREATE NEW CC</span> FROM [<span class="text-warning">',DATE_FORMAT(NEW.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-warning">',DATE_FORMAT(NEW.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
     
 END
 $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `before_cc_deleted` BEFORE DELETE ON `ccs` FOR EACH ROW BEGIN
-	UPDATE tasks 
-    SET deleted_by = OLD.deleted_by, deleted_at = NOW() 
-    WHERE cc_id = OLD.id;
-    
+	UPDATE tasks SET deleted_by = OLD.deleted_by, deleted_at = NOW() WHERE cc_id = OLD.id;
     DELETE FROM tasks WHERE cc_id = OLD.id;
 END
 $$
@@ -1125,16 +1125,6 @@ CREATE TABLE `projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `projects`
---
-
-INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 11, 'Test project changed', 'This is project description	\n', 1, '2023-10-11 12:54:00', '2023-10-11 17:54:00', '1,2,4', '', NULL, NULL, 1, 0, '2023-10-11 12:55:04', 1, '2023-10-11 18:26:30', 1, NULL, ''),
-(2, 16, 'test new project', 'Test project description\n', 1, '2023-10-11 18:27:00', '2023-10-11 21:27:00', '1,5', '', NULL, NULL, 3, 1, '2023-10-11 18:29:17', 1, NULL, 0, NULL, ''),
-(3, 13, 'test project 1410', 'the 1410 project description\n', 1, '2023-10-14 16:15:00', '2023-10-14 19:15:00', '1,3,4', '', NULL, NULL, 2, 1, '2023-10-14 16:17:24', 1, NULL, 0, NULL, ''),
-(4, 13, 'test project 12344321', 'project description here\n', 1, '2023-10-14 16:15:00', '2023-10-14 21:15:00', '', '', NULL, NULL, 1, 1, '2023-10-14 17:04:41', 1, NULL, 0, NULL, '');
-
---
 -- Bẫy `projects`
 --
 DELIMITER $$
@@ -1222,7 +1212,7 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
     -- description 
     	IF NEW.description <> OLD.description THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE DESCRIPTION</span> FROM [<span class="text-secondary">',OLD.description,'</span>] TO [<span class="text-info">',NEW.description,'</span>],');            
+        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE DESCRIPTION</span><a href="javascript:void(0)" onClick="ViewContent(''FROM:<br/>', OLD.description,'TO: <br/>', NEW.description,''')">View detail</a> ,');            
         END IF;
     -- //description
     
@@ -1329,29 +1319,6 @@ CREATE TABLE `project_instructions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `project_instructions`
---
-
-INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(1, 1, 'This is the 1st project instruction\n', '2023-10-11 12:55:04', 1, '2023-10-11 11:26:30', 1, NULL, NULL),
-(2, 2, 'The 1st instruciton\n', '2023-10-11 18:29:17', 1, NULL, 0, NULL, NULL),
-(3, 1, 'The 2nd instruction here\n', '0000-00-00 00:00:00', 1, NULL, 0, NULL, NULL),
-(8, 1, 'The 3rd instruction\n', '0000-00-00 00:00:00', 0, NULL, 0, NULL, NULL),
-(9, 1, 'the 4th instruction\n', '2023-10-11 21:23:38', 1, NULL, 0, NULL, NULL),
-(10, 1, 'the 5th instruction\n', '2023-10-11 21:24:24', 1, NULL, 0, NULL, NULL),
-(11, 1, 'The 6th instruction\n', '2023-10-11 21:38:09', 1, NULL, 0, NULL, NULL),
-(12, 1, 'The 7th instruction\n', '2023-10-11 21:39:15', 1, NULL, 0, NULL, NULL),
-(13, 1, 'the 8th instruction\n', '2023-10-11 21:42:49', 1, NULL, 0, NULL, NULL),
-(14, 1, 'the 9th instruction\n', '2023-10-11 21:48:35', 1, NULL, 0, NULL, NULL),
-(15, 1, 'test abc xyzzzzz\n', '2023-10-11 21:54:57', 1, NULL, 0, NULL, NULL),
-(16, 1, 'Test instruciton\n', '2023-10-12 11:43:03', 1, NULL, 0, NULL, NULL),
-(17, 1, 'Test instruction\n', '2023-10-12 11:54:54', 1, NULL, 0, NULL, NULL),
-(18, 1, 'test instruction 222\n', '2023-10-12 12:24:11', 1, NULL, 0, NULL, NULL),
-(19, 3, 'instruction\n', '2023-10-14 16:17:24', 1, NULL, 0, NULL, NULL),
-(20, 3, 'this is new instruction\n', '2023-10-14 17:01:57', 1, NULL, 0, NULL, NULL),
-(21, 4, 'Instruction here\n', '2023-10-14 17:04:41', 1, NULL, 0, NULL, NULL);
-
---
 -- Bẫy `project_instructions`
 --
 DELIMITER $$
@@ -1359,6 +1326,7 @@ CREATE TRIGGER `after_instruction_inserted` AFTER INSERT ON `project_instruction
  	DECLARE v_ins_count INT DEFAULT 0;
     DECLARE v_actioner varchar(100);
     DECLARE v_content text DEFAULT '';
+    
     SET v_ins_count = (SELECT COUNT(id) FROM project_instructions WHERE project_id = NEW.project_id and id < NEW.id);
     IF v_ins_count > 0 THEN
     	SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.created_by);
@@ -1398,54 +1366,6 @@ CREATE TABLE `project_logs` (
   `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
   `content` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `project_logs`
---
-
-INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `content`) VALUES
-(1, 1, 0, 0, '2023-10-11 12:55:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(2, 1, 0, 0, '2023-10-11 12:55:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(3, 1, 0, 0, '2023-10-11 12:55:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(4, 1, 0, 0, '2023-10-11 12:55:04', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-JA</span>]'),
-(5, 1, 0, 0, '2023-10-11 13:35:07', '[<span class=\"fw-bold text-info\">tuan.bv</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(6, 1, 0, 0, '2023-10-11 13:36:42', '[<span class=\"fw-bold text-info\">hung.bv</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">10</span>]'),
-(7, 1, 0, 0, '2023-10-11 16:41:48', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">11/10/2023 15:51</span>] TO [<span class=\"text-warning\">12/10/2023 15:51</span>]'),
-(8, 1, 0, 0, '2023-10-11 16:42:11', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
-(9, 1, 0, 0, '2023-10-11 16:50:34', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">5</span>]'),
-(10, 1, 0, 0, '2023-10-11 16:50:50', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> FROM [<span class=\"text-secondary\">Tassk demo \n</span>] TO [<span class=\"text-primary\">Tassk demo  123\n</span>]'),
-(11, 1, 0, 0, '2023-10-11 16:52:35', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]'),
-(12, 1, 0, 0, '2023-10-11 16:52:41', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]'),
-(25, 1, 0, 0, '2023-10-12 11:54:54', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'Test instruction\n\')\">View detail</a>'),
-(26, 1, 0, 0, '2023-10-12 12:24:11', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'test instruction 222\n\')\">View detail</a>'),
-(27, 1, 0, 0, '2023-10-12 18:51:31', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]'),
-(28, 1, 0, 0, '2023-10-14 11:40:02', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]'),
-(29, 1, 0, 0, '2023-10-14 11:44:22', '[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">CHANGE TASK STATUS</span> FROM [<span class=\"text-secondary\">Reject</span>] TO [<span class=\"text-primary\">Done</span>]'),
-(30, 3, 0, 0, '2023-10-14 16:17:24', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(31, 3, 0, 0, '2023-10-14 16:17:24', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(32, 3, 0, 0, '2023-10-14 16:17:24', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(33, 3, 0, 0, '2023-10-14 16:17:24', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]'),
-(34, 3, 0, 0, '2023-10-14 16:50:02', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">5</span>]'),
-(35, 3, 0, 0, '2023-10-14 16:50:02', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">5</span>]'),
-(36, 3, 0, 0, '2023-10-14 16:50:45', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">3</span>]'),
-(37, 3, 0, 0, '2023-10-14 16:59:44', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(FROM:<hr/>fdsấ\n<br/><hr/>TO:This is task description here\n)\">View detail</a>'),
-(38, 3, 0, 0, '2023-10-14 17:00:16', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]'),
-(39, 3, 0, 0, '2023-10-14 17:00:21', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]'),
-(40, 3, 0, 0, '2023-10-14 17:00:24', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-Stand]'),
-(41, 3, 0, 0, '2023-10-14 17:01:57', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'this is new instruction\n\')\">View detail</a>'),
-(42, 3, 0, 0, '2023-10-14 17:02:34', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(43, 3, 0, 0, '2023-10-14 17:03:00', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(FROM:<hr/>\n<br/><hr/>TO:fáđá\n)\">View detail</a>'),
-(44, 3, 0, 0, '2023-10-14 17:03:18', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(FROM:<hr/>fáđá\n<br/><hr/>TO:fáđá 123412\n)\">View detail</a>'),
-(45, 3, 0, 0, '2023-10-14 17:03:26', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(FROM:<hr/>fáđá 123412\n<br/><hr/>TO:fáđá 123412314124\n)\">View detail</a>'),
-(46, 3, 0, 0, '2023-10-14 17:03:46', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]'),
-(47, 3, 0, 0, '2023-10-14 17:03:48', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]'),
-(48, 3, 0, 0, '2023-10-14 17:03:51', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]'),
-(49, 3, 0, 0, '2023-10-14 17:03:53', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]'),
-(50, 4, 0, 0, '2023-10-14 17:04:41', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]'),
-(51, 4, 0, 0, '2023-10-14 17:05:04', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">14/10/2023 16:15</span>] TO [<span class=\"text-warning\">14/10/2023 16:15</span>]'),
-(52, 4, 0, 0, '2023-10-14 17:05:30', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [<span class=\"fw-bold\">1</span>]'),
-(53, 4, 0, 0, '2023-10-14 17:07:33', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [<span class=\"fw-bold\">4</span>]'),
-(54, 4, 0, 0, '2023-10-14 17:07:43', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK LEVEL</span> FROM [<span class=\"text-secondary\">PE-BASIC</span>] TO [<span class=\"text-primary\">Re-Stand</span>], <span class=\"text-danger\">UNASSIGN EDITOR</span> O');
 
 -- --------------------------------------------------------
 
@@ -1492,6 +1412,7 @@ CREATE TABLE `tasks` (
   `editor_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm editor được gán hoặc nhận task',
   `editor_assigned` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1: Editor được gán, 0: editor nhận task',
   `editor_wage` float DEFAULT 0 COMMENT 'Tiền công của editor',
+  `editor_url` varchar(5000) NOT NULL COMMENT 'Link submit của editor parttime',
   `qa_id` int(11) NOT NULL,
   `qa_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm qa được gán task hoặc nhận task',
   `qa_assigned` tinyint(1) NOT NULL COMMENT '1: QA được gán, 0: QA nhận task',
@@ -1517,36 +1438,15 @@ CREATE TABLE `tasks` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `tasks`
---
-
-INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(3, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 1, 0, 1, 0, 0, 1, '', '2023-10-11 12:55:04', 1, '2023-10-11 05:55:04', 0, NULL, NULL),
-(4, 1, 'test task insert suddently', 1, 4, '2023-10-12 11:51:31', 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 13:35:07', 14, '2023-10-12 11:51:31', 4, NULL, NULL),
-(5, 1, 'test insert suddently', 1, 4, '2023-10-14 04:40:02', 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 10, 0, 0, 1, '', '2023-10-11 13:36:42', 23, '2023-10-14 04:44:22', 4, '2023-10-14 04:40:02', NULL),
-(6, 1, 'CC Task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 1, 3, 0, 0, 1, '', '2023-10-11 16:42:11', 1, '2023-10-11 09:42:11', 0, NULL, NULL),
-(7, 1, 'Tassk demo  123\n', 0, 43, '2023-10-11 09:52:03', 1, 0, 9, '2023-10-11 09:52:03', 1, 0, 0, 0, NULL, 0, 1, 0, 0, 5, 0, 0, 1, '', '2023-10-11 16:50:34', 1, '2023-10-11 09:52:03', 1, NULL, NULL),
-(8, 1, '\n', 0, 42, NULL, 0, 0, 9, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 16:57:40', 1, '2023-10-11 09:57:40', 0, NULL, NULL),
-(9, 1, '\n', 0, 49, NULL, 0, 0, 49, NULL, 0, 0, 0, 0, NULL, 0, 8, 0, 0, 5, 0, 0, 1, '', '2023-10-11 18:23:28', 1, '2023-10-11 11:23:28', 0, NULL, NULL),
-(10, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-11 18:29:17', 1, '2023-10-11 11:29:17', 0, NULL, NULL),
-(11, 2, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 1, 0, 1, 0, 0, 1, '', '2023-10-11 18:29:17', 1, '2023-10-11 11:29:17', 0, NULL, NULL),
-(19, 4, 'Task CC description\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 0, 3, 1, 0, 0, 1, '', '2023-10-14 17:05:30', 1, '2023-10-14 10:05:30', 0, NULL, NULL),
-(20, 4, 'normal task\n', 0, 0, '2023-10-14 10:07:43', 0, 0, 0, '2023-10-14 10:07:43', 0, 0, 0, 0, NULL, 0, 4, 0, 0, 4, 0, 0, 1, '', '2023-10-14 17:07:33', 1, '2023-10-14 10:07:43', 1, NULL, NULL);
-
---
 -- Bẫy `tasks`
 --
 DELIMITER $$
 CREATE TRIGGER `after_task_deleted` AFTER DELETE ON `tasks` FOR EACH ROW BEGIN
 	DECLARE v_level varchar(100);
     SET v_level = (SELECT name FROM levels WHERE id = OLD.level_id);
-    IF OLD.cc_id > 0 THEN
-        INSERT INTO project_logs(project_id,timestamp,content)
-        VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE CC TASK </span>[',v_level,']'));
-     ELSE
-     	INSERT INTO project_logs(project_id,timestamp,content)
-        VALUES(OLD.project_id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE TASK </span>[',v_level,']'));
-     END IF;
+    
+	INSERT INTO project_logs(project_id,task_id,timestamp,content)
+    VALUES(OLD.project_id,OLD.id,OLD.deleted_at,CONCAT('[<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE TASK </span>[',v_level,']'));
 END
 $$
 DELIMITER ;
@@ -1554,18 +1454,20 @@ DELIMITER $$
 CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);
     DECLARE v_level varchar(50);
-    DECLARE v_action varchar(250) DEFAULT '';
+    DECLARE v_content varchar(5000);
     
     SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM tasks WHERE id = NEW.id));
     SET v_level = (SELECT name FROM levels WHERE id = NEW.level_id);
-    IF NEW.cc_id = 0 THEN
-    	SET v_action = "INSERT TASK";
+    
+    SET v_content = CONCAT('[<span class="fw-bold text-info">',v_created_by,'</span>] ');
+    IF NEW.cc_id > 0 THEN
+    	SET v_content = CONCAT( v_content,'<span class="text-success">INSERT CC TASK</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [',NEW.quantity,']');
     ELSE
-    	SET v_action = "INSERT CC TASK";
+    	SET v_content = CONCAT(v_content,'<span class="text-success">INSERT TASK</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [',NEW.quantity,']');
     END IF;
     
-    INSERT INTO project_logs(project_id,timestamp,content)
-    VALUES(NEW.project_id,NEW.created_at,CONCAT('[<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">',v_action,'</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [<span class="fw-bold">',NEW.quantity,'</span>]'));
+    INSERT INTO project_logs(project_id,task_id,timestamp,content)
+    VALUES(NEW.project_id,NEW.id,NEW.created_at,v_content);
     
 END
 $$
@@ -1594,7 +1496,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     -- description
     IF(OLD.description <> NEW.description) THEN
     	SET v_changes = TRUE;
-    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(FROM:<hr/>',OLD.description,'<br/><hr/>TO:',NEW.description,')">View detail</a>,');
+    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(''FROM:<hr/>',OLD.description,'<br/><hr/>TO:',NEW.description,''')">View detail</a>,');
          SET v_content = CONCAT(v_content,' ',v_action);
     END IF;
     -- //end description
@@ -1616,6 +1518,15 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
         SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
         
          SET v_action = CONCAT('<span class="text-warning">CHANGE TASK STATUS</span> FROM [<span class="text-secondary">', v_old_status, '</span>] TO [<span class="text-primary">', v_new_status, '</span>],');
+         
+           -- editor url
+           IF OLD.editor_url <> NEW.editor_url AND  IsURL(NEW.editor_url) THEN
+                SET v_action = (SELECT TRIM(TRAILING ',' FROM v_action));                 
+                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>, ');        
+                SET v_content = CONCAT(v_content,' ',v_action); 
+           END IF;
+        -- //editor url
+    
         SET v_content = CONCAT(v_content,' ',v_action); 
     END IF;
     -- //end status
@@ -1644,6 +1555,8 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
       	END IF;       
     END IF; 
     -- //EDITOR
+    
+ 
     
     
     -- QA
@@ -1704,11 +1617,26 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     END IF;
     -- //end quantity
     
+    -- paid
+    	IF OLD.pay <> NEW.pay THEN
+        	SET v_changes = TRUE;
+        	IF NEW.pay = 1 THEN            	
+        		SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-secondary">FALSE</span>] TO [<span class="text-primary">TRUE</span>],');
+            ELSE
+            	SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-primary">TRUE</span>] TO [<span class="text-secondary">FALSE</span>],');
+            END IF;
+            SET v_content = CONCAT(v_content,' ',v_action); 
+        END IF;
+    -- //paid
+    
+
+    
     -- insert logs
     IF v_changes = TRUE THEN
     	SET v_content = (SELECT TRIM(TRAILING ',' FROM v_content));
-        INSERT INTO project_logs(project_id, timestamp, content)
-        VALUES(OLD.project_id, NEW.updated_at, v_content);
+        
+        INSERT INTO project_logs(project_id,task_id, timestamp, content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_content);
     END IF;
 END
 $$
@@ -2077,7 +2005,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2167,19 +2095,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2191,7 +2119,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

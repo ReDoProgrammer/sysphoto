@@ -169,6 +169,8 @@ $('#btnSubmitTask').click(function () {
 
     //end validation
 
+    console.log({taskId});
+
     if (taskId < 1) {
         $.ajax({
             url: '../task/create',

@@ -43,7 +43,7 @@ BEGIN
     -- description 
     	IF NEW.description <> OLD.description THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE DESCRIPTION</span> FROM [<span class="text-secondary">',OLD.description,'</span>] TO [<span class="text-info">',NEW.description,'</span>],');            
+        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE DESCRIPTION</span><a href="javascript:void(0)" onClick="ViewContent(\'FROM:<br/>', OLD.description,'TO: <br/>', NEW.description,'\')">View detail</a> ,');            
         END IF;
     -- //description
     
