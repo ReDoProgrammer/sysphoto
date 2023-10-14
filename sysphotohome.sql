@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 14, 2023 lúc 04:59 PM
+-- Thời gian đã tạo: Th10 14, 2023 lúc 10:07 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -157,7 +157,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerUpdate` (IN `p_id` BIGINT, 
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT)   BEGIN
-    DECLARE v_levels VARCHAR(100) DEFAULT '';
+   DECLARE v_levels VARCHAR(100) DEFAULT '';
     DECLARE v_processing_tasks_count INT DEFAULT 0;
     DECLARE v_count_available_task INT DEFAULT 0;
 
@@ -170,25 +170,16 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT) 
             AND FIND_IN_SET(status_id, '0,2,5') > 0);
         IF v_processing_tasks_count > 0 THEN
              SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'),'icon','danger','heading','Locked ') AS msg;
-        ELSE
-            SET v_levels = (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_editor));
-            SET v_count_available_task = (
-                SELECT  COUNT(t.id)
-                FROM tasks t
-                INNER JOIN projects p ON t.project_id = p.id
-                WHERE t.editor_id = 0
-                AND FIND_IN_SET(t.status_id, v_levels) > 0
-                ORDER BY p.end_date
-                LIMIT 1
-            );
-            IF v_count_available_task > 0 THEN
+        ELSE          
+            IF EXISTS( SELECT * FROM tasks t INNER JOIN projects p ON t.project_id = p.id WHERE t.editor_id = 0
+                AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_editor))) > 1 ORDER BY p.end_date LIMIT 1) THEN
                 UPDATE tasks
                 SET editor_id = p_editor, editor_timestamp = NOW(), updated_by = p_editor, updated_at = NOW()
                 WHERE id = (SELECT  t.id
                                     FROM tasks t
                                     INNER JOIN projects p ON t.project_id = p.id
                                     WHERE t.editor_id = 0
-                                    AND FIND_IN_SET(t.status_id, v_levels) > 0
+                                    AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_editor))) > 1 
                                     ORDER BY p.end_date
                                     LIMIT 1);
                 IF ROW_COUNT() > 0 THEN
@@ -348,7 +339,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectLogs` (IN `p_id` BIGINT)   B
     	DATE_FORMAT(timestamp, '%d/%m/%Y %H:%i:%s') as timestamp
     FROM 	project_logs 
     WHERE project_id = p_id 
-    ORDER BY timestamp DESC;
+    ORDER BY id DESC;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusAll` ()   BEGIN
+	SELECT * FROM project_statuses;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectUpdate` (IN `p_id` BIGINT, IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(250), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_updated_by` INT)   BEGIN
@@ -377,12 +372,15 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT)   BEGIN   
       SELECT 
    		t.level_id,
+        DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') as start_date,
+        DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') as end_date,
         lv.name as level,
         lv.color as level_color,
         t.quantity,
         ts.name as status,
         ts.color as status_color,
-		NormalizeContent(t.description) as description,
+		NormalizeContent(t.description) as task_description,
+        NormalizeContent(p.description) as project_description,
         t.editor_id,
         e.acronym as editor,
          DATE_FORMAT(t.editor_timestamp, '%d/%m/%Y %H:%i:%s') as editor_timestamp,
@@ -403,25 +401,39 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
         c.acronym as created_by,
         DATE_FORMAT(t.updated_at, '%d/%m/%Y %H:%i:%s') as updated_at,
         u.acronym as updated_by,
-        (
-        SELECT 
-        CONCAT('[', GROUP_CONCAT(
-            JSON_OBJECT(
-                'id', i.id,
-                'content', i.content,
-                'created_at', DATE_FORMAT(i.created_at, '%d/%m/%Y %H:%i')
-            ) SEPARATOR ','
-        ), ']')
-        FROM project_instructions i
-        WHERE i.project_id = t.project_id
-        ORDER BY i.id DESC
-    ) AS instructions_list,
+       
+         CONCAT('[', GROUP_CONCAT(
+    DISTINCT JSON_OBJECT(
+        'id',pi.id,
+        'content', pi.content
+    ) ORDER BY pl.id DESC SEPARATOR ','
+), ']')  AS instructions_list,
     	t.cc_id,
     	CASE WHEN t.cc_id > 0 THEN
      		cc.feedback
        	 	ELSE ''
-        END as cc_content
+        END as cc_content,
+     CONCAT('[', GROUP_CONCAT(
+    DISTINCT JSON_OBJECT(
+        'timestamp', DATE_FORMAT(pl.timestamp, '%d/%m/%Y %H:%i'),
+        'content', pl.content
+    ) ORDER BY pl.id DESC SEPARATOR ','
+), ']') as task_logs,
+ JSON_OBJECT(
+    	'color',cm.name,'output',op.name,'size',ctm.size,
+        'is_straighten',ctm.is_straighten,'straighten_remark',ctm.straighten_remark,
+        'tv',ctm.tv,'fire',ctm.fire,'sky',ctm.sky,'grass',ctm.grass,
+        'style',ns.name,'cloud',cl.name,'style_remark',ctm.style_remark
+    ) as styles
     FROM tasks t
+    JOIN projects p ON t.project_id = p.id
+    JOIN customers ctm ON p.customer_id = ctm.id
+   	LEFT JOIN color_modes cm ON ctm.color_mode_id = ctm.id
+    LEFT JOIN outputs op ON ctm.output_id = op.id
+    LEFT JOIN national_styles ns ON ctm.national_style_id = ns.id
+    LEFT JOIN clouds cl ON ctm.cloud_id = cl.id
+    JOIN project_logs pl ON pl.project_id = p.id AND pl.task_id = t.id
+    LEFT JOIN project_instructions pi ON pi.project_id = p.id
 	LEFT JOIN ccs cc ON t.cc_id = cc.id
 	JOIN levels lv ON t.level_id = lv.id
     LEFT JOIN users e ON t.editor_id = e.id
@@ -459,7 +471,7 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_date` TIMESTAMP, IN `p_to_date` TIMESTAMP, IN `p_status` INT, IN `p_page` INT, IN `p_limit` INT, IN `p_actioner` INT, IN `p_role` INT)   BEGIN
     DECLARE v_sql VARCHAR(5000);
 
-    SET v_sql = "SELECT t.id,lv.name as level,lv.color as level_color,t.quantity, t.editor_assigned,t.qa_assigned, 
+    SET v_sql = "SELECT t.id,lv.name as level,lv.color as level_color,t.quantity, t.editor_assigned,t.qa_assigned,t.status_id, 
                     ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,t.pay,t.pay_remark,
                     p.name as project_name,DATE_FORMAT(p.start_date,'%d/%m/%Y %H:%m') as start_date, DATE_FORMAT(p.end_date,'%d/%m/%Y %H:%m') as end_date,
                     ct.acronym as customer,
@@ -504,6 +516,16 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskStatusAll` ()   BEGIN
 	SELECT * FROM task_statuses ORDER BY id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskSubmitedByEditor` (IN `p_id` BIGINT, IN `p_url` VARCHAR(500), IN `p_editor` INT, IN `p_status` INT)   BEGIN
+	UPDATE tasks
+    SET status_id = p_status,
+    	updated_at = NOW(),
+        updated_by = p_editor,
+        editor_url = p_url
+     WHERE id = p_id;
+     SELECT ROW_COUNT() as updated_rows;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskUpdate` (IN `p_id` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_assign_editor` TINYINT, IN `p_qa` INT, IN `p_assign_qa` TINYINT, IN `p_quantity` INT, IN `p_level` INT, IN `p_updated_by` INT)   BEGIN
@@ -690,6 +712,13 @@ CREATE TABLE `ccs` (
   `deleted_by` varchar(100) NOT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp() COMMENT 'Thời điểm xóa cc'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `ccs`
+--
+
+INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(1, 1, 'The 1st project CC feedback\n', '2023-10-14 22:10:00', '2023-10-14 22:10:00', '2023-10-14 22:18:23', 1, '2023-10-14 15:18:23', 0, '', NULL);
 
 --
 -- Bẫy `ccs`
@@ -1125,6 +1154,13 @@ CREATE TABLE `projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Đang đổ dữ liệu cho bảng `projects`
+--
+
+INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(1, 13, 'test 123 update', 'This is the project description\n', 1, '2023-10-14 22:10:00', '2023-10-15 03:10:00', '1,3', '', NULL, NULL, 1, 1, '2023-10-14 22:11:58', 1, NULL, 0, NULL, '');
+
+--
 -- Bẫy `projects`
 --
 DELIMITER $$
@@ -1319,6 +1355,14 @@ CREATE TABLE `project_instructions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Đang đổ dữ liệu cho bảng `project_instructions`
+--
+
+INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(1, 1, 'This is the 1st instruction\n', '2023-10-14 22:11:58', 1, NULL, 0, NULL, NULL),
+(2, 1, 'The 2nd instruction\n', '2023-10-14 22:18:53', 1, NULL, 0, NULL, NULL);
+
+--
 -- Bẫy `project_instructions`
 --
 DELIMITER $$
@@ -1366,6 +1410,40 @@ CREATE TABLE `project_logs` (
   `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
   `content` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `project_logs`
+--
+
+INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `content`) VALUES
+(1, 1, 0, 0, '2023-10-14 22:11:58', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]'),
+(2, 1, 1, 0, '2023-10-14 22:11:58', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]'),
+(3, 1, 2, 0, '2023-10-14 22:11:58', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]'),
+(4, 1, 3, 0, '2023-10-14 22:17:44', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [3]'),
+(5, 1, 0, 1, '2023-10-14 22:18:23', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">14/10/2023 22:10</span>] TO [<span class=\"text-warning\">14/10/2023 22:10</span>]'),
+(6, 1, 0, 0, '2023-10-14 22:18:53', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'The 2nd instruction\n\')\">View detail</a>'),
+(7, 1, 4, 0, '2023-10-14 22:21:55', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT CC TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]'),
+(8, 1, 3, 0, '2023-10-14 22:24:10', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'FROM:<hr/>Normally task created\n<br/><hr/>TO:Normally task created updated\n\')\">View detail</a>'),
+(9, 1, 3, 0, '2023-10-14 22:29:09', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">UNASSIGN EDITOR</span> ON TASK [<span class=\"text-primary\">PE-STAND</span>]'),
+(10, 1, 5, 0, '2023-10-14 22:29:44', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]'),
+(11, 1, 6, 0, '2023-10-14 22:29:50', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [3]'),
+(12, 1, 7, 0, '2023-10-14 22:29:54', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [3]'),
+(13, 1, 8, 0, '2023-10-14 22:29:58', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [3]'),
+(14, 1, 9, 0, '2023-10-14 22:30:03', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [3]'),
+(15, 1, 10, 0, '2023-10-14 22:30:08', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>] with quantity: [3]'),
+(16, 1, 11, 0, '2023-10-14 22:30:13', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [3]'),
+(17, 1, 12, 0, '2023-10-14 22:30:17', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">VHS</span>] with quantity: [3]'),
+(18, 1, 13, 0, '2023-10-14 22:30:23', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">VIDEO</span>] with quantity: [3]'),
+(19, 1, 7, 0, '2023-10-14 22:57:45', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]'),
+(20, 1, 7, 0, '2023-10-15 02:46:07', '[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]'),
+(21, 1, 7, 0, '2023-10-15 02:46:48', '[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\"> SET STARTED STATUS TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]'),
+(22, 1, 1, 0, '2023-10-15 02:49:21', '[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with <a href=\"https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129\" target=\"_blank\">Link</a>, '),
+(23, 1, 7, 0, '2023-10-15 02:49:43', '[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with <a href=\"https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129\" target=\"_blank\">Link</a>, '),
+(24, 1, 7, 0, '2023-10-15 02:51:02', '[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\"> SET STARTED STATUS TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]'),
+(25, 1, 7, 0, '2023-10-15 02:59:12', 'EDITOR[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with <a href=\"https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129\" target=\"_blank\">Link</a>, '),
+(26, 1, 7, 0, '2023-10-15 03:00:53', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\"> SET STARTED STATUS TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]'),
+(27, 1, 7, 0, '2023-10-15 03:01:29', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with <a href=\"https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129\" target=\"_blank\">Link</a>, '),
+(28, 1, 7, 0, '2023-10-15 03:02:38', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\"> SET STARTED STATUS TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]');
 
 -- --------------------------------------------------------
 
@@ -1438,6 +1516,25 @@ CREATE TABLE `tasks` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Đang đổ dữ liệu cho bảng `tasks`
+--
+
+INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(1, 1, NULL, 1, 0, NULL, 0, 0, 'https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129', 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-14 22:11:58', 1, '2023-10-14 19:49:21', 4, NULL, NULL),
+(2, 1, NULL, 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 0, 1, 0, 0, 1, '', '2023-10-14 22:11:58', 1, '2023-10-14 15:11:58', 0, NULL, NULL),
+(3, 1, 'Normally task created updated\n', 0, 0, '2023-10-14 15:29:09', 0, 0, '', 0, '2023-10-14 15:29:09', 0, 0, 0, 0, NULL, 0, 1, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:17:44', 1, '2023-10-14 15:29:09', 1, NULL, NULL),
+(4, 1, 'CC task description\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 1, 3, 0, 0, 1, '', '2023-10-14 22:21:55', 1, '2023-10-14 15:21:55', 0, NULL, NULL),
+(5, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:29:44', 1, '2023-10-14 15:29:44', 0, NULL, NULL),
+(6, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:29:50', 1, '2023-10-14 15:29:50', 0, NULL, NULL),
+(7, 1, 'Normally task created updated\n', 0, 4, '2023-10-14 15:57:45', 0, 0, '\'\'', 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:29:54', 1, '2023-10-14 20:02:38', 4, NULL, NULL),
+(8, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:29:58', 1, '2023-10-14 15:29:58', 0, NULL, NULL),
+(9, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 6, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:30:03', 1, '2023-10-14 15:30:03', 0, NULL, NULL),
+(10, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:30:08', 1, '2023-10-14 15:30:08', 0, NULL, NULL),
+(11, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 8, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:30:13', 1, '2023-10-14 15:30:13', 0, NULL, NULL),
+(12, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 9, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:30:17', 1, '2023-10-14 15:30:17', 0, NULL, NULL),
+(13, 1, 'Normally task created updated\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 10, 0, 0, 3, 0, 0, 1, '', '2023-10-14 22:30:23', 1, '2023-10-14 15:30:23', 0, NULL, NULL);
+
+--
 -- Bẫy `tasks`
 --
 DELIMITER $$
@@ -1487,10 +1584,14 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     DECLARE v_new_emp VARCHAR(100) DEFAULT '';
     
     DECLARE v_changes BOOLEAN DEFAULT FALSE;
+
+    DECLARE v_role varchar(100) DEFAULT '';
+
+    SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
   
   	SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai
 
-    SET v_content = CONCAT('[<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
+    SET v_content = CONCAT(v_role,': [<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
    
     
     -- description
@@ -1514,16 +1615,18 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     -- status
     IF(OLD.status_id <> NEW.status_id) THEN
     	SET v_changes = TRUE;
-        SET v_old_status = (SELECT name FROM task_statuses WHERE id = OLD.status_id);
         SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
+        IF v_new_status IS NOT NULL THEN
+            SET v_action = CONCAT('<span class="text-warning">',v_new_status,' TASK</span> [<span class="fw-bold">',v_new_level,'</span>]'); 
+        ELSE
+            SET v_action = CONCAT('<span class="text-warning"> SET STARTED STATUS TASK</span> [<span class="fw-bold">',v_new_level,'</span>]'); 
+        END IF;
         
-         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK STATUS</span> FROM [<span class="text-secondary">', v_old_status, '</span>] TO [<span class="text-primary">', v_new_status, '</span>],');
-         
+        
            -- editor url
            IF OLD.editor_url <> NEW.editor_url AND  IsURL(NEW.editor_url) THEN
                 SET v_action = (SELECT TRIM(TRAILING ',' FROM v_action));                 
-                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>, ');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>, ');       
            END IF;
         -- //editor url
     
@@ -2005,7 +2108,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2095,19 +2198,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2119,7 +2222,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

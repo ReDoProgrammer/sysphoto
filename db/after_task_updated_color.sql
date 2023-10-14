@@ -15,10 +15,14 @@ BEGIN
     DECLARE v_new_emp VARCHAR(100) DEFAULT '';
     
     DECLARE v_changes BOOLEAN DEFAULT FALSE;
+
+    DECLARE v_role varchar(100) DEFAULT '';
+
+    SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
   
   	SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai
 
-    SET v_content = CONCAT('[<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
+    SET v_content = CONCAT(v_role,': [<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
    
     
     -- description
@@ -42,16 +46,18 @@ BEGIN
     -- status
     IF(OLD.status_id <> NEW.status_id) THEN
     	SET v_changes = TRUE;
-        SET v_old_status = (SELECT name FROM task_statuses WHERE id = OLD.status_id);
         SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
+        IF v_new_status IS NOT NULL THEN
+            SET v_action = CONCAT('<span class="text-warning">',v_new_status,' TASK</span> [<span class="fw-bold">',v_new_level,'</span>]'); 
+        ELSE
+            SET v_action = CONCAT('<span class="text-warning"> SET STARTED STATUS TASK</span> [<span class="fw-bold">',v_new_level,'</span>]'); 
+        END IF;
         
-         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK STATUS</span> FROM [<span class="text-secondary">', v_old_status, '</span>] TO [<span class="text-primary">', v_new_status, '</span>],');
-         
+        
            -- editor url
            IF OLD.editor_url <> NEW.editor_url AND  IsURL(NEW.editor_url) THEN
                 SET v_action = (SELECT TRIM(TRAILING ',' FROM v_action));                 
-                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>, ');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>, ');       
            END IF;
         -- //editor url
     

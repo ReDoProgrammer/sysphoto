@@ -58,6 +58,17 @@ class TaskModel extends Model
         // return $this->__db->delete($this->__table,"id = ".$id);
     }
 
+    public function EditorSubmitTask($id,$url){
+        $user = unserialize($_SESSION['user']);
+        $params = [
+            'p_id'=>$id,
+            'p_url'=>$url,
+            'p_editor'=>$user->id,
+            'p_status'=>1
+        ];
+        return $this->__db->executeStoredProcedure("TaskSubmitedByEditor",$params);
+    }
+
     public function GetTasksByProject($id)
     {
         // $params = ['p_id'=>$id];

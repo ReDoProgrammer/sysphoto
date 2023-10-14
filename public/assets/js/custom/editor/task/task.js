@@ -35,8 +35,43 @@ $('#btnSearch').click(function (e) {
 })
 $('#btnSubmitTask').click(function(){
     let url = $('#txtUrl').val();
-
+    $.ajax({
+        url:'task/submit',
+        type:'post',
+        data:{id:taskId,url},
+        success:function(data){
+            try {
+                let content = $.parseJSON(data);
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    showHideTransition: 'fade',
+                    icon: content.icon
+                })
+                if(content.code == 200){
+                    $("#task_submit_modal").modal('hide');
+                    fetch();
+                }
+            } catch (error) {
+                console.log(data,error);
+            }
+        }
+    })
 })
+
+$('#ckbReadInstruction').on('change', function() {
+    $('#btnSubmitTask').prop('disabled', !this.checked);
+  });
+
+$("#task_submit_modal").on('shown.bs.modal', function () {
+    $('#btnSubmitTask').prop('disabled', true);
+});
+
+$("#task_submit_modal").on("hidden.bs.modal", function () {
+   taskId = 0;
+});
+
+
 function ViewTaskDetail(id) {
     $.ajax({
         url: 'task/viewdetail',

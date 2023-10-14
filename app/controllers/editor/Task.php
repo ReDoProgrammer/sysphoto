@@ -52,4 +52,27 @@
                 'tasks'=>$this->__task_model->GetOwnerTasks($from_date,$to_date,$status,$page,$limit)
             ]);
         }
+
+        public function Submit(){
+            $id = $_POST['id'];
+            $url = $_POST['url'];
+            $result = $this->__task_model->EditorSubmitTask($id,$url);
+            print_r($result);
+            // if($result['updated_rows']>0){
+            //     $data =[
+            //         'code'=>200,
+            //         'icon'=>'success',
+            //         'heading'=>'SUCCESSFULLY',
+            //         'msg'=>'You have submitted the task successfully.'
+            //     ];
+            // }else{
+            //     $data =[
+            //         'code'=>204,
+            //         'icon'=>'warning',
+            //         'heading'=>'WARNING',
+            //         'msg'=>'The task submission failed.'
+            //     ];
+            // }
+            // echo json_encode($data);
+        }
     }
