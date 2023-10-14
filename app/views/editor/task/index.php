@@ -38,18 +38,21 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Email</th>
+                        <th>#</th>
+                        <th>Project</th>                      
+                        <th>Level</th>
+                        <th>From date</th>
+                        <th>To date</th>
+                        <th class="text-center">Q.ty</th>
+                        <th>Status</th>
+                        <th class="text-center">Editor</th>
+                        <th class="text-center">QA</th>
+                        <th class="text-center">DC</th>
+                        <th class="text-center">Paid</th>
+                        <th></th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>John</td>
-                        <td>Doe</td>
-                        <td>john@example.com</td>
-                    </tr>
-                </tbody>
+                <tbody id="tblTasks"></tbody>
             </table>
         </div>
     </div>
@@ -65,24 +68,7 @@
             <option value="200">200</option>
             <option value="0">All</option>
         </select>
-    </div>
-    <div class="col-md-10 col-xs-6 text-end mt-2">
-        <nav aria-label="...">
-            <ul class="pagination" id="pagination">
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item active" aria-current="page">
-                    <a class="page-link" href="#">2</a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
+    </div>    
 </div>
 
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/editor/task/task.js"></script>

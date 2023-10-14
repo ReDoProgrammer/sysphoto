@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 13, 2023 lúc 08:42 PM
+-- Thời gian đã tạo: Th10 14, 2023 lúc 09:34 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -162,14 +162,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT) 
     DECLARE v_count_available_task INT DEFAULT 0;
 
 
-    IF NOT EXISTS(SELECT * FROM users e JOIN employee_groups g ON e.editor_group_id = g.id WHERE e.id = p_editor)  THEN
-        SELECT 'You have not been assigned levels to access tasks. Please contact your administrator.' as msg;
+    IF NOT EXISTS(SELECT * FROM users e JOIN employee_groups g ON e.editor_group_id = g.id WHERE e.id = p_editor)  THEN     
+        SELECT JSON_OBJECT('code', '403', 'msg', CONCAT('You have not been assigned levels to access tasks. Please contact your administrator.'),'icon','danger','heading','Forbidden') AS msg;
     ELSE
         SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
             WHERE editor_id = p_editor
             AND FIND_IN_SET(status_id, '0,2,5') > 0);
         IF v_processing_tasks_count > 0 THEN
-            SELECT 'You cannot get more tasks until your current task has been submitted.' as msg;
+             SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'),'icon','danger','heading','Locked ') AS msg;
         ELSE
             SET v_levels = (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_editor));
             SET v_count_available_task = (
@@ -192,12 +192,12 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT) 
                                     ORDER BY p.end_date
                                     LIMIT 1);
                 IF ROW_COUNT() > 0 THEN
-                    SELECT 'You have successfully obtained the task.' as msg;
+                    SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'),'icon','success','heading','Get Task successfully ') AS msg;
                 ELSE
-                    SELECT 'Unable to fetch additional tasks.' as msg;
+                    SELECT JSON_OBJECT('code', '503', 'msg', CONCAT('Unable to fetch additional tasks.'),'icon','danger','heading','Locked ') AS msg;
                 END IF;
             ELSE
-                SELECT 'No available task found.' as msg;
+                 SELECT JSON_OBJECT('code', '404', 'msg', CONCAT('No available task found.'),'icon','warning','heading','Not Found ') AS msg;
             END IF;
         END IF;
     END IF;
@@ -437,16 +437,18 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_date` TIMESTAMP, IN `p_to_date` TIMESTAMP, IN `p_status` INT, IN `p_page` INT, IN `p_limit` INT, IN `p_actioner` INT, IN `p_role` INT)   BEGIN
     DECLARE v_sql VARCHAR(5000);
-    DECLARE v_pages INT DEFAULT 0;
 
-    SET v_sql = "SELECT t.id,lv.name,t.quantity, t.editor_assigned,t.qa_assigned, 
+    SET v_sql = "SELECT t.id,lv.name as level,lv.color as level_color,t.quantity, t.editor_assigned,t.qa_assigned, 
                     ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,t.pay,t.pay_remark,
+                    p.name as project_name,DATE_FORMAT(p.start_date,'%d/%m/%Y %H:%m') as start_date, DATE_FORMAT(p.end_date,'%d/%m/%Y %H:%m') as end_date,
+                    ct.acronym as customer,
                     e.acronym as editor, DATE_FORMAT(t.editor_timestamp,'%d/%m/%Y %H:%m') as editor_timestamp,
                     qa.acronym as qa, DATE_FORMAT(t.qa_timestamp,'%d/%m/%Y %H:%m') as qa_timestamp,
                     dc.acronym as dc, DATE_FORMAT(t.dc_timestamp,'%d/%m/%Y %H:%m') as dc_timestamp
                 FROM tasks t
                 JOIN levels lv ON t.level_id = lv.id
                 JOIN projects p ON t.project_id = p.id
+                JOIN customers ct ON p.customer_id = ct.id
                 LEFT JOIN users e ON t.editor_id = e.id
                 LEFT JOIN users qa ON t.qa_id = qa.id
                 LEFT JOIN users dc ON t.dc_id = dc.id
@@ -454,42 +456,29 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_dat
 
     SET v_sql = CONCAT(v_sql, "WHERE p.end_date >= '", p_from_date, "' AND p.end_date <= '", p_to_date, "'");
 
-    IF p_status > 0 THEN
+     IF p_status > 0 THEN
         SET v_sql = CONCAT(v_sql, " AND t.status_id = ", p_status);
-    END IF;
+     END IF;
 
-    CASE
+     CASE
         WHEN p_role = 5 THEN -- QA
             SET v_sql = CONCAT(v_sql, " AND t.qa_id = ", p_actioner);
-        WHEN p_role = 6 THEN -- Editor
+         WHEN p_role = 6 THEN -- Editor
             SET v_sql = CONCAT(v_sql, " AND t.editor_id = ", p_actioner);
-        WHEN p_role = 7 THEN -- DC
+         WHEN p_role = 7 THEN -- DC
             SET v_sql = CONCAT(v_sql, " AND t.dc_id = ", p_actioner);
-    END CASE;
+     END CASE;
 
-    IF p_limit > 0 THEN
-        SET v_sql = CONCAT(v_sql, " LIMIT ", p_limit, " OFFSET ", (p_page - 1) * p_limit);
-    END IF;
-
-    -- Create a temporary table to store the results
-    CREATE TEMPORARY TABLE IF NOT EXISTS temp_results (count INT);
-
-    -- Prepare and execute the count query to fetch the total count
-    SET @v_sql = v_sql;
-    SET @v_sql_count = CONCAT('SELECT COUNT(*) FROM (', @v_sql, ') AS subquery');
-    INSERT INTO temp_results (count) SELECT COUNT(*) FROM (SELECT 1) AS subquery;
-    SELECT count INTO v_pages FROM temp_results;
-    IF p_limit > 0 THEN
-    	SELECT CEILING(v_pages / p_limit) AS pages;
-    END IF;
-    -- Drop the temporary table
-    DROP TEMPORARY TABLE IF EXISTS temp_results;
+     IF p_limit > 0 THEN
+    	 SET p_page = CAST(p_page AS SIGNED); 
+    	 SET p_limit = CAST(p_limit AS SIGNED); 
+         SET v_sql = CONCAT(v_sql, " LIMIT ", p_limit, " OFFSET ", (p_page - 1) * p_limit);
+     END IF;
 
     -- Prepare and execute the main query
-    PREPARE stmt FROM @v_sql;
+    PREPARE stmt FROM v_sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
-
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskStatusAll` ()   BEGIN
@@ -1400,7 +1389,9 @@ INSERT INTO `project_logs` (`id`, `project_id`, `timestamp`, `content`) VALUES
 (12, 1, '2023-10-11 16:52:41', '[<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]'),
 (25, 1, '2023-10-12 11:54:54', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'Test instruction\n\')\">View detail</a>'),
 (26, 1, '2023-10-12 12:24:11', '[<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'test instruction 222\n\')\">View detail</a>'),
-(27, 1, '2023-10-12 18:51:31', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]');
+(27, 1, '2023-10-12 18:51:31', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]'),
+(28, 1, '2023-10-14 11:40:02', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]'),
+(29, 1, '2023-10-14 11:44:22', '[<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">CHANGE TASK STATUS</span> FROM [<span class=\"text-secondary\">Reject</span>] TO [<span class=\"text-primary\">Done</span>]');
 
 -- --------------------------------------------------------
 
@@ -1478,7 +1469,7 @@ CREATE TABLE `tasks` (
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (3, 1, NULL, 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 4, 1, 0, 1, 0, 0, 1, '', '2023-10-11 12:55:04', 1, '2023-10-11 05:55:04', 0, NULL, NULL),
 (4, 1, 'test task insert suddently', 1, 4, '2023-10-12 11:51:31', 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 13:35:07', 14, '2023-10-12 11:51:31', 4, NULL, NULL),
-(5, 1, 'test insert suddently', 2, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 10, 0, 0, 1, '', '2023-10-11 13:36:42', 23, '2023-10-11 06:36:42', 0, NULL, NULL),
+(5, 1, 'test insert suddently', 1, 4, '2023-10-14 04:40:02', 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 10, 0, 0, 1, '', '2023-10-11 13:36:42', 23, '2023-10-14 04:44:22', 4, '2023-10-14 04:40:02', NULL),
 (6, 1, 'CC Task\n', 0, 0, NULL, 0, 0, 0, NULL, 0, 0, 0, 0, NULL, 0, 7, 0, 1, 3, 0, 0, 1, '', '2023-10-11 16:42:11', 1, '2023-10-11 09:42:11', 0, NULL, NULL),
 (7, 1, 'Tassk demo  123\n', 0, 43, '2023-10-11 09:52:03', 1, 0, 9, '2023-10-11 09:52:03', 1, 0, 0, 0, NULL, 0, 1, 0, 0, 5, 0, 0, 1, '', '2023-10-11 16:50:34', 1, '2023-10-11 09:52:03', 1, NULL, NULL),
 (8, 1, '\n', 0, 42, NULL, 0, 0, 9, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 1, 0, 0, 1, '', '2023-10-11 16:57:40', 1, '2023-10-11 09:57:40', 0, NULL, NULL),
@@ -2132,7 +2123,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`

@@ -3,6 +3,7 @@
         private $__task_model;
 
         function  __construct(){
+            parent::__construct();
             $this->__task_model = $this->model("TaskModel");
         }
         public function index(){
@@ -12,11 +13,10 @@
             $this->render('__layouts/editor_layout', $this->data);
         }
         public function GetTask(){
-            $result = $this->__task_model->EditorGetTask();
-            $data = ['msg'=>$result['msg']];
-            echo json_encode($data);
+            $result = $this->__task_model->EditorGetTask();        
+            echo $result['msg'];
         }
-        public function filter(){           
+        public function fectch(){           
             $from_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'].":00"))->format('Y-m-d H:i:s');
             $to_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'].":00"))->format('Y-m-d H:i:s');
             $status = $_GET['status'];           
