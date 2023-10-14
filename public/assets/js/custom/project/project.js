@@ -6,6 +6,7 @@ $(document).ready(function () {
     LoadComboes();
     LoadTemplates();
     LoadCustomers();
+    LoadProjectStatuses();
     page = 1;
     limit = $('#slPageSize option:selected').val();
     $('#btnSearch').click();
@@ -149,10 +150,27 @@ function LoadTemplates() {
     })
 }
 
+function LoadProjectStatuses(){
+    $.ajax({
+        url:'projectstatus/all',
+        type:'get',
+        success:function(data){
+            try {
+                let content = $.parseJSON(data);
+                content.ps.forEach(p=>{
+                    $('#slProjectStatuses').append(`<option value="${p.id}">${p.name}</option>`);
+                })
+            } catch (error) {
+                console.log(data,error);
+            }
+        }
+    })
+}
+
 function fetch() {
     let from_date = $('#txtFromDate').val();
     let to_date = $('#txtToDate').val();
-    let stt = $('#slJobStatus').val() ? $.map($('#slJobStatus').val(), function (value) {
+    let stt = $('#slProjectStatuses').val() ? $.map($('#slProjectStatuses').val(), function (value) {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
     let search = $('#txtSearch').val();

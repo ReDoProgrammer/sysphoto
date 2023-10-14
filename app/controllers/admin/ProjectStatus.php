@@ -6,8 +6,13 @@
             parent::__construct();
             $this->prjectstatus_model = $this->model('ProjectStatusModel');
         }
-        function list(){
-            $status = $this->prjectstatus_model->getList();   
-            echo json_encode($status);    
+        function All(){          
+            echo json_encode([
+                'code'=>200,
+                'icon'=>'success',
+                'heading'=>'SUCCESSFULLY',
+                'msg'=>'Load all Project statuses successfully!',
+                'ps'=>$this->prjectstatus_model->AllProjectStatuses()
+            ]);    
         }
     }

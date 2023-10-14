@@ -1,5 +1,6 @@
 var page = 1;
 var limit = 0;
+var taskId = 0;
 $(document).ready(function () {
     LoadOwnTasks();
     LoadTaskStatuses();
@@ -32,16 +33,19 @@ $('#btnSearch').click(function (e) {
     e.preventDefault();
     LoadOwnTasks();
 })
-function ViewTaskDetail(id){
+$('#btnSubmitTask').click(function(){
+    let url = $('#txtUrl').val();
+
+})
+function ViewTaskDetail(id) {
     $.ajax({
-        url:'task/viewdetail',
-        type:'get',
-        data:{id},
-        success:function(data){
+        url: 'task/viewdetail',
+        type: 'get',
+        data: { id },
+        success: function (data) {
             try {
                 let content = $.parseJSON(data);
-                console.log(content);
-                $('#divCC').hide();
+
                 let t = content.task;
                 $('#level').addClass(t.level_color);
                 $('#level').text(t.level);
@@ -49,35 +53,90 @@ function ViewTaskDetail(id){
                 $('#quantity').text(t.quantity);
 
                 $('#status').addClass(t.status_color);
-                $('#status').text(t.status);
+                $('#status').text(t.status ? t.status : '-');
+
                 
-                $('#pDescription').html(t.description);
+
+                $('#start_date').html(`<span class="text-danger fw-bold">${(t.start_date.split(' ')[1])}</span> <br/>${(t.start_date.split(' ')[0])}`);
+                $('#end_date').html(`<span class="text-danger fw-bold">${(t.end_date.split(' ')[1])}</span> <br/>${(t.end_date.split(' ')[0])}`);
+
+                $('#divDescription').empty();
+                let s = $.parseJSON(t.styles);
+                console.log(s);
+                $('#divDescription').append(`
+                    <div class="row">
+                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color?s.color:''}</span></div>
+                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output?s.output:''}</span></div>
+                        <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
+                    </div>
+                `);
+
+                $('#divDescription').append(`<hr>
+                    <div class="row mt-3">
+                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style?s.style:''}</span></div>
+                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud?s.cloud:''}</span></div>
+                        <div class="col-sm-4">TV: <span class="fw-bold">${s.tv}</span></div>                        
+                    </div>
+                `);
+
+
+                $('#divDescription').append(`<hr>
+                    <div class="row mt-3">                        
+                        <div class="col-sm-4">Sky: <span class="fw-bold">${s.sky}</span></div>
+                        <div class="col-sm-4">Fire: <span class="fw-bold">${s.fire}</span></div>
+                        <div class="col-sm-4">Grass: <span class="fw-bold">${s.grass}</span></div>
+                    </div>
+                `);
+                $('#divDescription').append(`<hr>
+                    <div class="row mt-3">
+                        <div class="col-sm-12">Straighten: ${s.is_straighten==1?'<i class="fa-regular fa-square-check"></i>':'<i class="fa-regular fa-square"></i>'}
+                        <span class="fw-bold">${s.straighten_remark}</span></div>
+                    </div>
+                `)
+                $('#divDescription').append(`<hr><p class="mt-3 mb-5">${s.style_remark}</p>`);
+
+
+                if (t.cc_id > 0) {
+                    $('#divDescription').append(t.cc_content)
+                }
+
+                $('#divDescription').append(t.task_description);
 
                 let instructions = $.parseJSON(t.instructions_list);
-                $('#divInstructions').empty();
-                instructions.forEach(i=>{
-                    $('#divInstructions').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
+                instructions.forEach(i => {
+                    $('#divDescription').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
                 })
-                if(t.cc_id>0){
-                    $('#divCC').show();
-                    $('#divCC').empty();
-                    $('#divCC').append('<card-header class="text-secondary">CC description</card-header>');
-                    $('#divCC').append(`<div class="card-body">${t.cc_content}</div>`)
-                }
-                $('#editor').text(t.editor?t.editor:'-');
-                $('#qa').text(t.qa?t.qa:'-');
-                $('#dc').text(t.dc?t.dc:'-');
 
-                $('#task_modal').modal('show');
+                let logs = $.parseJSON(t.task_logs);
+                $('#ulTaskLogs').empty();
+                logs.forEach(l => {
+                    $('#ulTaskLogs').append(`
+                            <li class="mb-2">
+                                <p class="mb-0">${l.content}</p>
+                                <div>
+                                    <span class="res-activity-time">
+                                        <i class="fa-regular fa-clock"></i>
+                                        ${l.timestamp}
+                                    </span>
+                                </div>
+                            </li>
+                        `);
+                })
+                $('#editor').text(t.editor ? t.editor : '-');
+                $('#qa').text(t.qa ? t.qa : '-');
+                $('#dc').text(t.dc ? t.dc : '-');
+
+                $('#task_detail_modal').modal('show');
             } catch (error) {
-                console.log(data,error);
+                console.log(data, error);
             }
         }
     })
 }
 
-function SubmitTask(id){
-    console.log(id);
+function SubmitTask(id) {
+    taskId = 0;
+    $('#task_submit_modal').modal('show');
 }
 
 function LoadTaskStatuses() {
@@ -130,7 +189,7 @@ function LoadOwnTasks() {
                             <td><span class="text-danger fw-bold">${(t.start_date.split(' '))[1]}</span> <br/>${(t.start_date.split(' '))[0]}</td>
                             <td><span class="text-danger fw-bold">${(t.end_date.split(' '))[1]}</span> <br/>${(t.end_date.split(' '))[0]}</td>
                             <td class="text-center">${t.quantity}</td>
-                            <td><span class="${t.status_color}">${t.status}</span></td>
+                            <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                             <td class="text-center">${t.editor ? t.editor : '-'}</td>
                             <td class="text-center">${t.qa ? t.qa : '-'}</td>
                             <td class="text-center">${t.dc ? t.dc : '-'}</td>
@@ -141,7 +200,7 @@ function LoadOwnTasks() {
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                    ${(t.id == 0 || t.id ==2 || t.id == 5)?'<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask('+t.id+')"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>':''}
+                                    ${(t.status_id == 0 || t.status_id == 2 || t.id == 5) ? '<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(' + t.id + ')"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>' : ''}
                                 </div> 
                             </div>
                             </td>

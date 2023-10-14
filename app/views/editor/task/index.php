@@ -70,5 +70,8 @@
         </select>
     </div>    
 </div>
-<?php include_once 'detail_modal.php'; ?>
+<?php 
+    $this->render('common/task_detail_modal'); 
+    include_once "task_submit_modal.php";
+?>
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/editor/task/task.js"></script>

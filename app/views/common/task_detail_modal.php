@@ -8,43 +8,44 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-sm-4 form-group">
+                    <div class="col-sm-2 form-group">
                         <label for="">Level</label>
                         <h4 id="level" class="mt-2"></h4>
                     </div>
-                    <div class="col-sm-4 form-group">
+                    <div class="col-sm-2 form-group">
                         <label for="">Quantity</label>
                         <h4 id="quantity" class="mt-2"></h4>
                     </div>
-                    <div class="col-sm-4 form-group">
+                    <div class="col-sm-2 form-group">
                         <label for="">Status</label>
                         <h4 id="status" class="mt-2"></h4>
                     </div>
-                </div>
-                <hr>
-                <div class="card">
-                    <div class="card-header">Project Description</div>
-                    <div class="card-body">
-                        <p id="pDescription" class="mt-2"></p>
+                    <div class="col-sm-3 form-group text-center">
+                        <label for="">Start date</label>
+                        <h5 class="mt-2 text-center" id="start_date"></h5>
+                    </div>
+                    <div class="col-sm-3 form-group text-center">
+                        <label for="">End date</label>
+                        <h5 class="mt-2 text-center" id="end_date"></h5>
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-header">Instructions:</div>
-                    <div class="card-body">
-                        <div id="divInstructions"
-                            style="max-height:200px; overflow-y: auto;border: 1px solid #ccc;"></div>
+                    <div class="card-header fw-bold text-info">Description</div>
+                    <div class="card-body" id="divDescription"
+                        style="max-height:350px; overflow-y: auto;border: 1px solid #ccc; padding-left:20px; padding-top:10px; padding-bottom: 10px; ">
                     </div>
                 </div>
-
-
-               <div class="card" id="divCC"></div>
-
-               
 
                 <div class="card mt-2">
-                    <div class="card-header">Task logs:</div>
-                    <div class="card-body" id="divTaskLogs"></div>
+                    <div class="card-header fw-bold text-info">Task logs:</div>
+                    <div class="card-body">
+                        <ul class="res-activity-list" id="ulTaskLogs"
+                            style="max-height:200px; overflow-y: auto;border: 1px solid #ccc; padding-left:20px; padding-top:10px; padding-bottom: 10px; ">
+
+
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="row">

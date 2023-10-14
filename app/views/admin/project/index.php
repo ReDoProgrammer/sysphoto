@@ -11,11 +11,10 @@
         </div>
     </div>
     <div class="col-xxl-3 col-lg-3 col-md-3 col-sm-6 col-xs-12">
-        <select class="select" name="states[]" multiple="multiple" id="slJobStatus">
-
+        <select class="select" name="states[]" multiple="multiple" id="slProjectStatuses">
         </select>
     </div>
-    <div class="col-xxl-3 col-lg-3 col-md-3 col-sm-6 col-xs-12">
+    <div class="col-xxl-2 col-lg-2 col-md-3 col-sm-6 col-xs-12">
         <div class="input-block mb-3 form-focus mb-0">
             <input type="text" class="form-control floating" id="txtSearch">
             <label class="focus-label">Filter project</label>
@@ -25,7 +24,7 @@
         <a href="#" id="btnSearch" class="btn btn-success btn-search"><i class="fas fa-search me-2"></i>
         </a>
     </div>
-    <div class="col-xxl-1 col-lg-1 col-md-12 col-xs-12">
+    <div class="col-xxl-2 col-lg-2 col-md-12 col-xs-12">
         <div class="add-emp-section">
             <a href="#" class="btn btn-success btn-add-emp" data-bs-toggle="modal" data-bs-target="#modal_project"><i
                     class="fas fa-plus"></i>Add</a>
