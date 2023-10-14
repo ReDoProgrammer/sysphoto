@@ -93,16 +93,19 @@ function ViewTaskDetail(id) {
                         <span class="fw-bold">${s.straighten_remark}</span></div>
                     </div>
                 `)
-                $('#divDescription').append(`<hr><p class="mt-3 mb-5">${s.style_remark}</p>`);
+                $('#divDescription').append(`<hr><span class="text-secondary">Style remark:</span><p class="mt-3 mb-5">${s.style_remark}</p>`);
 
 
                 if (t.cc_id > 0) {
-                    $('#divDescription').append(t.cc_content)
+                    $('#divDescription').append(`<span class="text-secondary">CC description:</span>`);
+                    $('#divDescription').append(`<p class="mt-2">${t.cc_content}</p>`)
                 }
 
-                $('#divDescription').append(t.task_description);
+                $('#divDescription').append(`<span class="text-secondary">Task description:</span>`);
+                $('#divDescription').append(`<p class="mt-2">${t.task_description}</p>`);
 
                 let instructions = $.parseJSON(t.instructions_list);
+                $('#divDescription').append(`<span class="text-secondary">Instructions:</span>`);
                 instructions.forEach(i => {
                     $('#divDescription').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
                 })
