@@ -35,10 +35,10 @@ class TaskModel extends Model
         return $this->executeStoredProcedure("TaskUpdate", $params);
     }
 
-    public function getDetail($id)
+    public function GetDetail($id)
     {
-        $params = ['p_id' => $id];
-        return $this->executeStoredProcedure("TaskDetailJoin", $params);
+        $params = [0 => $id];
+        return $this->__db->callStoredProcedure("TaskDetailJoin", $params);
     }
     public function getList()
     {

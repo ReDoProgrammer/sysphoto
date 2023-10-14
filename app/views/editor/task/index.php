@@ -70,5 +70,5 @@
         </select>
     </div>    
 </div>
-
+<?php include_once 'detail_modal.php'; ?>
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/editor/task/task.js"></script>

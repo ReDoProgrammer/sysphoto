@@ -16,6 +16,28 @@
             $result = $this->__task_model->EditorGetTask();        
             echo $result['msg'];
         }
+
+        public function ViewDetail(){
+            $id = $_GET['id'];
+            $result = $this->__task_model->GetDetail($id);
+            if(!empty($result)){
+                $data = [
+                    'code'=>200,
+                    'icon'=>'success',
+                    'heading'=>'SUCCESSFULLY',
+                    'msg'=>'Get task detail successfully.',
+                    'task'=>$result[0]
+                ];
+            }else{
+                $data = [
+                    'code'=>404,
+                    'icon'=>'warning',
+                    'heading'=>'Not Found',
+                    'msg'=>'Task not found.'
+                ];
+            }
+            echo json_encode($data);
+        }
         public function fectch(){           
             $from_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'].":00"))->format('Y-m-d H:i:s');
             $to_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'].":00"))->format('Y-m-d H:i:s');
