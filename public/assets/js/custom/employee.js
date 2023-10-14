@@ -22,14 +22,15 @@ $('#btnLogin').click(function () {
 
 
     $.ajax({
-        url: 'employee/authLogin',
+        url: 'auth/authLogin',
         type: 'post',
         data: { email, password },
         success: function (data) {
             try {
                 let auth = $.parseJSON(data);
+                console.log(auth);
                 if (auth.code == 200) {
-                    $(location).prop('href', 'home')
+                    $(location).prop('href', 'dashboard')
                 } else {
                     Swal.fire(
                         'OPP..!',

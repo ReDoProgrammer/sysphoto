@@ -12,7 +12,7 @@ class User
     public function __construct($id,$fullname,$acronym, $email,$role_id,$role_name,$task_getable)
     {
         $this->id = $id;
-        $this->firstname = $fullname;
+        $this->fullname = $fullname;
         $this->acronym = $acronym;
         $this->email = $email;
         $this->role_id = $role_id;

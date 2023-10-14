@@ -62,7 +62,7 @@ function ViewTaskDetail(id){
                     $('#divCC').show();
                     $('#divCC').empty();
                     $('#divCC').append('<card-header class="text-secondary">CC description</card-header>');
-                    $('#divCC').append(`<div class="card-body">${t.feeback}</div>`)
+                    $('#divCC').append(`<div class="card-body">${t.cc_content}</div>`)
                 }
                 $('#editor').text(t.editor?t.editor:'-');
                 $('#qa').text(t.qa?t.qa:'-');

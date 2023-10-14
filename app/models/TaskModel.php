@@ -16,7 +16,7 @@ class TaskModel extends Model
             'p_cc' => $cc,
             'p_created_by' => $user->id
         ];
-        return $this->executeStoredProcedure("TaskInsert", $params);
+        return $this->__db->executeStoredProcedure("TaskInsert", $params);
     }
     function UpdateTask($id, $description, $editor, $qa, $quantity, $level)
     {
@@ -32,7 +32,7 @@ class TaskModel extends Model
             'p_level' => $level,
             'p_updated_by' => $user->id
         ];
-        return $this->executeStoredProcedure("TaskUpdate", $params);
+        return $this->__db->executeStoredProcedure("TaskUpdate", $params);
     }
 
     public function GetDetail($id)

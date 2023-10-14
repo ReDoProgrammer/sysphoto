@@ -5,6 +5,7 @@
      * Đường dẫn ảo => Đường dẫn thật
      */
     $routes['admin/login'] = 'admin/auth/login';
+    $routes['admin/home'] = 'admin/dashboard';
 
 
     $routes['editor/login']='editor/auth/login';

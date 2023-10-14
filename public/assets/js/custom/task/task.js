@@ -65,7 +65,7 @@ function editTask(id) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     let t = content.task;
-                    qDescription.setText(t.description?t.description:'');
+                    qDescription.setText(t.description ? t.description : '');
                     $('#slLevels').val(t.level_id);
                     LoadEditorsByLevel(t.level_id, t.editor_id);
                     LoadQAsByLevel(t.level_id, t.qa_id);
@@ -89,41 +89,38 @@ function viewTask(id) {
             try {
                 let content = $.parseJSON(data);
                 console.log(content);
-                let task = content.task;
-                if (content.code == 200) {
-                    $('#pDescription').html(task.description);
-                    $('#dLevel').html(task.level);
-                    $('#dQuantity').html(task.quantity);
+                $('#divCC').hide();
+                let t = content.task;
+                $('#level').addClass(t.level_color);
+                $('#level').text(t.level);
 
+                $('#quantity').text(t.quantity);
 
-                    if (task.editor) {
-                        $('#dEditor').html(task.editor);
-                        $('#dETimeStamp').html(task.editor ? task.editor_timestamp : '-');
-                        $('#dEAssigned').html(task.editor_assigned == 1 ? `<i class="far fa-check-square"></i> Assigned into task` : `<i class="far fa-check-square"></i> Get task`);
-                        $('#dEView').html(task.editor_view == 1 ? `<i class="far fa-check-square"></i> View instruction` : `<i class="fa-regular fa-square"></i> View instruction`);
-                    }
+                $('#status').addClass(t.status_color);
+                $('#status').text(t.status);
 
+                $('#pDescription').html(t.description);
 
-                    if (task.qa) {
-                        $('#dQA').html(task.qa);
-                        $('#dQATimeStamp').html(task.qa ? task.qa_timestamp : '-');
-                        $('#dQAAssigned').html(task.qa_assigned == 1 ? `<i class="far fa-check-square"></i> Assigned into task` : `<i class="far fa-check-square"></i> Get task`);
-                        $('#dQAView').html(task.qa_view == 1 ? `<i class="far fa-check-square"></i> View instruction` : `<i class="fa-regular fa-square"></i> View instruction`);
-                    }
-
-                    if(task.dc){
-                        $('#dDC').html(task.dc);
-                        $('#dDCSubmit').html(task.dc_submit==1?`<span class="text-success">Submit</span>`:`<span class="text-danger">Reject</span>`);
-                        $('#dDCTimeStamp').html(task.editor_timestamp);
-                    }
-                   
-
-
+                let instructions = $.parseJSON(t.instructions_list);
+                $('#divInstructions').empty();
+                instructions.forEach(i => {
+                    $('#divInstructions').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
+                })
+                if (t.cc_id > 0) {
+                    $('#divCC').show();
+                    $('#divCC').empty();
+                    $('#divCC').append('<card-header class="text-secondary">CC description</card-header>');
+                    $('#divCC').append(`<div class="card-body">${t.cc_content}</div>`)
                 }
-                $('#view_task_modal').modal('show');
+                $('#editor').text(t.editor ? t.editor : '-');
+                $('#qa').text(t.qa ? t.qa : '-');
+                $('#dc').text(t.dc ? t.dc : '-');
+
+                $('#task_detail_modal').modal('show');
             } catch (error) {
                 console.log(data, error);
             }
+
         }
     })
 
@@ -180,7 +177,7 @@ $('#btnSubmitTask').click(function () {
                 prjId: idValue,
                 description,
                 level,
-                cc:ccId,
+                cc: ccId,
                 editor: editor ? editor : 0,
                 qa: qa ? qa : 0,
                 quantity: parseInt(quantity)

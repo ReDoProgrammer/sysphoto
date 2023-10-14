@@ -168,7 +168,7 @@
 
 <?php
 $this->render('admin/task/modal');
-$this->render('admin/task/detail');
+$this->render('common/task_detail_modal');
 
 ?>
 

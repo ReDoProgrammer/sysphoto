@@ -1,5 +1,5 @@
 <!-- Task Detail Modal -->
-<div id="task_modal" class="modal custom-modal fade" role="dialog">
+<div id="task_detail_modal" class="modal custom-modal fade" role="dialog">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">

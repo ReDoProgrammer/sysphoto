@@ -112,15 +112,24 @@ class Task extends AdminController
     public function detail()
     {
         $id = $_GET['id'];
-        echo json_encode(
-            array(
-                'code' => '200',
-                'msg' => 'Get task by id successfully!',
-                'task' => $this->task_model->getDetail($id),
-                'icon' => 'success',
-                'heading' => 'Successfully!'
-            )
-        );
+        $result = $this->task_model->GetDetail($id);
+        if(!empty($result)){
+            $data = [
+                'code'=>200,
+                'icon'=>'success',
+                'heading'=>'SUCCESSFULLY',
+                'msg'=>'Get task detail successfully.',
+                'task'=>$result[0]
+            ];
+        }else{
+            $data = [
+                'code'=>404,
+                'icon'=>'warning',
+                'heading'=>'Not Found',
+                'msg'=>'Task not found.'
+            ];
+        }
+        echo json_encode($data);
     }
 
 
