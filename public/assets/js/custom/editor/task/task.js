@@ -173,7 +173,7 @@ function ViewTaskDetail(id) {
 }
 
 function SubmitTask(id) {
-    taskId = 0;
+    taskId = id;
     $('#task_submit_modal').modal('show');
 }
 

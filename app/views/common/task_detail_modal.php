@@ -17,7 +17,7 @@
                         <h4 id="quantity" class="mt-2"></h4>
                     </div>
                     <div class="col-sm-2 form-group">
-                        <label for="">Status</label>
+                        <label for="">Status</label><br/>
                         <h4 id="status" class="mt-2"></h4>
                     </div>
                     <div class="col-sm-3 form-group text-center">

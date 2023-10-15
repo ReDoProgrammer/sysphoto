@@ -3,10 +3,10 @@
     <div class="col-xxl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">
         <div class="row">
             <div class="col-sm-6 col-md-6">
-            <input type="date" id="txtFromDate" class="form-control datetimepicker">
+            <input type="date" id="txtFromDate" class="form-control datetimepicker-start">
             </div>
             <div class="col-sm-6 col-md-6">
-                <input type="date" id="txtToDate" class="form-control datetimepicker">
+                <input type="date" id="txtToDate" class="form-control datetimepicker-end">
             </div>
         </div>
     </div>
@@ -35,7 +35,7 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0" style="min-height: 200px;max-height:300px; overflow-y: auto;border: 1px solid #ccc; padding-left:20px; padding-top:10px; padding-bottom: 10px; ">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -52,7 +52,7 @@
                         <th></th>
                     </tr>
                 </thead>
-                <tbody id="tblTasks"></tbody>
+                <tbody id="tblTasks" ></tbody>
             </table>
         </div>
     </div>

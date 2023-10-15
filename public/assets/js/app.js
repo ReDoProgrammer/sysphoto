@@ -159,6 +159,20 @@ $(document).ready(function () {
 		time_24hr: true,
 		allowInput: true // Cho phép nhập ngày thủ công
 	});
+	flatpickr(".datetimepicker-start", {
+		dateFormat: "d/m/Y H:i",
+		enableTime: true,
+		defaultDate: moment(new Date()).format('DD/MM/YYYY '+"00:01"),
+		time_24hr: true,
+		allowInput: true // Cho phép nhập ngày thủ công
+	});
+	flatpickr(".datetimepicker-end", {
+		dateFormat: "d/m/Y H:i",
+		enableTime: true,
+		defaultDate: moment(new Date()).format('DD/MM/YYYY '+"23:59"),
+		time_24hr: true,
+		allowInput: true // Cho phép nhập ngày thủ công
+	});
 
 
 	// if ($('.datetimepicker').length > 0) {
