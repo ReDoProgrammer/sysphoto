@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 15, 2023 lúc 07:02 PM
+-- Thời gian đã tạo: Th10 15, 2023 lúc 08:45 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -209,6 +209,75 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorSubmitTask` (IN `p_id` BIGINT
         editor_url = p_url
      WHERE id = p_id;
      SELECT ROW_COUNT() as updated_rows;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetTask` (IN `p_actioner` INT, IN `p_role` INT)   BEGIN
+   DECLARE v_levels VARCHAR(100) DEFAULT '';
+    DECLARE v_processing_tasks_count INT DEFAULT 0;
+    DECLARE v_count_available_task INT DEFAULT 0;
+
+
+    IF NOT EXISTS(SELECT *
+                    FROM users u
+                    INNER JOIN user_groups ug
+                    ON (CASE
+                        WHEN p_role = 6 THEN u.editor_group_id
+                        WHEN p_role = 5 THEN u.qa_group_id
+                        END) = ug.id
+                 	WHERE u.id = p_actioner)  THEN     
+        SELECT JSON_OBJECT('code', '403', 'msg', CONCAT('You have not been assigned levels to access tasks. Please contact your administrator.'),'icon','danger','heading','Forbidden') AS msg;
+    ELSE
+    	IF p_role = 6 THEN -- editor
+        	SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
+            WHERE editor_id = p_actioner
+            AND FIND_IN_SET(status_id, '0,2,5') > 0); -- status: default/qa reject/ dc reject
+        ELSE -- QA
+        	SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
+            WHERE qa_id = p_actioner
+            AND FIND_IN_SET(status_id, '1,3') > 0); -- status: done, fixxed
+        END IF;
+        
+            
+        IF v_processing_tasks_count > 0 THEN
+             SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'),'icon','danger','heading','Locked ') AS msg;
+        ELSE          
+            IF EXISTS( SELECT * FROM tasks t INNER JOIN projects p ON t.project_id = p.id WHERE (CASE WHEN p_role = 6 THEN t.editor_id ELSE t.qa_id END) = 0
+                AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT CASE WHEN p_role = 6 THEN editor_group_id ELSE qa_group_id END FROM users WHERE id = p_actioner))) > 1 ORDER BY p.end_date LIMIT 1) THEN
+               IF p_role = 6 THEN -- editor
+                   UPDATE tasks
+                    SET                
+                    editor_id = p_actioner,editor_timestamp = NOW(), 
+                    updated_by = p_actioner, updated_at = NOW()
+                    WHERE id = (SELECT  t.id
+                                        FROM tasks t
+                                        INNER JOIN projects p ON t.project_id = p.id
+                                        WHERE t.editor_id = 0
+                                        AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_actioner))) > 1 
+                                        ORDER BY p.end_date
+                                        LIMIT 1);
+                ELSE -- QA
+                	UPDATE tasks
+                    SET                
+                    qa_id = p_actioner,qa_timestamp = NOW(), 
+                    updated_by = p_actioner, updated_at = NOW()
+                    WHERE id = (SELECT  t.id
+                                        FROM tasks t
+                                        INNER JOIN projects p ON t.project_id = p.id
+                                        WHERE t.qa_id = 0
+                                        AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT qa_group_id FROM users WHERE id = p_actioner))) > 1 
+                                        ORDER BY p.end_date
+                                        LIMIT 1);
+                END IF;
+                IF ROW_COUNT() > 0 THEN
+                    SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'),'icon','success','heading','Get Task successfully ') AS msg;
+                ELSE
+                    SELECT JSON_OBJECT('code', '503', 'msg', CONCAT('Unable to fetch additional tasks.'),'icon','danger','heading','Locked ') AS msg;
+                END IF;
+            ELSE
+                 SELECT JSON_OBJECT('code', '404', 'msg', CONCAT('No available task found.'),'icon','warning','heading','Not Found ') AS msg;
+            END IF;
+        END IF;
+    END IF;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `PrjectGetCCsWithTasks` (IN `p_project` BIGINT)   BEGIN
@@ -1848,7 +1917,7 @@ INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`
 (6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:19:50', 0, NULL, 0),
 (7, 'Trần Tú Thành', 'Thanh.tt', 'Thanh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:36:12', 0, NULL, 0),
 (8, 'Trần Hồng Nhung', 'nhung.th', 'nhung.thphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-04 14:41:06', 0, NULL, 0),
-(9, 'Phạm Năng Bình', 'binh.pn', 'binh@photohome.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-05 08:00:36', 0, NULL, 0),
+(9, 'Phạm Năng Bình', 'binh.pn', 'binh@photohome.com', '202cb962ac59075b964b07152d234b70', 5, 6, 5, '', 1, 1, 3, '2023-09-05 08:00:36', 0, NULL, 0),
 (10, 'Bùi Đức Hiếu', 'hieu.bd', 'hieu.bdphotohome@gmai.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:52:26', 0, NULL, 0),
 (11, 'Phạm Phương Nam', 'nam.pp', 'nam.ppphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:53:05', 0, NULL, 0),
 (12, 'Nguyễn Đức Việt', 'viet.nd', 'viet.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:53:39', 0, NULL, 0),
@@ -1860,7 +1929,7 @@ INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`
 (18, 'Vũ Đức Thắng', 'thang.vd', 'thang.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:57:58', 0, NULL, 0),
 (19, 'Chu Thị Thúy', 'thuy.ct', 'thuy.ctphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:58:36', 0, NULL, 0),
 (20, 'Trần Văn Đoàn', 'doan.tv', 'doan.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:59:01', 0, NULL, 0),
-(21, 'Vũ Hồng Sơn', 'son.vh', 'son.vhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-10 02:40:43', 0, NULL, 0),
+(21, 'Vũ Hồng Sơn', 'son.vh', 'son.vhphotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 5, 6, 5, '', 1, 0, 1, '2023-09-10 02:40:43', 0, NULL, 0),
 (22, 'Nguyễn Tuấn Nam', 'nam.nt', 'nam.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:02', 0, NULL, 0),
 (23, 'Bùi Văn Hưng', 'hung.bv', 'hung.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:26', 0, NULL, 0),
 (24, 'Bùi Ngọc Hoàng', 'hoang.bn', 'hoang.bnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:55', 0, NULL, 0),

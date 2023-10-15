@@ -9,6 +9,7 @@
 
 
     $routes['editor/login']='editor/auth/login';
+    $routes['qa/login']='qa/auth/login';
 
 
     $routes['trang-chu'] = 'home';
