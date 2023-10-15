@@ -43,9 +43,11 @@
                         <th>Level</th>
                         <th>From date</th>
                         <th>To date</th>
+                        <th>Commencement date</th>
                         <th class="text-center">Q.ty</th>
                         <th>Status</th>
                         <th class="text-center">Editor</th>
+                        <th class="text-center">Link</th>
                         <th class="text-center">QA</th>
                         <th class="text-center">DC</th>
                         <th class="text-center">Paid</th>

@@ -20,7 +20,7 @@ $('#btnGetTask').click(function () {
                     icon: content.icon
                 })
                 if (content.code == 200) {
-                    fetch();
+                    LoadOwnTasks();
                 }
             } catch (error) {
                 console.log(data, error);
@@ -50,7 +50,7 @@ $('#btnSubmitTask').click(function(){
                 })
                 if(content.code == 200){
                     $("#task_submit_modal").modal('hide');
-                    fetch();
+                    LoadOwnTasks();
                 }
             } catch (error) {
                 console.log(data,error);
@@ -65,6 +65,8 @@ $('#ckbReadInstruction').on('change', function() {
 
 $("#task_submit_modal").on('shown.bs.modal', function () {
     $('#btnSubmitTask').prop('disabled', true);
+    $('#ckbReadInstruction').prop('checked', false);
+    $('#txtUrl').val('');
 });
 
 $("#task_submit_modal").on("hidden.bs.modal", function () {
@@ -224,12 +226,18 @@ function LoadOwnTasks() {
                         <tr id="${t.id}">
                             <td>${++idx}</td>
                             <td class="text-center"> <span class="fw-bold">${t.project_name}</span> <br/> [${t.customer}]</td>                            
-                            <td>${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger"></i>' : ''}<span class="fw-bold ${t.level_color}">${t.level}</span></td>
+                            <td><span class="fw-bold ${t.level_color}">${t.level}</span> ${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger"></i>' : ''}</td>
                             <td><span class="text-danger fw-bold">${(t.start_date.split(' '))[1]}</span> <br/>${(t.start_date.split(' '))[0]}</td>
                             <td><span class="text-danger fw-bold">${(t.end_date.split(' '))[1]}</span> <br/>${(t.end_date.split(' '))[0]}</td>
+                            <td><span class="text-danger fw-bold">${(t.editor_timestamp.split(' '))[1]}</span> <br/>${(t.editor_timestamp.split(' '))[0]}</td>
                             <td class="text-center">${t.quantity}</td>
                             <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                             <td class="text-center">${t.editor ? t.editor : '-'}</td>
+                            <td class="text-center">
+                                ${(t.status_id !=0 &&t.editor_url.trim().length>0)?
+                                    '<a href="'+t.editor_url+'" target="_blank"><i class="fa-solid fa-link text-info"></i></a>':
+                                    '-'}
+                            </td>
                             <td class="text-center">${t.qa ? t.qa : '-'}</td>
                             <td class="text-center">${t.dc ? t.dc : '-'}</td>
                             <td class="text-center">${t.pay == 1 ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>'}</td>

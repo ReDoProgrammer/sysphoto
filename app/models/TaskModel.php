@@ -63,10 +63,9 @@ class TaskModel extends Model
         $params = [
             'p_id'=>$id,
             'p_url'=>$url,
-            'p_editor'=>$user->id,
-            'p_status'=>1
+            'p_editor'=>$user->id
         ];
-        return $this->__db->executeStoredProcedure("TaskSubmitedByEditor",$params);
+        return $this->__db->executeStoredProcedure("EditorSubmitTask",$params);
     }
 
     public function GetTasksByProject($id)

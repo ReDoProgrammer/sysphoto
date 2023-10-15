@@ -62,8 +62,8 @@ function GetLogs() {
                     let logs = content.logs;
                     logs.forEach(l => {
                         $('#ulProjectLogs').append(`
-                            <li>
-                                <p class="mb-0">${l.content}</p>
+                            <li id="${l.id}">
+                                <p class="mb-0">${l.action}</p>
                                 <div>
                                     <span class="res-activity-time">
                                         <i class="fa-regular fa-clock"></i>
