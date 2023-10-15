@@ -2,7 +2,7 @@ DELIMITER //
 CREATE TRIGGER after_task_updated
 AFTER UPDATE ON tasks FOR EACH ROW
 BEGIN 
-    DECLARE v_content VARCHAR(250) DEFAULT '';
+    DECLARE v_actions VARCHAR(250) DEFAULT '';
     DECLARE v_action VARCHAR(250) DEFAULT '';
     
     DECLARE v_old_level VARCHAR(100) DEFAULT '';
@@ -18,18 +18,21 @@ BEGIN
 
     DECLARE v_role varchar(100) DEFAULT '';
 
+    DECLARE v_content text DEFAULT '';
+
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
   
   	SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai
 
-    SET v_content = CONCAT(v_role,': [<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
+    SET v_actions = CONCAT(v_role,': [<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
    
     
     -- description
     IF(OLD.description <> NEW.description) THEN
     	SET v_changes = TRUE;
-    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(\'FROM:<hr/>',OLD.description,'<br/><hr/>TO:',NEW.description,'\')">View detail</a>,');
-         SET v_content = CONCAT(v_content,' ',v_action);
+    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(',NEW.id,')">View detail</a>,');
+        SET v_content = CONCAT('<span class="text-secondary">FROM:</span><br/><hr>',OLD.description,'<span class="mt-3 text-secondary">TO:</span><hr/>',NEW.description); 
+        SET v_actions = CONCAT(v_actions,' ',v_action);
     END IF;
     -- //end description
     
@@ -39,7 +42,7 @@ BEGIN
         SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id);
        
         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK LEVEL</span> FROM [<span class="text-secondary">', v_old_level, '</span>] TO [<span class="text-primary">', v_new_level, '</span>],');
-        SET v_content = CONCAT(v_content,' ',v_action);        
+        SET v_actions = CONCAT(v_actions,' ',v_action);        
     END IF;
     -- //end task level
     
@@ -61,7 +64,7 @@ BEGIN
            END IF;
         -- //editor url
     
-        SET v_content = CONCAT(v_content,' ',v_action); 
+        SET v_actions = CONCAT(v_actions,' ',v_action); 
     END IF;
     -- //end status
     
@@ -72,20 +75,20 @@ BEGIN
       	IF OLD.editor_id = 0 THEN -- neu truoc do chua co editor     		
             IF NEW.editor_assigned = 1 THEN -- neu la gan editor
             	SET v_action = CONCAT('<span class="text-warning">ASSIGN EDITOR</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- neu la editor get task
             	SET v_action = CONCAT('EDITOR: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_content = v_action;
+                SET v_actions = v_action;
             END IF;            
      	ELSE -- neu truoc do co editor
         	IF NEW.editor_id = 0 THEN -- neu la huy editor
                 SET v_new_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);   
             	SET v_action = CONCAT('<span class="text-danger">UNASSIGN EDITOR</span>[<span class="fw-bold">',v_new_emp,'</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- thay sang editor khac
             	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);
                 SET v_action = CONCAT('<span class="text-warning">CHANGE EDITOR</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             END IF;      
       	END IF;       
     END IF; 
@@ -101,19 +104,19 @@ BEGIN
       	IF OLD.qa_id = 0 THEN -- neu truoc do chua co QA     		
             IF NEW.qa_assigned = 1 THEN -- neu la gan QA
             	SET v_action = CONCAT('<span class="text-warning">ASSIGN QA</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- neu la QA get task
             	SET v_action = CONCAT('QA: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_content = v_action;
+                SET v_actions = v_action;
             END IF;            
      	ELSE -- neu truoc do co QA
         	IF NEW.qa_id = 0 THEN -- neu la huy QA
             	SET v_action = CONCAT('<span class="text-danger">UNASSIGN QA</span> ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- thay doi QA
             	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.qa_id);
                 SET v_action = CONCAT('<span class="text-warning">CHANGE QA</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             END IF;      
       	END IF;       
     END IF; 
@@ -126,19 +129,19 @@ BEGIN
         	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.dc_id);     
         	IF OLD.dc_id = 0 THEN -- DC nhan task            	
             	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_content = v_action;
+                SET v_actions = v_action;
             ELSE -- DC submit task hoac thay doi DC
             	IF OLD.dc_id <> NEW.dc_id THEN -- thay doi DC
                 	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.dc_id);    
                     SET v_action = CONCAT('<span class="text-warning">CHANGE DC</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],'); 
-                   	SET v_content = CONCAT(v_content,' ',v_action); 
+                   	SET v_actions = CONCAT(v_actions,' ',v_action); 
                 ELSE  -- DC submit hoac reject task
                 	IF NEW.dc_submit = 1 THEN -- submit task
                     	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">SUBMIT TASK</span> [',v_new_level,']');               
                     ELSE -- reject task
                     	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-danger">REJECT TASK</span> [',v_new_level,']');  
                     END IF;
-                     SET v_content = v_action;
+                     SET v_actions = v_action;
                 END IF;
             END IF;
         END IF;  
@@ -148,7 +151,7 @@ BEGIN
     IF(OLD.quantity <> NEW.quantity) THEN
     	SET v_changes = TRUE;
         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK QUANTITY</span> FROM [<span class="text-secondary">', OLD.quantity, '</span>] TO [<span class="text-primary">', NEW.quantity, '</span>],');
-        SET v_content = CONCAT(v_content,' ',v_action); 
+        SET v_actions = CONCAT(v_actions,' ',v_action); 
     END IF;
     -- //end quantity
     
@@ -160,7 +163,7 @@ BEGIN
             ELSE
             	SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-primary">TRUE</span>] TO [<span class="text-secondary">FALSE</span>],');
             END IF;
-            SET v_content = CONCAT(v_content,' ',v_action); 
+            SET v_actions = CONCAT(v_actions,' ',v_action); 
         END IF;
     -- //paid
     
@@ -168,10 +171,10 @@ BEGIN
     
     -- insert logs
     IF v_changes = TRUE THEN
-    	SET v_content = (SELECT TRIM(TRAILING ',' FROM v_content));
+    	SET v_actions = (SELECT TRIM(TRAILING ',' FROM v_actions));
         
-        INSERT INTO project_logs(project_id,task_id, timestamp, content)
-        VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_content);
+        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_actions,v_content);
     END IF;
 END; //
 DELIMITER ;

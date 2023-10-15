@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 15, 2023 lúc 10:30 AM
+-- Thời gian đã tạo: Th10 15, 2023 lúc 05:22 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -739,7 +739,7 @@ CREATE TRIGGER `after_cc_inserted` AFTER INSERT ON `ccs` FOR EACH ROW BEGIN
     SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM tasks WHERE id = NEW.id));
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.created_by));
     
-    INSERT INTO project_logs(project_id,cc_id,timestamp,content)
+    INSERT INTO project_logs(project_id,cc_id,timestamp,action)
     VALUES(NEW.project_id,NEW.id,NEW.created_at,CONCAT(v_role,' [<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">CREATE NEW CC</span> FROM [<span class="text-warning">',DATE_FORMAT(NEW.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-warning">',DATE_FORMAT(NEW.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
     
 END
@@ -1169,13 +1169,11 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 --
 DELIMITER $$
 CREATE TRIGGER `AutoInsertTask` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
-    DECLARE v_project_id BIGINT;
     DECLARE v_levels VARCHAR(100);
     DECLARE v_created_by INT;
     
-    SELECT MAX(id) INTO v_project_id FROM projects;
-    SELECT levels INTO v_levels FROM projects WHERE id = v_project_id;
-    SELECT created_by INTO v_created_by FROM projects WHERE id = v_project_id;
+    SELECT levels INTO v_levels FROM projects WHERE id = NEW.id;
+    SELECT created_by INTO v_created_by FROM projects WHERE id = NEW.id;
 
     SET @start = 1;
     SET @end = LOCATE(',', v_levels);
@@ -1184,7 +1182,7 @@ CREATE TRIGGER `AutoInsertTask` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
     IF @end IS NOT NULL THEN
         WHILE @end > 0 DO
             INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
-            VALUES (v_project_id, SUBSTRING(v_levels, @start, @end - @start),1, v_created_by);
+            VALUES (NEW.id, SUBSTRING(v_levels, @start, @end - @start),1, v_created_by);
             SET @start = @end + 1;
             SET @end = LOCATE(',', v_levels, @start);
         END WHILE;
@@ -1193,7 +1191,7 @@ CREATE TRIGGER `AutoInsertTask` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
     -- Xử lý giá trị cuối cùng
     IF SUBSTRING(v_levels, @start) > 0 THEN
         INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
-        VALUES (v_project_id, SUBSTRING(v_levels, @start),1, v_created_by);
+        VALUES (NEW.id, SUBSTRING(v_levels, @start),1, v_created_by);
     END IF;
 END
 $$
@@ -1208,7 +1206,7 @@ CREATE TRIGGER `after_project_inserted` AFTER INSERT ON `projects` FOR EACH ROW 
     SET v_customer = (SELECT acronym FROM customers WHERE id = NEW.customer_id);
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.created_by));
     
-    INSERT INTO project_logs(project_id,timestamp,content)
+    INSERT INTO project_logs(project_id,timestamp,action)
     VALUES(NEW.id,NEW.created_at,CONCAT(v_role,' [<span class="text-info fw-bold">',v_created_by,'</span>] <span class="text-success">CREATE PROJECT FOR CUSTOMER</span> [<span class="text-primary">',v_customer,'</span>]'));
 END
 $$
@@ -1216,7 +1214,8 @@ DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW BEGIN
 	DECLARE v_actioner  varchar(100);
-    DECLARE v_content varchar(255) DEFAULT '';
+    DECLARE v_action varchar(255) DEFAULT '';
+    DECLARE v_content text DEFAULT '';
     
     DECLARE v_old_customer varchar(50);
     DECLARE v_new_customer varchar(50);
@@ -1236,12 +1235,12 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
     
     SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.updated_by);
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
-    SET v_content = CONCAT(v_role,' [<span class="fw-bold text-info">',v_actioner,'</span>]');
+    SET v_action = CONCAT(v_role,' [<span class="fw-bold text-info">',v_actioner,'</span>]');
     
        -- name
     	IF NEW.name <> OLD.name THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE NAME</span> FROM [<span class="text-secondary">',OLD.name,'</span>] TO [<span class="text-info">',NEW.name,'</span>],');            
+        	SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE NAME</span> FROM [<span class="text-secondary">',OLD.name,'</span>] TO [<span class="text-info">',NEW.name,'</span>],');            
         END IF;
     -- //name
     
@@ -1250,7 +1249,7 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
         	 SET v_changed = TRUE;
         	SET v_old_customer = (SELECT acronym FROM customers WHERE id = OLD.customer_id);
         	SET v_new_customer = (SELECT acronym FROM customers WHERE id = NEW.customer_id);
-            SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE CUSTOMER</span> FROM [<span class="text-secondary">',v_old_customer,'</span>] TO [<span class="text-info">',v_new_customer,'</span>],');
+            SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE CUSTOMER</span> FROM [<span class="text-secondary">',v_old_customer,'</span>] TO [<span class="text-info">',v_new_customer,'</span>],');
            
         END IF;
     -- //customer
@@ -1258,7 +1257,8 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
     -- description 
     	IF NEW.description <> OLD.description THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE DESCRIPTION</span><a href="javascript:void(0)" onClick="ViewContent(''', OLD.description,'TO: <hr/>', NEW.description,''')">View detail</a> ,');            
+        	SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE DESCRIPTION</span><a href="javascript:void(0)" onClick="ViewContent(',NEW.id,')>View detail</a> ,');            
+            SET v_content = CONCAT('<span class="text-secondary">FROM:</span><br/><hr>',OLD.description,'<span class="mt-3 text-secondary">TO:</span><hr/>',NEW.description);
         END IF;
     -- //description
     
@@ -1267,21 +1267,21 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
         	SET v_changed = TRUE;
         	SET v_old_status = (SELECT name FROM project_statuses WHERE id = OLD.status_id);
         	SET v_new_status = (SELECT name FROM project_statuses WHERE id = NEW.status_id);
-            SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE STATUS</span> FROM [<span class="text-secondary">',v_old_status,'</span>] TO [<span class="text-info">',v_new_status,'</span>],');            
+            SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE STATUS</span> FROM [<span class="text-secondary">',v_old_status,'</span>] TO [<span class="text-info">',v_new_status,'</span>],');            
         END IF;
     -- //status
     
     -- START DATE
     	IF NEW.start_date <> OLD.start_date THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE START DATE</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.start_date,'%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-info">',DATE_FORMAT(NEW.start_date,'%d/%m/%Y %H:%i'),'</span>],');            
+        	SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE START DATE</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.start_date,'%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-info">',DATE_FORMAT(NEW.start_date,'%d/%m/%Y %H:%i'),'</span>],');            
         END IF;
     -- //START DATE
     
         -- END DATE
     	IF NEW.end_date <> OLD.end_date THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE END DATE</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.end_date,'%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-info">',DATE_FORMAT(NEW.end_date,'%d/%m/%Y %H:%i'),'</span>],');            
+        	SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE END DATE</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.end_date,'%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-info">',DATE_FORMAT(NEW.end_date,'%d/%m/%Y %H:%i'),'</span>],');            
         END IF;
     -- //END DATE
     
@@ -1290,15 +1290,15 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
         	SET v_changed = TRUE;
         	IF LENGTH(NEW.levels) = 0 THEN -- huy ap dung template
             	SET v_old_templates = (SELECT GROUP_CONCAT(name SEPARATOR ', ') FROM levels WHERE FIND_IN_SET(id, OLD.levels) > 0);
-                SET v_content = CONCAT(v_content,' <span class="text-danger">CANCEL TEMPLATES</span> [',v_old_templates,'],');                
+                SET v_action = CONCAT(v_action,' <span class="text-danger">CANCEL TEMPLATES</span> [',v_old_templates,'],');                
             ELSE
             	IF LENGTH(OLD.levels) = 0 THEN -- ap template
                 	SET v_new_templates = (SELECT GROUP_CONCAT(name SEPARATOR ', ') FROM levels WHERE FIND_IN_SET(id, NEW.levels) > 0);
-                	SET v_content = CONCAT(v_content,' <span class="text-info">APPLY TEMPLATES</span> [',v_new_templates,'],');
+                	SET v_action = CONCAT(v_action,' <span class="text-info">APPLY TEMPLATES</span> [',v_new_templates,'],');
                 ELSE -- thay doi template
                 	SET v_old_templates = (SELECT GROUP_CONCAT(name SEPARATOR ', ') FROM levels WHERE FIND_IN_SET(id, OLD.levels) > 0);
                     SET v_new_templates = (SELECT GROUP_CONCAT(name SEPARATOR ', ') FROM levels WHERE FIND_IN_SET(id, NEW.levels) > 0);
-                    SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE TEMPLATES</span> FROM [<span class="text-secondary">',v_old_templates,'</span>] TO [<span class="text-info">',v_new_templates,'</span>],');
+                    SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE TEMPLATES</span> FROM [<span class="text-secondary">',v_old_templates,'</span>] TO [<span class="text-info">',v_new_templates,'</span>],');
                 END IF;
             END IF;
         END IF;
@@ -1309,15 +1309,15 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
         	SET v_changed = TRUE;
         	IF NEW.combo_id = 0 THEN -- neu la huy combo
             	SET v_old_combo = (SELECT name FROM comboes WHERE id = OLD.combo_id);
-            	SET v_content = CONCAT(v_content,' <span class="text-danger">CANCEL COMBO</span> [',v_old_combo,'],');
+            	SET v_action = CONCAT(v_action,' <span class="text-danger">CANCEL COMBO</span> [',v_old_combo,'],');
             ELSE -- thay doi combo
             	IF OLD.combo_id =0 THEN -- neu truoc do chua co combo
                 	SET v_new_combo = (SELECT name FROM comboes WHERE id = NEW.combo_id);
-                    SET v_content = CONCAT(v_content,' <span class="text-success">APPLY COMBO</span> [',v_new_combo,'],');
+                    SET v_action = CONCAT(v_action,' <span class="text-success">APPLY COMBO</span> [',v_new_combo,'],');
                 ELSE -- thay doi combo 1 sang combo 2
                 	SET v_old_combo = (SELECT name FROM comboes WHERE id = OLD.combo_id);
                     SET v_new_combo = (SELECT name FROM comboes WHERE id = NEW.combo_id);
-                    SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE COMBO</span> FROM [<span class="text-secondary">',v_old_combo,'</span>] TO [<span class="text-info">',v_new_combo,'</span>],');
+                    SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE COMBO</span> FROM [<span class="text-secondary">',v_old_combo,'</span>] TO [<span class="text-info">',v_new_combo,'</span>],');
                 END IF;
             END IF;
         END IF;
@@ -1327,18 +1327,18 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
     	IF NEW.priority <> OLD.priority THEN
         	SET v_changed = TRUE;
         	IF NEW.priority = 1 THEN 
-            	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE PRIORITY</span> TO [<span class="text-danger">URGEN</span>],');
+            	SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE PRIORITY</span> TO [<span class="text-danger">URGEN</span>],');
             ELSE
-            	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE PRIORITY</span> TO [<span class="text-secondary">NORMAL</span>],');
+            	SET v_action = CONCAT(v_action,' <span class="text-warning">CHANGE PRIORITY</span> TO [<span class="text-secondary">NORMAL</span>],');
             END IF;            
         END IF;
     -- //priority
     
     
     IF v_changed = TRUE THEN
-    		SET v_content = (SELECT TRIM(TRAILING ',' FROM v_content));
-             INSERT INTO project_logs(project_id,timestamp,content)
-             VALUES(OLD.id,NEW.updated_at,v_content);
+    		SET v_action = (SELECT TRIM(TRAILING ',' FROM v_action));
+             INSERT INTO project_logs(project_id,timestamp,action,content)
+             VALUES(OLD.id,NEW.updated_at,v_action,v_content);
     END IF;
 
     
@@ -1379,7 +1379,7 @@ DELIMITER $$
 CREATE TRIGGER `after_instruction_inserted` AFTER INSERT ON `project_instructions` FOR EACH ROW BEGIN 
  	DECLARE v_ins_count INT DEFAULT 0;
     DECLARE v_actioner varchar(100);
-    DECLARE v_content text DEFAULT '';
+    DECLARE v_action text DEFAULT '';
     DECLARE v_role varchar(100) DEFAULT '';
     
     SET v_ins_count = (SELECT COUNT(id) FROM project_instructions WHERE project_id = NEW.project_id and id < NEW.id);
@@ -1387,26 +1387,28 @@ CREATE TRIGGER `after_instruction_inserted` AFTER INSERT ON `project_instruction
     IF v_ins_count > 0 THEN
     	SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.created_by);
          SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.created_by));
-        SET v_content = CONCAT(v_role,' [<span class="fw-bold text-info">', v_actioner, '</span>] <span class="text-success">INSERT NEW INSTRUCTION</span> <a href="javascript:void(0)" onClick="ViewContent(''', NEW.content, ''')">View detail</a>');
+        SET v_action = CONCAT(v_role,' [<span class="fw-bold text-info">', v_actioner, '</span>] <span class="text-success">INSERT NEW INSTRUCTION</span> <a href="javascript:void(0)" onClick="ViewContent(''', NEW.content, ''')">View detail</a>');
 
-    	INSERT INTO project_logs(project_id,timestamp,content)
-        VALUES(NEW.project_id,NEW.created_at,v_content);
+    	INSERT INTO project_logs(project_id,timestamp,action)
+        VALUES(NEW.project_id,NEW.created_at,v_action);
     END IF;
  END
 $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_project_instruction_updated` AFTER UPDATE ON `project_instructions` FOR EACH ROW BEGIN
-	DECLARE v_content varchar(255) DEFAULT '';
+	DECLARE v_actions varchar(255) DEFAULT '';
+    DECLARE v_content text DEFAULT '';
     DECLARE v_actioner varchar(50);
     DECLARE v_role varchar(100) DEFAULT '';
     
 	IF NEW.content <> OLD.content THEN
      	SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.updated_by);
         SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
-    	SET v_content = CONCAT(v_role,' [<span class="fw-bold text-info">',v_actioner,'</span>] <span class="text-warning">CHANGE INSTRUCTION</span> <a href="javascript:void(0)" onClick="ViewContent(''', OLD.content, '<br/>TO: <hr/>',NEW.content,''')">View detail</a>,');     
-         INSERT INTO project_logs(project_id,timestamp,content)
-         VALUES(OLD.project_id,NEW.updated_at,v_content);
+    	SET v_actions = CONCAT(v_role,' [<span class="fw-bold text-info">',v_actioner,'</span>] <span class="text-warning">CHANGE INSTRUCTION</span> <a href="javascript:void(0)" onClick="ViewContent(',NEW.id,')">View detail</a>,');     
+        SET v_content = CONCAT('<span class="text-secondary">FROM:</span><br/><hr>',OLD.content,'<span class="mt-3 text-secondary">TO:</span><hr/>',NEW.content);
+        INSERT INTO project_logs(project_id,timestamp,action,content)
+        VALUES(OLD.project_id,NEW.updated_at,v_actions,v_content);
     END IF;
 END
 $$
@@ -1424,6 +1426,7 @@ CREATE TABLE `project_logs` (
   `task_id` bigint(20) NOT NULL DEFAULT 0,
   `cc_id` bigint(20) NOT NULL DEFAULT 0,
   `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
+  `action` varchar(255) NOT NULL,
   `content` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -1431,28 +1434,29 @@ CREATE TABLE `project_logs` (
 -- Đang đổ dữ liệu cho bảng `project_logs`
 --
 
-INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `content`) VALUES
-(1, 1, 1, 0, '2023-10-15 15:21:20', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]'),
-(2, 1, 2, 0, '2023-10-15 15:21:20', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]'),
-(3, 1, 3, 0, '2023-10-15 15:21:20', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]'),
-(4, 1, 0, 0, '2023-10-15 15:21:20', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]'),
-(5, 1, 4, 0, '2023-10-15 15:24:04', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]'),
-(6, 1, 5, 0, '2023-10-15 15:24:48', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [7]'),
-(7, 1, 0, 2, '2023-10-15 15:25:04', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">15/10/2023 15:20</span>] TO [<span class=\"text-warning\">15/10/2023 18:20</span>]'),
-(8, 1, 0, 0, '2023-10-15 15:25:17', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'New instruction here\n\')\">View detail</a>'),
-(9, 1, 0, 0, '2023-10-15 15:25:28', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">TEST PROJECT</span>] TO [<span class=\"text-info\">TEST PROJECT 1</span>]'),
-(10, 1, 0, 0, '2023-10-15 15:26:07', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE START DATE</span> FROM [<span class=\"text-secondary\">15/10/2023 15:20</span>] TO [<span class=\"text-info\">14/10/2023 15:20</span>]'),
-(11, 1, 0, 0, '2023-10-15 15:26:59', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE END DATE</span> FROM [<span class=\"text-secondary\">15/10/2023 18:20</span>] TO [<span class=\"text-info\">15/10/2023 20:00</span>]'),
-(12, 1, 0, 0, '2023-10-15 15:27:24', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 1</span>] TO [<span class=\"text-info\">combo 3</span>]'),
-(13, 1, 0, 0, '2023-10-15 15:27:38', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">CANCEL COMBO</span> [combo 3]'),
-(14, 1, 0, 0, '2023-10-15 15:27:50', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">APPLY COMBO</span> [combo 2]'),
-(15, 1, 0, 0, '2023-10-15 15:28:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TEMPLATES</span> FROM [<span class=\"text-secondary\">PE-STAND, PE-BASIC, PE-Drone-Basic</span>] TO [<span class=\"text-info\">PE-BASIC, PE-Drone-Basic</span>]'),
-(16, 1, 0, 0, '2023-10-15 15:28:20', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">CANCEL TEMPLATES</span> [PE-BASIC, PE-Drone-Basic]'),
-(17, 1, 0, 0, '2023-10-15 15:28:35', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-info\">APPLY TEMPLATES</span> [PE-STAND, PE-Drone-Basic, Re-ADV]'),
-(18, 1, 0, 0, '2023-10-15 15:29:16', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE PRIORITY</span> TO [<span class=\"text-secondary\">NORMAL</span>]'),
-(19, 1, 0, 0, '2023-10-15 15:29:26', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE PRIORITY</span> TO [<span class=\"text-danger\">URGEN</span>]'),
-(20, 1, 0, 0, '2023-10-15 15:29:40', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(\'PROJECT DESCRIPTION\nTO: <hr/>PROJECT DESCRIPTION 23\n\')\">View detail</a> '),
-(21, 1, 0, 0, '2023-10-15 15:29:53', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'instruction 1\n<br/>TO: <hr/>instruction 1 34\n\')\">View detail</a>,');
+INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
+(1, 1, 1, 0, '2023-10-15 15:21:20', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]'),
+(2, 1, 2, 0, '2023-10-15 15:21:20', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]'),
+(3, 1, 3, 0, '2023-10-15 15:21:20', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]'),
+(4, 1, 0, 0, '2023-10-15 15:21:20', '', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]'),
+(5, 1, 4, 0, '2023-10-15 15:24:04', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]'),
+(6, 1, 5, 0, '2023-10-15 15:24:48', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [7]'),
+(7, 1, 0, 2, '2023-10-15 15:25:04', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">15/10/2023 15:20</span>] TO [<span class=\"text-warning\">15/10/2023 18:20</span>]'),
+(8, 1, 0, 0, '2023-10-15 15:25:17', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'New instruction here\n\')\">View detail</a>'),
+(9, 1, 0, 0, '2023-10-15 15:25:28', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">TEST PROJECT</span>] TO [<span class=\"text-info\">TEST PROJECT 1</span>]'),
+(10, 1, 0, 0, '2023-10-15 15:26:07', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE START DATE</span> FROM [<span class=\"text-secondary\">15/10/2023 15:20</span>] TO [<span class=\"text-info\">14/10/2023 15:20</span>]'),
+(11, 1, 0, 0, '2023-10-15 15:26:59', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE END DATE</span> FROM [<span class=\"text-secondary\">15/10/2023 18:20</span>] TO [<span class=\"text-info\">15/10/2023 20:00</span>]'),
+(12, 1, 0, 0, '2023-10-15 15:27:24', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 1</span>] TO [<span class=\"text-info\">combo 3</span>]'),
+(13, 1, 0, 0, '2023-10-15 15:27:38', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">CANCEL COMBO</span> [combo 3]'),
+(14, 1, 0, 0, '2023-10-15 15:27:50', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">APPLY COMBO</span> [combo 2]'),
+(15, 1, 0, 0, '2023-10-15 15:28:02', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TEMPLATES</span> FROM [<span class=\"text-secondary\">PE-STAND, PE-BASIC, PE-Drone-Basic</span>] TO [<span class=\"text-info\">PE-BASIC, PE-Drone-Basic</span>]'),
+(16, 1, 0, 0, '2023-10-15 15:28:20', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-danger\">CANCEL TEMPLATES</span> [PE-BASIC, PE-Drone-Basic]'),
+(17, 1, 0, 0, '2023-10-15 15:28:35', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-info\">APPLY TEMPLATES</span> [PE-STAND, PE-Drone-Basic, Re-ADV]'),
+(18, 1, 0, 0, '2023-10-15 15:29:16', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE PRIORITY</span> TO [<span class=\"text-secondary\">NORMAL</span>]'),
+(19, 1, 0, 0, '2023-10-15 15:29:26', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE PRIORITY</span> TO [<span class=\"text-danger\">URGEN</span>]'),
+(20, 1, 0, 0, '2023-10-15 15:29:40', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(\'PROJECT DESCRIPTION\nTO: <hr/>PROJECT DESCRIPTION 23\n\')\">View detail</a> '),
+(21, 1, 0, 0, '2023-10-15 15:29:53', '', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'instruction 1\n<br/>TO: <hr/>instruction 1 34\n\')\">View detail</a>,'),
+(22, 1, 2, 0, '2023-10-15 21:58:36', '', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]');
 
 -- --------------------------------------------------------
 
@@ -1530,7 +1534,7 @@ CREATE TABLE `tasks` (
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (1, 1, NULL, 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 1, 1, 0, 1, 0, 0, 1, '', '2023-10-15 15:21:20', 1, '2023-10-15 08:21:20', 0, NULL, NULL),
-(2, 1, NULL, 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 1, 0, 1, 0, 0, 1, '', '2023-10-15 15:21:20', 1, '2023-10-15 08:21:20', 0, NULL, NULL),
+(2, 1, NULL, 0, 4, '2023-10-15 14:58:36', 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 1, 0, 1, 0, 0, 1, '', '2023-10-15 15:21:20', 1, '2023-10-15 14:58:36', 4, NULL, NULL),
 (3, 1, NULL, 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 1, 0, 1, 0, 0, 1, '', '2023-10-15 15:21:20', 1, '2023-10-15 08:21:20', 0, NULL, NULL),
 (4, 1, 'Task inserted normally\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 2, 0, 0, 3, 0, 0, 1, '', '2023-10-15 15:24:04', 1, '2023-10-15 08:24:04', 0, NULL, NULL),
 (5, 1, '\n', 0, 0, NULL, 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 0, 7, 0, 0, 1, '', '2023-10-15 15:24:48', 1, '2023-10-15 08:24:48', 0, NULL, NULL);
@@ -1545,7 +1549,7 @@ CREATE TRIGGER `after_task_deleted` AFTER DELETE ON `tasks` FOR EACH ROW BEGIN
 
     SET v_level = (SELECT name FROM levels WHERE id = OLD.level_id);
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE acronym = OLD.deleted_by));
-	INSERT INTO project_logs(project_id,task_id,timestamp,content)
+	INSERT INTO project_logs(project_id,task_id,timestamp,action)
     VALUES(OLD.project_id,OLD.id,OLD.deleted_at,CONCAT(v_role,' [<span class="text-info fw-bold">',OLD.deleted_by,'</span>] <span class="text-danger">DELETE TASK </span>[',v_level,']'));
 END
 $$
@@ -1554,29 +1558,29 @@ DELIMITER $$
 CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);
     DECLARE v_level varchar(50);
-    DECLARE v_content varchar(5000);
+    DECLARE v_action varchar(5000);
     DECLARE v_role varchar(100) DEFAULT '';
     
     SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM tasks WHERE id = NEW.id));
     SET v_level = (SELECT name FROM levels WHERE id = NEW.level_id);
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.created_by));
     
-    SET v_content = CONCAT(v_role,' [<span class="fw-bold text-info">',v_created_by,'</span>] ');
+    SET v_action = CONCAT(v_role,' [<span class="fw-bold text-info">',v_created_by,'</span>] ');
     IF NEW.cc_id > 0 THEN
-    	SET v_content = CONCAT( v_content,'<span class="text-success">INSERT CC TASK</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [',NEW.quantity,']');
+    	SET v_action = CONCAT( v_action,'<span class="text-success">INSERT CC TASK</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [',NEW.quantity,']');
     ELSE
-    	SET v_content = CONCAT(v_content,'<span class="text-success">INSERT TASK</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [',NEW.quantity,']');
+    	SET v_action = CONCAT(v_action,'<span class="text-success">INSERT TASK</span> [<span class="fw-bold">',v_level,'</span>] with quantity: [',NEW.quantity,']');
     END IF;
     
-    INSERT INTO project_logs(project_id,task_id,timestamp,content)
-    VALUES(NEW.project_id,NEW.id,NEW.created_at,v_content);
+    INSERT INTO project_logs(project_id,task_id,timestamp,action)
+    VALUES(NEW.project_id,NEW.id,NEW.created_at,v_action);
     
 END
 $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN 
-    DECLARE v_content VARCHAR(250) DEFAULT '';
+    DECLARE v_actions VARCHAR(250) DEFAULT '';
     DECLARE v_action VARCHAR(250) DEFAULT '';
     
     DECLARE v_old_level VARCHAR(100) DEFAULT '';
@@ -1592,18 +1596,21 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
 
     DECLARE v_role varchar(100) DEFAULT '';
 
+    DECLARE v_content text DEFAULT '';
+
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
   
   	SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai
 
-    SET v_content = CONCAT(v_role,': [<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
+    SET v_actions = CONCAT(v_role,': [<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
    
     
     -- description
     IF(OLD.description <> NEW.description) THEN
     	SET v_changes = TRUE;
-    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(''',OLD.description,'<br/>TO:<hr/>',NEW.description,''')">View detail</a>,');
-         SET v_content = CONCAT(v_content,' ',v_action);
+    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(',NEW.id,')">View detail</a>,');
+        SET v_content = CONCAT('<span class="text-secondary">FROM:</span><br/><hr>',OLD.description,'<span class="mt-3 text-secondary">TO:</span><hr/>',NEW.description); 
+        SET v_actions = CONCAT(v_actions,' ',v_action);
     END IF;
     -- //end description
     
@@ -1613,7 +1620,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
         SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id);
        
         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK LEVEL</span> FROM [<span class="text-secondary">', v_old_level, '</span>] TO [<span class="text-primary">', v_new_level, '</span>],');
-        SET v_content = CONCAT(v_content,' ',v_action);        
+        SET v_actions = CONCAT(v_actions,' ',v_action);        
     END IF;
     -- //end task level
     
@@ -1635,7 +1642,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
            END IF;
         -- //editor url
     
-        SET v_content = CONCAT(v_content,' ',v_action); 
+        SET v_actions = CONCAT(v_actions,' ',v_action); 
     END IF;
     -- //end status
     
@@ -1646,20 +1653,20 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
       	IF OLD.editor_id = 0 THEN -- neu truoc do chua co editor     		
             IF NEW.editor_assigned = 1 THEN -- neu la gan editor
             	SET v_action = CONCAT('<span class="text-warning">ASSIGN EDITOR</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- neu la editor get task
             	SET v_action = CONCAT('EDITOR: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_content = v_action;
+                SET v_actions = v_action;
             END IF;            
      	ELSE -- neu truoc do co editor
         	IF NEW.editor_id = 0 THEN -- neu la huy editor
                 SET v_new_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);   
             	SET v_action = CONCAT('<span class="text-danger">UNASSIGN EDITOR</span>[<span class="fw-bold">',v_new_emp,'</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- thay sang editor khac
             	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);
                 SET v_action = CONCAT('<span class="text-warning">CHANGE EDITOR</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             END IF;      
       	END IF;       
     END IF; 
@@ -1675,19 +1682,19 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
       	IF OLD.qa_id = 0 THEN -- neu truoc do chua co QA     		
             IF NEW.qa_assigned = 1 THEN -- neu la gan QA
             	SET v_action = CONCAT('<span class="text-warning">ASSIGN QA</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- neu la QA get task
             	SET v_action = CONCAT('QA: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_content = v_action;
+                SET v_actions = v_action;
             END IF;            
      	ELSE -- neu truoc do co QA
         	IF NEW.qa_id = 0 THEN -- neu la huy QA
             	SET v_action = CONCAT('<span class="text-danger">UNASSIGN QA</span> ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             ELSE -- thay doi QA
             	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.qa_id);
                 SET v_action = CONCAT('<span class="text-warning">CHANGE QA</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_content = CONCAT(v_content,' ',v_action); 
+                SET v_actions = CONCAT(v_actions,' ',v_action); 
             END IF;      
       	END IF;       
     END IF; 
@@ -1700,19 +1707,19 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
         	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.dc_id);     
         	IF OLD.dc_id = 0 THEN -- DC nhan task            	
             	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_content = v_action;
+                SET v_actions = v_action;
             ELSE -- DC submit task hoac thay doi DC
             	IF OLD.dc_id <> NEW.dc_id THEN -- thay doi DC
                 	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.dc_id);    
                     SET v_action = CONCAT('<span class="text-warning">CHANGE DC</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],'); 
-                   	SET v_content = CONCAT(v_content,' ',v_action); 
+                   	SET v_actions = CONCAT(v_actions,' ',v_action); 
                 ELSE  -- DC submit hoac reject task
                 	IF NEW.dc_submit = 1 THEN -- submit task
                     	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">SUBMIT TASK</span> [',v_new_level,']');               
                     ELSE -- reject task
                     	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-danger">REJECT TASK</span> [',v_new_level,']');  
                     END IF;
-                     SET v_content = v_action;
+                     SET v_actions = v_action;
                 END IF;
             END IF;
         END IF;  
@@ -1722,7 +1729,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     IF(OLD.quantity <> NEW.quantity) THEN
     	SET v_changes = TRUE;
         SET v_action = CONCAT('<span class="text-warning">CHANGE TASK QUANTITY</span> FROM [<span class="text-secondary">', OLD.quantity, '</span>] TO [<span class="text-primary">', NEW.quantity, '</span>],');
-        SET v_content = CONCAT(v_content,' ',v_action); 
+        SET v_actions = CONCAT(v_actions,' ',v_action); 
     END IF;
     -- //end quantity
     
@@ -1734,7 +1741,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
             ELSE
             	SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-primary">TRUE</span>] TO [<span class="text-secondary">FALSE</span>],');
             END IF;
-            SET v_content = CONCAT(v_content,' ',v_action); 
+            SET v_actions = CONCAT(v_actions,' ',v_action); 
         END IF;
     -- //paid
     
@@ -1742,10 +1749,10 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     
     -- insert logs
     IF v_changes = TRUE THEN
-    	SET v_content = (SELECT TRIM(TRAILING ',' FROM v_content));
+    	SET v_actions = (SELECT TRIM(TRAILING ',' FROM v_actions));
         
-        INSERT INTO project_logs(project_id,task_id, timestamp, content)
-        VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_content);
+        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_actions,v_content);
     END IF;
 END
 $$
@@ -2216,7 +2223,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
