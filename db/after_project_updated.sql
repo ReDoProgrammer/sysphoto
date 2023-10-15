@@ -19,9 +19,12 @@ BEGIN
     DECLARE v_new_combo varchar(50);
     
     DECLARE v_changed BOOLEAN DEFAULT FALSE;
+
+    DECLARE v_role varchar(100) DEFAULT '';
     
     SET v_actioner = (SELECT acronym FROM users WHERE id = NEW.updated_by);
-    SET v_content = CONCAT('[<span class="fw-bold text-info">',v_actioner,'</span>]');
+    SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
+    SET v_content = CONCAT(v_role,' [<span class="fw-bold text-info">',v_actioner,'</span>]');
     
        -- name
     	IF NEW.name <> OLD.name THEN
@@ -43,7 +46,7 @@ BEGIN
     -- description 
     	IF NEW.description <> OLD.description THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE DESCRIPTION</span><a href="javascript:void(0)" onClick="ViewContent(\'FROM:<br/>', OLD.description,'TO: <br/>', NEW.description,'\')">View detail</a> ,');            
+        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE DESCRIPTION</span><a href="javascript:void(0)" onClick="ViewContent(\'', OLD.description,'TO: <hr/>', NEW.description,'\')">View detail</a> ,');            
         END IF;
     -- //description
     
@@ -59,14 +62,14 @@ BEGIN
     -- START DATE
     	IF NEW.start_date <> OLD.start_date THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE START DATE</span> FROM [<span class="text-secondary">',OLD.start_date,'</span>] TO [<span class="text-info">',NEW.start_date,'</span>],');            
+        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE START DATE</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.start_date,'%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-info">',DATE_FORMAT(NEW.start_date,'%d/%m/%Y %H:%i'),'</span>],');            
         END IF;
     -- //START DATE
     
         -- END DATE
     	IF NEW.end_date <> OLD.end_date THEN
         	SET v_changed = TRUE;
-        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE END DATE</span> FROM [<span class="text-secondary">',OLD.end_date,'</span>] TO [<span class="text-info">',NEW.end_date,'</span>],');            
+        	SET v_content = CONCAT(v_content,' <span class="text-warning">CHANGE END DATE</span> FROM [<span class="text-secondary">',DATE_FORMAT(OLD.end_date,'%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-info">',DATE_FORMAT(NEW.end_date,'%d/%m/%Y %H:%i'),'</span>],');            
         END IF;
     -- //END DATE
     

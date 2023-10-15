@@ -1,7 +1,7 @@
 DELIMITER //
 CREATE TRIGGER after_task_updated
 AFTER UPDATE ON tasks FOR EACH ROW
-BEGIN
+BEGIN 
     DECLARE v_content VARCHAR(250) DEFAULT '';
     DECLARE v_action VARCHAR(250) DEFAULT '';
     
@@ -79,7 +79,8 @@ BEGIN
             END IF;            
      	ELSE -- neu truoc do co editor
         	IF NEW.editor_id = 0 THEN -- neu la huy editor
-            	SET v_action = CONCAT('<span class="text-danger">UNASSIGN EDITOR</span> ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
+                SET v_new_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);   
+            	SET v_action = CONCAT('<span class="text-danger">UNASSIGN EDITOR</span>[<span class="fw-bold">',v_new_emp,'</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
                 SET v_content = CONCAT(v_content,' ',v_action); 
             ELSE -- thay sang editor khac
             	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);
