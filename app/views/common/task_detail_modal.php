@@ -32,7 +32,7 @@
 
                 <div class="card">
                     <div class="card-header fw-bold text-info">Description</div>
-                    <div class="card-body" id="divDescription"
+                    <div class="card-body" id="divTaskDescription"
                         style="max-height:350px; overflow-y: auto;border: 1px solid #ccc; padding-left:20px; padding-top:10px; padding-bottom: 10px; ">
                     </div>
                 </div>

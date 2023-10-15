@@ -82,6 +82,7 @@ function ViewTaskDetail(id) {
                 let content = $.parseJSON(data);
 
                 let t = content.task;
+
                 $('#level').addClass(t.level_color);
                 $('#level').text(t.level);
 
@@ -95,10 +96,10 @@ function ViewTaskDetail(id) {
                 $('#start_date').html(`<span class="text-danger fw-bold">${(t.start_date.split(' ')[1])}</span> <br/>${(t.start_date.split(' ')[0])}`);
                 $('#end_date').html(`<span class="text-danger fw-bold">${(t.end_date.split(' ')[1])}</span> <br/>${(t.end_date.split(' ')[0])}`);
 
-                $('#divDescription').empty();
+                $('#divTaskDescription').empty();
                 let s = $.parseJSON(t.styles);
                 console.log(s);
-                $('#divDescription').append(`
+                $('#divTaskDescription').append(`
                     <div class="row">
                         <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color?s.color:''}</span></div>
                         <div class="col-sm-4">Output: <span class="fw-bold">${s.output?s.output:''}</span></div>
@@ -106,7 +107,7 @@ function ViewTaskDetail(id) {
                     </div>
                 `);
 
-                $('#divDescription').append(`<hr>
+                $('#divTaskDescription').append(`<hr>
                     <div class="row mt-3">
                         <div class="col-sm-4">National style: <span class="fw-bold">${s.style?s.style:''}</span></div>
                         <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud?s.cloud:''}</span></div>
@@ -115,34 +116,34 @@ function ViewTaskDetail(id) {
                 `);
 
 
-                $('#divDescription').append(`<hr>
+                $('#divTaskDescription').append(`<hr>
                     <div class="row mt-3">                        
                         <div class="col-sm-4">Sky: <span class="fw-bold">${s.sky}</span></div>
                         <div class="col-sm-4">Fire: <span class="fw-bold">${s.fire}</span></div>
                         <div class="col-sm-4">Grass: <span class="fw-bold">${s.grass}</span></div>
                     </div>
                 `);
-                $('#divDescription').append(`<hr>
+                $('#divTaskDescription').append(`<hr>
                     <div class="row mt-3">
                         <div class="col-sm-12">Straighten: ${s.is_straighten==1?'<i class="fa-regular fa-square-check"></i>':'<i class="fa-regular fa-square"></i>'}
                         <span class="fw-bold">${s.straighten_remark}</span></div>
                     </div>
                 `)
-                $('#divDescription').append(`<hr><span class="text-secondary">Style remark:</span><p class="mt-3 mb-5">${s.style_remark}</p>`);
+                $('#divTaskDescription').append(`<hr><span class="text-secondary">Style remark:</span><p class="mt-3 mb-5">${s.style_remark}</p>`);
 
 
                 if (t.cc_id > 0) {
-                    $('#divDescription').append(`<span class="text-secondary">CC description:</span>`);
-                    $('#divDescription').append(`<p class="mt-2">${t.cc_content}</p>`)
+                    $('#divTaskDescription').append(`<span class="text-secondary">CC description:</span>`);
+                    $('#divTaskDescription').append(`<p class="mt-2">${t.cc_content}</p>`)
                 }
 
-                $('#divDescription').append(`<span class="text-secondary">Task description:</span>`);
-                $('#divDescription').append(`<p class="mt-2">${t.task_description}</p>`);
+                $('#divTaskDescription').append(`<span class="text-secondary">Task description:</span>`);
+                $('#divTaskDescription').append(`<p class="mt-2">${t.task_description}</p>`);
 
                 let instructions = $.parseJSON(t.instructions_list);
-                $('#divDescription').append(`<span class="text-secondary">Instructions:</span>`);
+                $('#divTaskDescription').append(`<span class="text-secondary">Instructions:</span>`);
                 instructions.forEach(i => {
-                    $('#divDescription').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
+                    $('#divTaskDescription').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
                 })
 
                 let logs = $.parseJSON(t.task_logs);
