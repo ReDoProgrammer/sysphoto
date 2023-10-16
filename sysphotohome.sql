@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 16, 2023 lúc 09:30 PM
+-- Thời gian đã tạo: Th10 16, 2023 lúc 09:42 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -532,11 +532,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_dat
                     t.dc_id,dc.acronym as dc, ";
 
     IF v_role = 6 THEN
-        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.editor_timestamp,'%d/%m/%Y %H:%i') AS commencement_date");
+        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.editor_timestamp,'%d/%m/%Y %H:%i') AS commencement_date, FORMAT((editor_wage)* quantity,0) as wage");
     ELSEIF v_role = 5 THEN
-        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.qa_timestamp,'%d/%m/%Y %H:%i') AS commencement_date");
+        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.qa_timestamp,'%d/%m/%Y %H:%i') AS commencement_date, FORMAT((qa_wage)* quantity,0) as wage");
     ELSEIF v_role = 7 THEN
-        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.dc_timestamp,'%d/%m/%Y %H:%i') AS commencement_date");
+        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.dc_timestamp,'%d/%m/%Y %H:%i') AS commencement_date, FORMAT((dc_wage)* quantity,0) as wage");
     END IF;
 
     SET v_sql = CONCAT(v_sql, ", t.pay,t.unpaid_remark 
@@ -1696,7 +1696,9 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (61, 2, 10, 0, '2023-10-17 02:29:09', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
 (62, 2, 10, 0, '2023-10-17 02:29:34', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with <a href=\"https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E1%BB%9', ''),
 (63, 2, 9, 0, '2023-10-17 02:29:45', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
-(64, 2, 10, 0, '2023-10-17 02:30:13', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', '');
+(64, 2, 10, 0, '2023-10-17 02:30:13', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
+(65, 2, 11, 0, '2023-10-17 02:31:03', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
+(66, 2, 12, 0, '2023-10-17 02:33:14', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-ADV]', '');
 
 -- --------------------------------------------------------
 
@@ -1785,8 +1787,8 @@ INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`
 (7, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL),
 (9, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E1%BB%91ng', 9, '2023-10-16 19:29:45', 0, 200, 0, 0, 0, NULL, 0, 0, 0, 3, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 19:29:45', 9, NULL, NULL),
 (10, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E1%BB%91ng', 9, '2023-10-16 19:30:13', 0, 1200, 0, 0, 0, NULL, 0, 0, 0, 4, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 19:30:13', 9, NULL, NULL),
-(11, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL),
-(12, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL);
+(11, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 9, '2023-10-16 19:31:03', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 19:31:03', 9, NULL, NULL),
+(12, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 9, '2023-10-16 19:33:14', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 19:33:14', 9, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2506,7 +2508,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
