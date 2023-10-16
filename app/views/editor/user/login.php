@@ -42,8 +42,8 @@
                                 </div>
                             </div>
                             <div class="input-block mb-3 text-center">
-                                <button class="btn btn-primary account-btn" type="submit" id="btnLogin">Admin
-                                    Login</button>
+                                <button class="btn btn-primary account-btn" type="submit" id="btnLogin">
+                                    Login as Editor</button>
                             </div>
                         </div>
                         <!-- /Account Form -->

@@ -13,7 +13,8 @@
             $this->render('__layouts/qa_layout', $this->data);
         }
         public function GetTask(){
-            $result = $this->__task_model->EditorGetTask();        
+            $role = $_GET['role'];
+            $result = $this->__task_model->GetTask($role);        
             echo $result['msg'];
         }
 
@@ -38,7 +39,7 @@
             }
             echo json_encode($data);
         }
-        public function fectch(){           
+        public function fetch(){           
             $from_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'].":00"))->format('Y-m-d H:i:s');
             $to_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'].":00"))->format('Y-m-d H:i:s');
             $status = $_GET['status'];           
@@ -74,5 +75,29 @@
                 ];
             }
             echo json_encode($data);
+        }
+        public function Reject(){
+            $id = $_POST['id'];
+            $remark = $_POST['remark'];
+            $read_instructions = $_POST['read_instructions'];
+
+            $result = $this->__task_model->RejectTask($id,$remark,$read_instructions);
+            if($result['updated_rows']>0){
+                $data =[
+                    'code'=>200,
+                    'icon'=>'success',
+                    'heading'=>'SUCCESSFULLY',
+                    'msg'=>'You have submitted the task successfully.'
+                ];
+            }else{
+                $data =[
+                    'code'=>204,
+                    'icon'=>'warning',
+                    'heading'=>'WARNING',
+                    'msg'=>'The task submission failed.'
+                ];
+            }
+            echo json_encode($data);
+
         }
     }

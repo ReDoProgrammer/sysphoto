@@ -58,14 +58,27 @@ class TaskModel extends Model
         // return $this->__db->delete($this->__table,"id = ".$id);
     }
 
-    public function EditorSubmitTask($id,$url){
+    public function SubmitTask($id,$read_instructions,$content){
         $user = unserialize($_SESSION['user']);
         $params = [
             'p_id'=>$id,
-            'p_url'=>$url,
-            'p_editor'=>$user->id
+            'p_actioner'=>$user->id,
+            'p_role'=>$user->role_id,
+            'p_read_instructions'=>$read_instructions,
+            'p_content'=>$content            
         ];
-        return $this->__db->executeStoredProcedure("EditorSubmitTask",$params);
+        return $this->__db->executeStoredProcedure("TaskSubmited",$params);
+    }
+    public function RejectTask($id,$remark,$read_instructions){
+        $user = unserialize($_SESSION['user']);
+        $params = [
+            'p_id'=>$id,
+            'p_remark'=>$remark,
+            'p_actioner'=>$user->id,
+            'p_role'=>$user->role_id,
+            'p_read_instructions'=>$read_instructions
+        ];
+        return $this->__db->executeStoredProcedure("TaskRejected",$params);
     }
 
     public function GetTasksByProject($id)
@@ -98,6 +111,11 @@ class TaskModel extends Model
         $user = unserialize($_SESSION['user']);
         $params = ['p_editor' => $user->id];
         return $this->__db->executeStoredProcedure("EditorGetTask", $params);
+    }
+    public function GetTask($role){
+        $user = unserialize($_SESSION['user']);
+        $params = ['p_editor' => $user->id,'p_role'=>$role];
+        return $this->__db->executeStoredProcedure("TaskGetting", $params);
     }
     public function GetOwnerTasks($from_date, $to_date, $status, $page = 1, $limit = 0)
     {

@@ -38,7 +38,7 @@
             }
             echo json_encode($data);
         }
-        public function fectch(){           
+        public function fetch(){           
             $from_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'].":00"))->format('Y-m-d H:i:s');
             $to_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'].":00"))->format('Y-m-d H:i:s');
             $status = $_GET['status'];           
@@ -55,8 +55,9 @@
 
         public function Submit(){
             $id = $_POST['id'];
-            $url = $_POST['url'];
-            $result = $this->__task_model->EditorSubmitTask($id,$url);
+            $read_instructions = $_POST['read_instructions'];
+            $content = $_POST['content'];
+            $result = $this->__task_model->SubmitTask($id,$read_instructions,$content);
 
             if($result['updated_rows']>0){
                 $data =[

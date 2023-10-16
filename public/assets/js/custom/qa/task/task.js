@@ -6,11 +6,57 @@ $(document).ready(function () {
     LoadTaskStatuses();
 })
 $('#btnGetTask').click(function () {
-    $.ajax({
-        url: 'task/gettask',
-        type: 'get',
-        success: function (data) {
+    Swal.fire({
+        icon: 'question',
+        title: 'What role do you want to take on for the task?',
+        showDenyButton: true,
+        showCancelButton: false,
+        confirmButtonText: 'Editor',
+        denyButtonText: `QA`,
+    }).then((result) => {
+        let role = 0;
+        if (result.isConfirmed) {
+            role = 6;
+        } else if (result.isDenied) {
+            role = 5;
+        }
+        $.ajax({
+            url: 'task/gettask',
+            type: 'get',
+            data:{role},
+            success: function (data) {
 
+                try {
+                    let content = $.parseJSON(data);
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        showHideTransition: 'fade',
+                        icon: content.icon
+                    })
+                    if (content.code == 200) {
+                        LoadOwnTasks();
+                    }
+                } catch (error) {
+                    console.log(data, error);
+                }
+            }
+        })
+    })
+
+})
+
+$('#btnSearch').click(function (e) {
+    e.preventDefault();
+    LoadOwnTasks();
+})
+$('#btnSubmitTask').click(function () {
+    let url = $('#txtUrl').val();
+    $.ajax({
+        url: 'task/submit',
+        type: 'post',
+        data: { id: taskId, url },
+        success: function (data) {
             try {
                 let content = $.parseJSON(data);
                 $.toast({
@@ -20,6 +66,7 @@ $('#btnGetTask').click(function () {
                     icon: content.icon
                 })
                 if (content.code == 200) {
+                    $("#task_submit_modal").modal('hide');
                     LoadOwnTasks();
                 }
             } catch (error) {
@@ -28,19 +75,14 @@ $('#btnGetTask').click(function () {
         }
     })
 })
-
-$('#btnSearch').click(function (e) {
-    e.preventDefault();
-    LoadOwnTasks();
-})
-$('#btnSubmitTask').click(function(){
-    let url = $('#txtUrl').val();
-    let read_instructions = $('#ckbReadInstruction').is(':checked')?1:0;
+$('#btnSubmitRejectingTask').click(function(){
+    let remark = qTaskRejectingRemark.getText();
+    let read_instructions = $('#ckbRejectReadInstructions').is(':checked')?1:0;
 
     $.ajax({
-        url:'task/submit',
+        url:'task/reject',
         type:'post',
-        data:{id:taskId,read_instructions,content:url},
+        data:{id:taskId,remark,read_instructions},
         success:function(data){
             try {
                 let content = $.parseJSON(data);
@@ -51,7 +93,7 @@ $('#btnSubmitTask').click(function(){
                     icon: content.icon
                 })
                 if(content.code == 200){
-                    $("#task_submit_modal").modal('hide');
+                    $('#task_reject_modal').modal('hide');
                     LoadOwnTasks();
                 }
             } catch (error) {
@@ -61,9 +103,12 @@ $('#btnSubmitTask').click(function(){
     })
 })
 
-$('#ckbReadInstruction').on('change', function() {
+$('#ckbReadInstruction').on('change', function () {
     $('#btnSubmitTask').prop('disabled', !this.checked);
-  });
+});
+$('#ckbRejectReadInstructions').on('change', function () {
+    $('#btnSubmitRejectingTask').prop('disabled', !this.checked);
+});
 
 $("#task_submit_modal").on('shown.bs.modal', function () {
     $('#btnSubmitTask').prop('disabled', true);
@@ -72,7 +117,18 @@ $("#task_submit_modal").on('shown.bs.modal', function () {
 });
 
 $("#task_submit_modal").on("hidden.bs.modal", function () {
-   taskId = 0;
+    taskId = 0;
+});
+
+$("#task_reject_modal").on('shown.bs.modal', function () {
+    $('#btnSubmitRejectingTask').prop('disabled', true);
+    $('#ckbRejectReadInstructions').prop('checked', false);
+    
+    qTaskRejectingRemark.setText('');
+});
+
+$("#task_reject_modal").on("hidden.bs.modal", function () {
+    taskId = 0;
 });
 
 
@@ -95,7 +151,7 @@ function ViewTaskDetail(id) {
                 $('#status').addClass(t.status_color);
                 $('#status').text(t.status ? t.status : '-');
 
-                
+
 
                 $('#start_date').html(`<span class="text-danger fw-bold">${(t.start_date.split(' ')[1])}</span> <br/>${(t.start_date.split(' ')[0])}`);
                 $('#end_date').html(`<span class="text-danger fw-bold">${(t.end_date.split(' ')[1])}</span> <br/>${(t.end_date.split(' ')[0])}`);
@@ -105,16 +161,16 @@ function ViewTaskDetail(id) {
                 console.log(s);
                 $('#divTaskDescription').append(`
                     <div class="row">
-                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color?s.color:''}</span></div>
-                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output?s.output:''}</span></div>
+                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color ? s.color : ''}</span></div>
+                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output ? s.output : ''}</span></div>
                         <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
                     </div>
                 `);
 
                 $('#divTaskDescription').append(`<hr>
                     <div class="row mt-3">
-                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style?s.style:''}</span></div>
-                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud?s.cloud:''}</span></div>
+                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style ? s.style : ''}</span></div>
+                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud ? s.cloud : ''}</span></div>
                         <div class="col-sm-4">TV: <span class="fw-bold">${s.tv}</span></div>                        
                     </div>
                 `);
@@ -129,7 +185,7 @@ function ViewTaskDetail(id) {
                 `);
                 $('#divTaskDescription').append(`<hr>
                     <div class="row mt-3">
-                        <div class="col-sm-12">Straighten: ${s.is_straighten==1?'<i class="fa-regular fa-square-check"></i>':'<i class="fa-regular fa-square"></i>'}
+                        <div class="col-sm-12">Straighten: ${s.is_straighten == 1 ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>'}
                         <span class="fw-bold">${s.straighten_remark}</span></div>
                     </div>
                 `)
@@ -236,9 +292,9 @@ function LoadOwnTasks() {
                             <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                             <td class="text-center">${t.editor ? t.editor : '-'}</td>
                             <td class="text-center">
-                                ${(t.status_id !=0 &&t.editor_url.trim().length>0)?
-                                    '<a href="'+t.editor_url+'" target="_blank"><i class="fa-solid fa-link text-info"></i></a>':
-                                    '-'}
+                                ${(t.status_id != 0 && t.editor_url.trim().length > 0) ?
+                            '<a href="' + t.editor_url + '" target="_blank"><i class="fa-solid fa-link text-info"></i></a>' :
+                            '-'}
                             </td>
                             <td class="text-center">${t.qa ? t.qa : '-'}</td>
                             <td class="text-center">${t.dc ? t.dc : '-'}</td>
@@ -250,6 +306,7 @@ function LoadOwnTasks() {
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
                                     ${(t.status_id == 0 || t.status_id == 2 || t.id == 5) ? '<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(' + t.id + ')"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>' : ''}
+                                    ${(t.status_id == 1 || t.status_id == 3)?`<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id})"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> `:``}
                                 </div> 
                             </div>
                             </td>
@@ -264,6 +321,11 @@ function LoadOwnTasks() {
     })
 }
 
+function RejectTask(id){
+    taskId =id;
+    $('#task_reject_modal').modal('show');
+}
+
 
 var $selectizeTaskStatuses = $('#slTaskStatuses');
 $selectizeTaskStatuses.selectize({
@@ -271,3 +333,21 @@ $selectizeTaskStatuses.selectize({
     placeholder: 'Task Status'
 });
 var selectizeTaskStatus = $selectizeTaskStatuses[0].selectize;
+
+var qTaskRejectingRemark = new Quill('#divTaskRejectingRemark', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter Rejecting Remark here...",
+    // Đặt chiều cao cho trình soạn thảo
+    // Ví dụ: Chiều cao 300px
+    height: '300px'
+    // Hoặc chiều cao 5 dòng
+    // height: '10em'
+});

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 15, 2023 lúc 08:45 PM
+-- Thời gian đã tạo: Th10 16, 2023 lúc 07:37 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -182,92 +182,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT) 
                                     AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_editor))) > 1 
                                     ORDER BY p.end_date
                                     LIMIT 1);
-                IF ROW_COUNT() > 0 THEN
-                    SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'),'icon','success','heading','Get Task successfully ') AS msg;
-                ELSE
-                    SELECT JSON_OBJECT('code', '503', 'msg', CONCAT('Unable to fetch additional tasks.'),'icon','danger','heading','Locked ') AS msg;
-                END IF;
-            ELSE
-                 SELECT JSON_OBJECT('code', '404', 'msg', CONCAT('No available task found.'),'icon','warning','heading','Not Found ') AS msg;
-            END IF;
-        END IF;
-    END IF;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorSubmitTask` (IN `p_id` BIGINT, IN `p_url` VARCHAR(500), IN `p_editor` INT)   BEGIN
-	DECLARE v_status int;
-    IF (SELECT status_id FROM tasks WHERE id = p_id) = 0 THEN 
-    	SET v_status = 1;
-    ELSE
-    	SET v_status = 3;
-    END IF;
-    
-	UPDATE tasks
-    SET status_id = v_status,
-    	updated_at = NOW(),
-        updated_by = p_editor,
-        editor_url = p_url
-     WHERE id = p_id;
-     SELECT ROW_COUNT() as updated_rows;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `GetTask` (IN `p_actioner` INT, IN `p_role` INT)   BEGIN
-   DECLARE v_levels VARCHAR(100) DEFAULT '';
-    DECLARE v_processing_tasks_count INT DEFAULT 0;
-    DECLARE v_count_available_task INT DEFAULT 0;
-
-
-    IF NOT EXISTS(SELECT *
-                    FROM users u
-                    INNER JOIN user_groups ug
-                    ON (CASE
-                        WHEN p_role = 6 THEN u.editor_group_id
-                        WHEN p_role = 5 THEN u.qa_group_id
-                        END) = ug.id
-                 	WHERE u.id = p_actioner)  THEN     
-        SELECT JSON_OBJECT('code', '403', 'msg', CONCAT('You have not been assigned levels to access tasks. Please contact your administrator.'),'icon','danger','heading','Forbidden') AS msg;
-    ELSE
-    	IF p_role = 6 THEN -- editor
-        	SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
-            WHERE editor_id = p_actioner
-            AND FIND_IN_SET(status_id, '0,2,5') > 0); -- status: default/qa reject/ dc reject
-        ELSE -- QA
-        	SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
-            WHERE qa_id = p_actioner
-            AND FIND_IN_SET(status_id, '1,3') > 0); -- status: done, fixxed
-        END IF;
-        
-            
-        IF v_processing_tasks_count > 0 THEN
-             SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'),'icon','danger','heading','Locked ') AS msg;
-        ELSE          
-            IF EXISTS( SELECT * FROM tasks t INNER JOIN projects p ON t.project_id = p.id WHERE (CASE WHEN p_role = 6 THEN t.editor_id ELSE t.qa_id END) = 0
-                AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT CASE WHEN p_role = 6 THEN editor_group_id ELSE qa_group_id END FROM users WHERE id = p_actioner))) > 1 ORDER BY p.end_date LIMIT 1) THEN
-               IF p_role = 6 THEN -- editor
-                   UPDATE tasks
-                    SET                
-                    editor_id = p_actioner,editor_timestamp = NOW(), 
-                    updated_by = p_actioner, updated_at = NOW()
-                    WHERE id = (SELECT  t.id
-                                        FROM tasks t
-                                        INNER JOIN projects p ON t.project_id = p.id
-                                        WHERE t.editor_id = 0
-                                        AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_actioner))) > 1 
-                                        ORDER BY p.end_date
-                                        LIMIT 1);
-                ELSE -- QA
-                	UPDATE tasks
-                    SET                
-                    qa_id = p_actioner,qa_timestamp = NOW(), 
-                    updated_by = p_actioner, updated_at = NOW()
-                    WHERE id = (SELECT  t.id
-                                        FROM tasks t
-                                        INNER JOIN projects p ON t.project_id = p.id
-                                        WHERE t.qa_id = 0
-                                        AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT qa_group_id FROM users WHERE id = p_actioner))) > 1 
-                                        ORDER BY p.end_date
-                                        LIMIT 1);
-                END IF;
                 IF ROW_COUNT() > 0 THEN
                     SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'),'icon','success','heading','Get Task successfully ') AS msg;
                 ELSE
@@ -471,17 +385,17 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
         t.editor_id,
         e.acronym as editor,
          DATE_FORMAT(t.editor_timestamp, '%d/%m/%Y %H:%i:%s') as editor_timestamp,
-        t.editor_view,
+        t.editor_read_instructions,
         t.editor_assigned,
 		
         t.qa_id,
         q.acronym as qa,
         DATE_FORMAT(t.qa_timestamp, '%d/%m/%Y %H:%i:%s') as qa_timestamp,
-        t.qa_view,
+        t.qa_read_instructions,
         t.qa_assigned,
 
         d.acronym as dc,
-        t.dc_submit,
+        t.dc_read_instructions,
         DATE_FORMAT(t.dc_timestamp, '%d/%m/%Y %H:%i:%s') as dc_timestamp ,
 
         DATE_FORMAT(t.created_at, '%d/%m/%Y %H:%i:%s') as created_at,
@@ -532,10 +446,105 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
     WHERE t.id = p_id;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskGetting` (IN `p_actioner` INT, IN `p_role` INT)   BEGIN
+   DECLARE v_levels VARCHAR(100) DEFAULT '';
+    DECLARE v_processing_tasks_count INT DEFAULT 0;
+    DECLARE v_count_available_task INT DEFAULT 0;
+
+
+    IF NOT EXISTS(SELECT *
+                    FROM users u
+                    INNER JOIN employee_groups eg -- join để kiểm tra đc set level chưa
+                    ON (CASE
+                        WHEN p_role = 6 THEN u.editor_group_id
+                        WHEN p_role = 5 THEN u.qa_group_id
+                        END) = eg.id
+                 	 WHERE u.id = p_actioner)  THEN     
+        SELECT JSON_OBJECT('code', '403', 'msg', CONCAT('You have not been assigned levels to access tasks. Please contact your administrator.'),'icon','danger','heading','Forbidden') AS msg;
+    ELSE
+    	IF p_role = 6 THEN -- editor
+        	SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
+            WHERE editor_id = p_actioner
+            AND FIND_IN_SET(status_id, '0,2,5') > 0); -- status: default/qa reject/ dc reject
+        ELSE -- QA
+        	SET v_processing_tasks_count = (SELECT COUNT(id) FROM tasks
+            WHERE qa_id = p_actioner
+            AND FIND_IN_SET(status_id, '1,3') > 0); -- status: done, fixxed
+        END IF;
+        
+            
+        IF v_processing_tasks_count > 0 THEN
+             SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'),'icon','danger','heading','Locked ') AS msg;
+        ELSE          
+            IF EXISTS( SELECT * FROM tasks t INNER JOIN projects p ON t.project_id = p.id WHERE (CASE WHEN p_role = 6 THEN t.editor_id ELSE t.qa_id END) = 0
+                AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT CASE WHEN p_role = 6 THEN editor_group_id ELSE qa_group_id END FROM users WHERE id = p_actioner))) > 1 ORDER BY p.end_date LIMIT 1) THEN
+               IF p_role = 6 THEN -- editor
+                   UPDATE tasks
+                    SET                
+                    editor_id = p_actioner,editor_timestamp = NOW(), 
+                    updated_by = p_actioner, updated_at = NOW()
+                    WHERE id = (SELECT  t.id
+                                        FROM tasks t
+                                        INNER JOIN projects p ON t.project_id = p.id
+                                        WHERE t.editor_id = 0
+                                        AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT editor_group_id FROM users WHERE id = p_actioner))) > 1 
+                                        ORDER BY p.end_date
+                                        LIMIT 1);
+                ELSE -- QA
+                	UPDATE tasks
+                    SET                
+                    qa_id = p_actioner,qa_timestamp = NOW(), 
+                    updated_by = p_actioner, updated_at = NOW()
+                    WHERE id = (SELECT  t.id
+                                        FROM tasks t
+                                        INNER JOIN projects p ON t.project_id = p.id
+                                        WHERE t.qa_id = 0
+                                        AND FIND_IN_SET(t.level_id, (SELECT levels FROM employee_groups WHERE id = (SELECT qa_group_id FROM users WHERE id = p_actioner))) > 1 
+                                        ORDER BY p.end_date
+                                        LIMIT 1);
+                END IF;
+                IF ROW_COUNT() > 0 THEN
+                    SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'),'icon','success','heading','Get Task successfully ') AS msg;
+                ELSE
+                    SELECT JSON_OBJECT('code', '503', 'msg', CONCAT('Unable to fetch additional tasks.'),'icon','danger','heading','Locked ') AS msg;
+                END IF;
+            ELSE
+                 SELECT JSON_OBJECT('code', '404', 'msg', CONCAT('No available task found.'),'icon','warning','heading','Not Found ') AS msg;
+            END IF;
+        END IF;
+    END IF;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskInsert` (IN `p_project` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_qa` INT, IN `p_quantity` INT, IN `p_level` INT, IN `p_cc` INT, IN `p_created_by` INT)   BEGIN
 	INSERT INTO tasks(project_id,description,editor_id,qa_id,quantity,level_id,cc_id,created_by)
     VALUES(p_project,p_description,p_editor,p_qa,p_quantity,p_level,p_cc,p_created_by);
     SELECT LAST_INSERT_ID() as last_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejected` (IN `p_id` BIGINT, IN `p_remark` TEXT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` INT)   BEGIN
+    INSERT INTO task_rejectings(role_id, remark, created_by)
+    VALUES (p_role, NormalizeContent(p_remark), p_actioner);
+    
+    IF ROW_COUNT() > 0 THEN
+        BEGIN
+            UPDATE tasks
+            SET updated_at = NOW(),
+                updated_by = p_actioner,
+                status_id = CASE
+                    WHEN p_role = 5 THEN 2 -- QA role
+                    WHEN p_role = 7 THEN 5 -- DC role
+                END,
+                qa_reject_id = LAST_INSERT_ID() * (p_role = 5),
+                qa_read_instructions =  p_read_instructions * (p_role = 5),
+                dc_id = p_actioner * (p_role = 7),
+                dc_reject_id = LAST_INSERT_ID() * (p_role = 7),
+                dc_read_instructions = p_read_instructions * (p_role = 7)
+            WHERE id = p_id;
+            SELECT ROW_COUNT() as updated_rows;
+        END;
+    ELSE
+        SELECT 0 as updated_rows;
+    END IF;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGetByProject` (IN `p_id` BIGINT)   BEGIN
@@ -559,7 +568,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_dat
     DECLARE v_sql VARCHAR(5000);
 
     SET v_sql = "SELECT t.id,lv.name as level,lv.color as level_color,t.quantity, t.editor_assigned,t.qa_assigned,t.status_id, 
-                    ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,t.pay,t.pay_remark,
+                    ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,t.pay,t.unpaid_remark,
                     p.name as project_name,DATE_FORMAT(p.start_date,'%d/%m/%Y %H:%m') as start_date, DATE_FORMAT(p.end_date,'%d/%m/%Y %H:%m') as end_date,
                     ct.acronym as customer,
                     e.acronym as editor, DATE_FORMAT(t.editor_timestamp,'%d/%m/%Y %H:%m') as editor_timestamp,editor_url,
@@ -603,6 +612,35 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskStatusAll` ()   BEGIN
 	SELECT * FROM task_statuses ORDER BY id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskSubmited` (IN `p_id` BIGINT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` TINYINT, IN `p_content` TEXT)   BEGIN
+	UPDATE tasks
+    SET updated_at = NOW(), updated_by = p_actioner,
+    status_id = CASE
+        WHEN p_role = 6 THEN
+            CASE
+                WHEN status_id = 0 THEN 1 -- done
+                ELSE 3 -- fixed
+            END
+        WHEN p_role = 5 THEN 4 -- QA OK
+        WHEN p_role = 7 THEN 6 -- DC OK
+        ELSE 7 -- TLA upload
+    END,
+    dc_id = p_actioner * (p_role = 7), -- set dc id neu ng submit la DC
+    editor_read_instructions = p_read_instructions * (p_role = 6),
+    qa_read_instructions = p_read_instructions * (p_role = 5),
+    dc_read_instructions = p_read_instructions * (p_role = 7),
+    editor_url = CASE 
+        WHEN p_role = 6 AND IsURL(p_content) THEN p_content
+        ELSE ''
+    END,
+    tla_content = CASE 
+        WHEN p_role = 4 THEN NormalizeContent(p_content)
+        ELSE ''
+    END
+    WHERE id = p_id;
+    SELECT ROW_COUNT() as updated_rows;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskUpdate` (IN `p_id` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_assign_editor` TINYINT, IN `p_qa` INT, IN `p_assign_qa` TINYINT, IN `p_quantity` INT, IN `p_level` INT, IN `p_updated_by` INT)   BEGIN
@@ -1546,7 +1584,11 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (35, 1, 5, 0, '2023-10-15 23:39:55', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
 (36, 1, 5, 0, '2023-10-15 23:41:58', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
 (37, 1, 6, 0, '2023-10-15 23:42:00', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
-(38, 1, 6, 0, '2023-10-15 23:42:08', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with <a href=\"https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129\" target=\"_blank\">Link</a>', '');
+(38, 1, 6, 0, '2023-10-15 23:42:08', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with <a href=\"https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129\" target=\"_blank\">Link</a>', ''),
+(39, 1, 3, 0, '2023-10-16 10:29:23', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
+(40, 1, 3, 0, '2023-10-16 11:49:39', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">Reject TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(41, 1, 4, 0, '2023-10-16 11:50:05', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
+(42, 1, 3, 0, '2023-10-16 12:36:03', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Fixed TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with <a href=\"https://www.youtube.com/watch?v=WQ3_5gMCVLU&ab_channel=Nh%E1%BA%A1cV%C3%A0ng24h\" target', '');
 
 -- --------------------------------------------------------
 
@@ -1593,23 +1635,26 @@ CREATE TABLE `tasks` (
   `editor_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm editor được gán hoặc nhận task',
   `editor_assigned` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1: Editor được gán, 0: editor nhận task',
   `editor_wage` float DEFAULT 0 COMMENT 'Tiền công của editor',
+  `editor_read_instructions` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Editor đã đọc instructions',
   `editor_url` varchar(5000) NOT NULL COMMENT 'Link submit của editor parttime',
   `qa_id` int(11) NOT NULL,
   `qa_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm qa được gán task hoặc nhận task',
   `qa_assigned` tinyint(1) NOT NULL COMMENT '1: QA được gán, 0: QA nhận task',
   `qa_wage` float NOT NULL DEFAULT 0 COMMENT 'Tiền công của QA',
+  `qa_read_instructions` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu QA đã đọc instructions',
+  `qa_reject_id` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Tham chiếu tới id của task_rejectings',
   `dc_id` int(11) NOT NULL COMMENT 'Quản lý chất lượng ảnh đầu ra',
-  `dc_submit` tinyint(4) DEFAULT 0 COMMENT '1: ok, -1 reject',
   `dc_timestamp` timestamp NULL DEFAULT NULL COMMENT 'Thời điểm dc_submit',
   `dc_wage` float NOT NULL DEFAULT 0 COMMENT 'Tiền công của DC',
+  `dc_read_instructions` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'DC đã đọc instructions',
+  `dc_reject_id` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Tham chiếu tới id của task_rejectings',
   `level_id` int(30) NOT NULL,
+  `tla_content` text NOT NULL COMMENT 'Nội dung khi TLA upload task',
   `auto_gen` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu task được gen tự động hay là insert thủ công. 1: auto, 0: insert',
   `cc_id` int(11) NOT NULL DEFAULT 0 COMMENT 'CC id nếu có (>0). Mặc định sẽ là 0',
   `quantity` int(11) NOT NULL DEFAULT 1,
-  `editor_view` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu Editor đã xem instruction',
-  `qa_view` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu QA đã xem instruction',
   `pay` tinyint(4) NOT NULL DEFAULT 1 COMMENT 'Đánh dấu task có được thanh toán không',
-  `pay_remark` text NOT NULL COMMENT 'Ghi chú lí do nếu không thanh toán',
+  `unpaid_remark` text NOT NULL COMMENT 'Ghi chú lí do nếu không thanh toán',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) NOT NULL,
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -1622,12 +1667,12 @@ CREATE TABLE `tasks` (
 -- Đang đổ dữ liệu cho bảng `tasks`
 --
 
-INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `dc_id`, `dc_submit`, `dc_timestamp`, `dc_wage`, `level_id`, `auto_gen`, `cc_id`, `quantity`, `editor_view`, `qa_view`, `pay`, `pay_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(2, 1, 'PE Basic description 123\n', 0, 0, '2023-10-15 15:32:46', 0, 0, '', 0, '2023-10-15 15:32:46', 0, 0, 0, 0, NULL, 0, 1, 1, 0, 5, 0, 0, 1, '', '2023-10-15 22:26:19', 1, '2023-10-15 15:32:46', 1, NULL, NULL),
-(3, 1, 'Task description123\n', 1, 4, '2023-10-15 16:38:13', 0, 0, '', 0, '2023-10-15 15:29:02', 0, 0, 0, 0, NULL, 0, 3, 1, 0, 3, 0, 0, 1, '', '2023-10-15 22:26:19', 1, '2023-10-15 16:39:13', 4, NULL, NULL),
-(4, 1, 'PE Stand description 234\n', 1, 4, '2023-10-15 16:39:46', 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 5, 0, 0, 5, 0, 0, 1, '', '2023-10-15 22:35:29', 1, '2023-10-15 16:39:54', 4, NULL, NULL),
-(5, 1, '\n', 1, 4, '2023-10-15 16:39:55', 0, 0, '', 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 0, 8, 0, 0, 1, '', '2023-10-15 22:36:02', 1, '2023-10-15 16:41:58', 4, NULL, NULL),
-(6, 1, 'The 1st CC task\n', 1, 4, '2023-10-15 16:42:00', 0, 0, 'https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129', 0, NULL, 0, 0, 0, 0, NULL, 0, 3, 0, 2, 6, 0, 0, 1, '', '2023-10-15 22:36:53', 1, '2023-10-15 16:42:08', 4, NULL, NULL);
+INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(2, 1, 'PE Basic description 123\n', 0, 0, '2023-10-15 15:32:46', 0, 0, 0, '', 0, '2023-10-15 15:32:46', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 5, 1, '', '2023-10-15 22:26:19', 1, '2023-10-15 15:32:46', 1, NULL, NULL),
+(3, 1, 'Task description123\n', 3, 4, '2023-10-15 16:38:13', 0, 0, 1, 'https://www.youtube.com/watch?v=WQ3_5gMCVLU&ab_channel=Nh%E1%BA%A1cV%C3%A0ng24h', 9, '2023-10-16 03:29:23', 0, 0, 0, 1, 0, NULL, 0, 0, 0, 3, '', 1, 0, 3, 1, '', '2023-10-15 22:26:19', 1, '2023-10-16 05:37:12', 4, NULL, NULL),
+(4, 1, 'PE Stand description 234\n', 1, 4, '2023-10-15 16:39:46', 0, 0, 0, '', 9, '2023-10-16 04:50:05', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, '', 0, 0, 5, 1, '', '2023-10-15 22:35:29', 1, '2023-10-16 04:50:05', 9, NULL, NULL),
+(5, 1, '\n', 1, 4, '2023-10-15 16:39:55', 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, '', 0, 0, 8, 1, '', '2023-10-15 22:36:02', 1, '2023-10-15 16:41:58', 4, NULL, NULL),
+(6, 1, 'The 1st CC task\n', 1, 4, '2023-10-15 16:42:00', 0, 0, 0, 'https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, '', 0, 2, 6, 1, '', '2023-10-15 22:36:53', 1, '2023-10-15 16:42:08', 4, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -1847,6 +1892,31 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
 END
 $$
 DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `task_rejectings`
+--
+
+CREATE TABLE `task_rejectings` (
+  `id` bigint(20) NOT NULL,
+  `role_id` int(11) NOT NULL COMMENT 'Tham chiếu tới bảng user_types',
+  `remark` text NOT NULL COMMENT 'Ghi chú lí do reject',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(11) NOT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `updated_by` int(11) NOT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `deleted_by` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `task_rejectings`
+--
+
+INSERT INTO `task_rejectings` (`id`, `role_id`, `remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(1, 5, 'The 1st task rejecting remark\n', '2023-10-16 04:49:39', 9, NULL, 0, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -2174,6 +2244,13 @@ ALTER TABLE `tasks`
   ADD KEY `level_id` (`level_id`);
 
 --
+-- Chỉ mục cho bảng `task_rejectings`
+--
+ALTER TABLE `task_rejectings`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `role_id` (`role_id`);
+
+--
 -- Chỉ mục cho bảng `task_statuses`
 --
 ALTER TABLE `task_statuses`
@@ -2314,7 +2391,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2327,6 +2404,12 @@ ALTER TABLE `project_statuses`
 --
 ALTER TABLE `tasks`
   MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT cho bảng `task_rejectings`
+--
+ALTER TABLE `task_rejectings`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`
@@ -2406,6 +2489,12 @@ ALTER TABLE `tasks`
   ADD CONSTRAINT `tasks_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `tasks_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `tasks_ibfk_5` FOREIGN KEY (`level_id`) REFERENCES `levels` (`id`);
+
+--
+-- Các ràng buộc cho bảng `task_rejectings`
+--
+ALTER TABLE `task_rejectings`
+  ADD CONSTRAINT `task_rejectings_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `user_types` (`id`);
 
 --
 -- Các ràng buộc cho bảng `users`

@@ -42,8 +42,8 @@
                                 </div>
                             </div>
                             <div class="input-block mb-3 text-center">
-                                <button class="btn btn-primary account-btn" type="submit" id="btnLogin">Admin
-                                    Login</button>
+                                <button class="btn btn-primary account-btn" type="submit" id="btnLogin">
+                                    Login as QA</button>
                             </div>
                         </div>
                         <!-- /Account Form -->
@@ -66,7 +66,7 @@
     <!-- Custom JS -->
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.js"></script>
     <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.js"></script>
-    <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/editor/auth/auth.js"></script>
+    <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/qa/auth/auth.js"></script>
 
 </body>
 
