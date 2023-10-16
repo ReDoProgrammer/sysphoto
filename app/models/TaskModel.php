@@ -110,7 +110,6 @@ class TaskModel extends Model
     public function GetTask($role){
         $user = unserialize($_SESSION['user']);
         $params = ['p_actioner' => $user->id,'p_role'=>$role];
-        print_r($params);
         return $this->__db->executeStoredProcedure("TaskGetting", $params);
     }
     public function GetOwnerTasks($from_date, $to_date, $status, $page = 1, $limit = 0)
