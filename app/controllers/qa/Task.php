@@ -56,8 +56,11 @@
 
         public function Submit(){
             $id = $_POST['id'];
-            $url = $_POST['url'];
-            $result = $this->__task_model->EditorSubmitTask($id,$url);
+            $content = $_POST['content'];
+            $role = $_POST['role'];
+            $read_instructions = $_POST['read_instructions'];
+
+            $result = $this->__task_model->SubmitTask($id,$read_instructions,$content,$role);
 
             if($result['updated_rows']>0){
                 $data =[

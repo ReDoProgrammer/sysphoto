@@ -50,7 +50,7 @@
                         <th class="text-center">Link</th>
                         <th class="text-center">QA</th>
                         <th class="text-center">DC</th>
-                        <th class="text-center">Paid</th>
+                        <th class="text-center">Wage</th>
                         <th></th>
                     </tr>
                 </thead>

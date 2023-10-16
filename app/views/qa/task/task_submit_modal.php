@@ -3,14 +3,14 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="CustomerModalTitle">Editor Submit Task</h4>
+                <h4 class="modal-title" id="SubmitingModalTitle">Editor Submit Task</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
 
-                <div class="form-group">
+                <div class="form-group" id="divSubmitTaskContent">
                     <label for="">Url</label>
-                    <input type="text" placeholder="Please enter the submitting URL ..." id="txtUrl"
+                    <input type="text" placeholder="Please enter the submitting URL ..." id="txtContent"
                         class="form-control">
                 </div>
                 <div class="form-check mt-2">

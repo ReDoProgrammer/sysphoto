@@ -24,7 +24,7 @@ $('#btnGetTask').click(function () {
         $.ajax({
             url: 'task/gettask',
             type: 'get',
-            data:{role},
+            data: { role },
             success: function (data) {
 
                 try {
@@ -52,11 +52,17 @@ $('#btnSearch').click(function (e) {
     LoadOwnTasks();
 })
 $('#btnSubmitTask').click(function () {
-    let url = $('#txtUrl').val();
+    let content = $('#txtContent').val();
+    let read_instructions = $('#ckbReadInstruction').is(':checked')?1:0;
     $.ajax({
         url: 'task/submit',
         type: 'post',
-        data: { id: taskId, url },
+        data: { 
+                id: taskId, 
+                content,
+                read_instructions,
+                role:roleId
+             },
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
@@ -76,15 +82,15 @@ $('#btnSubmitTask').click(function () {
         }
     })
 })
-$('#btnSubmitRejectingTask').click(function(){
+$('#btnSubmitRejectingTask').click(function () {
     let remark = qTaskRejectingRemark.getText();
-    let read_instructions = $('#ckbRejectReadInstructions').is(':checked')?1:0;
+    let read_instructions = $('#ckbRejectReadInstructions').is(':checked') ? 1 : 0;
 
     $.ajax({
-        url:'task/reject',
-        type:'post',
-        data:{id:taskId,remark,read_instructions},
-        success:function(data){
+        url: 'task/reject',
+        type: 'post',
+        data: { id: taskId, remark, read_instructions },
+        success: function (data) {
             try {
                 let content = $.parseJSON(data);
                 $.toast({
@@ -93,12 +99,12 @@ $('#btnSubmitRejectingTask').click(function(){
                     showHideTransition: 'fade',
                     icon: content.icon
                 })
-                if(content.code == 200){
+                if (content.code == 200) {
                     $('#task_reject_modal').modal('hide');
                     LoadOwnTasks();
                 }
             } catch (error) {
-                console.log(data,error);
+                console.log(data, error);
             }
         }
     })
@@ -124,7 +130,7 @@ $("#task_submit_modal").on("hidden.bs.modal", function () {
 $("#task_reject_modal").on('shown.bs.modal', function () {
     $('#btnSubmitRejectingTask').prop('disabled', true);
     $('#ckbRejectReadInstructions').prop('checked', false);
-    
+
     qTaskRejectingRemark.setText('');
 });
 
@@ -234,11 +240,18 @@ function ViewTaskDetail(id) {
     })
 }
 
-function SubmitTask(id,role) {
+function SubmitTask(id, role) {
     taskId = id;
     roleId = role;
-    console.log({taskId,roleId});
+
+    $('#SubmitingModalTitle').text(`Submiting task as ${role==6?`Editor`:`QA`}`);
+    if(role == 5){
+        $('#divSubmitTaskContent').hide();
+    }else{
+        $('#divSubmitTaskContent').show();
+    }
     $('#task_submit_modal').modal('show');
+
 }
 
 function LoadTaskStatuses() {
@@ -280,6 +293,7 @@ function LoadOwnTasks() {
         success: function (data) {
             try {
                 let content = JSON.parse(data);
+                console.log(content);
                 let tasks = content.tasks;
                 let idx = (page - 1) * limit;
                 tasks.forEach(t => {
@@ -290,7 +304,7 @@ function LoadOwnTasks() {
                             <td><span class="fw-bold ${t.level_color}">${t.level}</span> ${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger"></i>' : ''}</td>
                             <td><span class="text-danger fw-bold">${(t.start_date.split(' '))[1]}</span> <br/>${(t.start_date.split(' '))[0]}</td>
                             <td><span class="text-danger fw-bold">${(t.end_date.split(' '))[1]}</span> <br/>${(t.end_date.split(' '))[0]}</td>
-                            <td><span class="text-danger fw-bold">${(t.editor_timestamp.split(' '))[1]}</span> <br/>${(t.editor_timestamp.split(' '))[0]}</td>
+                            <td><span class="text-danger fw-bold">${(t.commencement_date.split(' '))[1]}</span> <br/>${(t.commencement_date.split(' '))[0]}</td>
                             <td class="text-center">${t.quantity}</td>
                             <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                             <td class="text-center">${t.editor ? t.editor : '-'}</td>
@@ -308,9 +322,9 @@ function LoadOwnTasks() {
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                    ${(t.status_id == 1 || t.id == 3) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},5)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
-                                    ${(t.status_id == 0 ) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},6)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
-                                    ${(t.status_id == 1 || t.status_id == 3 || t.status_id == 5)?`<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id})"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> `:``}
+                                    ${(t.status_id == 1 || t.status_id == 3) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},5)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
+                                    ${(t.status_id == 0) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},6)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
+                                    ${(t.status_id == 1 || t.status_id == 3 || t.status_id == 5) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id})"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> ` : ``}
                                 </div> 
                             </div>
                             </td>
@@ -325,8 +339,8 @@ function LoadOwnTasks() {
     })
 }
 
-function RejectTask(id){
-    taskId =id;
+function RejectTask(id) {
+    taskId = id;
     $('#task_reject_modal').modal('show');
 }
 

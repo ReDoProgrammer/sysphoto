@@ -58,12 +58,12 @@ class TaskModel extends Model
         // return $this->__db->delete($this->__table,"id = ".$id);
     }
 
-    public function SubmitTask($id,$read_instructions,$content){
+    public function SubmitTask($id,$read_instructions,$content,$role){
         $user = unserialize($_SESSION['user']);
         $params = [
             'p_id'=>$id,
             'p_actioner'=>$user->id,
-            'p_role'=>$user->role_id,
+            'p_role'=>$role,
             'p_read_instructions'=>$read_instructions,
             'p_content'=>$content            
         ];

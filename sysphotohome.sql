@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 16, 2023 lúc 07:49 PM
+-- Thời gian đã tạo: Th10 16, 2023 lúc 09:30 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -519,14 +519,27 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_date` TIMESTAMP, IN `p_to_date` TIMESTAMP, IN `p_status` INT, IN `p_page` INT, IN `p_limit` INT, IN `p_actioner` INT, IN `p_role` INT)   BEGIN
     DECLARE v_sql VARCHAR(5000);
+    DECLARE v_role INT;  -- Khai báo biến local v_role
+
+    SET v_role = p_role;  -- Gán giá trị của p_role cho biến local v_role
 
     SET v_sql = "SELECT t.id,lv.name as level,lv.color as level_color,t.quantity, t.editor_assigned,t.qa_assigned,t.status_id, 
-                    ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,t.pay,t.unpaid_remark,
-                    p.name as project_name,DATE_FORMAT(p.start_date,'%d/%m/%Y %H:%m') as start_date, DATE_FORMAT(p.end_date,'%d/%m/%Y %H:%m') as end_date,
+                    ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,
+                    p.name as project_name,DATE_FORMAT(p.start_date,'%d/%m/%Y %H:%i') as start_date, DATE_FORMAT(p.end_date,'%d/%m/%Y %H:%i') as end_date,
                     ct.acronym as customer,
-                    e.acronym as editor, DATE_FORMAT(t.editor_timestamp,'%d/%m/%Y %H:%m') as editor_timestamp,editor_url,
-                    qa.acronym as qa, DATE_FORMAT(t.qa_timestamp,'%d/%m/%Y %H:%m') as qa_timestamp,
-                    dc.acronym as dc, DATE_FORMAT(t.dc_timestamp,'%d/%m/%Y %H:%m') as dc_timestamp
+                    t.editor_id,e.acronym as editor,editor_url,
+                    t.qa_id,qa.acronym as qa,                    
+                    t.dc_id,dc.acronym as dc, ";
+
+    IF v_role = 6 THEN
+        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.editor_timestamp,'%d/%m/%Y %H:%i') AS commencement_date");
+    ELSEIF v_role = 5 THEN
+        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.qa_timestamp,'%d/%m/%Y %H:%i') AS commencement_date");
+    ELSEIF v_role = 7 THEN
+        SET v_sql = CONCAT(v_sql, "DATE_FORMAT(t.dc_timestamp,'%d/%m/%Y %H:%i') AS commencement_date");
+    END IF;
+
+    SET v_sql = CONCAT(v_sql, ", t.pay,t.unpaid_remark 
                 FROM tasks t
                 JOIN levels lv ON t.level_id = lv.id
                 JOIN projects p ON t.project_id = p.id
@@ -534,26 +547,27 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGottenByOwner` (IN `p_from_dat
                 LEFT JOIN users e ON t.editor_id = e.id
                 LEFT JOIN users qa ON t.qa_id = qa.id
                 LEFT JOIN users dc ON t.dc_id = dc.id
-                LEFT JOIN task_statuses ts ON t.status_id = ts.id ";
+                LEFT JOIN task_statuses ts ON t.status_id = ts.id ");
 
     SET v_sql = CONCAT(v_sql, "WHERE p.end_date >= '", p_from_date, "' AND p.end_date <= '", p_to_date, "'");
 
-     IF p_status > 0 THEN
+    IF p_status > 0 THEN
         SET v_sql = CONCAT(v_sql, " AND t.status_id = ", p_status);
-     END IF;
+    END IF;
 
-     CASE
-        WHEN p_role = 5 THEN -- QA
-            SET v_sql = CONCAT(v_sql, " AND (t.qa_id = ", p_actioner," OR t.editor_id = ",p_actioner,")");
-         WHEN p_role = 6 THEN -- Editor
-            SET v_sql = CONCAT(v_sql, " AND t.editor_id = ", p_actioner);
-         WHEN p_role = 7 THEN -- DC
-            SET v_sql = CONCAT(v_sql, " AND (t.dc_id = ", p_actioner," OR t.qa_id = ",p_actioner," OR t.editor_id = ",p_actioner,")");
-     END CASE;
+    IF v_role = 5 THEN -- QA
+        SET v_sql = CONCAT(v_sql, " AND (t.qa_id = ", p_actioner," OR t.editor_id = ",p_actioner,")");
+    ELSEIF v_role = 6 THEN -- Editor
+        SET v_sql = CONCAT(v_sql, " AND t.editor_id = ", p_actioner);
+    ELSEIF v_role = 7 THEN -- DC
+        SET v_sql = CONCAT(v_sql, " AND (t.dc_id = ", p_actioner," OR t.qa_id = ",p_actioner," OR t.editor_id = ",p_actioner,")");
+    END IF;
 
-     IF p_limit > 0 THEN
-    	 SET p_page = CAST(p_page AS SIGNED); 
-    	 SET p_limit = CAST(p_limit AS SIGNED); 
+    SET v_sql = CONCAT(v_sql," ORDER BY t.status_id");
+
+    IF p_limit > 0 THEN
+         SET p_page = CAST(p_page AS SIGNED); 
+         SET p_limit = CAST(p_limit AS SIGNED); 
          SET v_sql = CONCAT(v_sql, " LIMIT ", p_limit, " OFFSET ", (p_page - 1) * p_limit);
      END IF;
 
@@ -568,14 +582,26 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskStatusAll` ()   BEGIN
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskSubmited` (IN `p_id` BIGINT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` TINYINT, IN `p_content` TEXT)   BEGIN
+    DECLARE v_wage FLOAT DEFAULT 0;
+    DECLARE v_price INT DEFAULT 0;
+    DECLARE v_role INT DEFAULT 0;
+
+    SET v_role = (SELECT type_id FROM users WHERE id = p_actioner);
+    SET v_price = (SELECT price FROM levels WHERE id = (SELECT level_id FROM tasks WHERE id = p_id));
+    SET v_wage = (SELECT wage FROM user_types WHERE id = v_role)/100*v_price;
+
 	UPDATE tasks
     SET updated_at = NOW(), updated_by = p_actioner,
     status_id = CASE
         WHEN p_role = 6 THEN
-            CASE
-                WHEN status_id = 0 THEN 1 -- done
-                ELSE 3 -- fixed
-            END
+            CASE WHEN v_role = 6 THEN -- editor role
+                    CASE
+                        WHEN status_id = 0 THEN 1 -- done
+                        ELSE 3 -- fixed
+                    END
+                WHEN v_role = 5 THEN 4 -- QA role
+                ELSE 6
+            END           
         WHEN p_role = 5 THEN 4 -- QA OK
         WHEN p_role = 7 THEN 
         	CASE 	WHEN editor_fix = 1 THEN 8 -- DC FIX 
@@ -594,7 +620,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskSubmited` (IN `p_id` BIGINT, IN
     tla_content = CASE 
         WHEN p_role = 4 THEN NormalizeContent(p_content)
         ELSE ''
-    END
+    END,
+    editor_wage = v_wage*(v_role = 6),
+    qa_wage = v_wage*(v_role = 5),
+    dc_wage = v_wage*(v_role = 7)
     WHERE id = p_id;
     SELECT ROW_COUNT() as updated_rows;
 END$$
@@ -1654,7 +1683,20 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (48, 2, 10, 0, '2023-10-16 21:49:07', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [1]', ''),
 (49, 2, 11, 0, '2023-10-16 21:49:07', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [1]', ''),
 (50, 2, 12, 0, '2023-10-16 21:49:07', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [1]', ''),
-(51, 2, 8, 0, '2023-10-16 21:51:23', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', '');
+(51, 2, 8, 0, '2023-10-16 21:51:23', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', ''),
+(52, 1, 4, 0, '2023-10-17 02:00:11', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
+(53, 2, 8, 0, '2023-10-17 02:00:27', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with <a href=\"https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E1%BB%9', ''),
+(54, 1, 5, 0, '2023-10-17 02:00:38', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
+(55, 1, 5, 0, '2023-10-17 02:01:01', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">Reject TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(56, 1, 6, 0, '2023-10-17 02:01:10', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
+(57, 1, 6, 0, '2023-10-17 02:03:05', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(58, 2, 9, 0, '2023-10-17 02:03:10', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
+(59, 2, 9, 0, '2023-10-17 02:24:29', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with <a href=\"https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E', ''),
+(60, 2, 8, 0, '2023-10-17 02:28:59', 'QA [<span class=\"text-info fw-bold\">binh.pn</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]', ''),
+(61, 2, 10, 0, '2023-10-17 02:29:09', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
+(62, 2, 10, 0, '2023-10-17 02:29:34', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with <a href=\"https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E1%BB%9', ''),
+(63, 2, 9, 0, '2023-10-17 02:29:45', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
+(64, 2, 10, 0, '2023-10-17 02:30:13', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', '');
 
 -- --------------------------------------------------------
 
@@ -1737,13 +1779,12 @@ CREATE TABLE `tasks` (
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (2, 1, 'PE Basic description 123\n', 0, 0, '2023-10-15 15:32:46', 0, 0, 0, 0, '', 0, '2023-10-15 15:32:46', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 5, 1, '', '2023-10-15 22:26:19', 1, '2023-10-15 15:32:46', 1, NULL, NULL),
 (3, 1, 'Task description123\n', 2, 4, '2023-10-15 16:38:13', 0, 0, 0, 1, 'https://www.youtube.com/watch?v=WQ3_5gMCVLU&ab_channel=Nh%E1%BA%A1cV%C3%A0ng24h', 9, '2023-10-16 03:29:23', 0, 0, 1, 2, 0, NULL, 0, 0, 0, 3, '', 1, 0, 3, 1, '', '2023-10-15 22:26:19', 1, '2023-10-16 05:50:30', 9, NULL, NULL),
-(4, 1, 'PE Stand description 234\n', 1, 4, '2023-10-15 16:39:46', 0, 0, 0, 0, '', 9, '2023-10-16 04:50:05', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, '', 0, 0, 5, 1, '', '2023-10-15 22:35:29', 1, '2023-10-16 04:50:05', 9, NULL, NULL),
-(5, 1, '\n', 1, 4, '2023-10-15 16:39:55', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, '', 0, 0, 8, 1, '', '2023-10-15 22:36:02', 1, '2023-10-15 16:41:58', 4, NULL, NULL),
-(6, 1, 'The 1st CC task\n', 1, 4, '2023-10-15 16:42:00', 0, 0, 0, 0, 'https://chat.openai.com/c/fc73428e-c4fa-483e-a456-6178025b5129', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, '', 0, 2, 6, 1, '', '2023-10-15 22:36:53', 1, '2023-10-15 16:42:08', 4, NULL, NULL),
+(4, 1, 'PE Stand description 234\n', 4, 4, '2023-10-15 16:39:46', 0, 0, 0, 0, '', 9, '2023-10-16 04:50:05', 0, 600, 1, 0, 0, NULL, 0, 0, 0, 5, '', 0, 0, 5, 1, '', '2023-10-15 22:35:29', 1, '2023-10-16 19:00:11', 9, NULL, NULL),
+(5, 1, '\n', 2, 4, '2023-10-15 16:39:55', 0, 0, 0, 0, '', 9, '2023-10-16 19:00:38', 0, 0, 1, 3, 0, NULL, 0, 0, 0, 3, '', 0, 0, 8, 1, '', '2023-10-15 22:36:02', 1, '2023-10-16 19:01:01', 9, NULL, NULL),
+(6, 1, 'The 1st CC task\n', 4, 4, '2023-10-15 16:42:00', 0, 0, 0, 0, '', 9, '2023-10-16 19:01:10', 0, 200, 1, 0, 0, NULL, 0, 0, 0, 3, '', 0, 2, 6, 1, '', '2023-10-15 22:36:53', 1, '2023-10-16 19:03:05', 9, NULL, NULL),
 (7, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL),
-(8, 2, NULL, 0, 9, '2023-10-16 14:51:23', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:51:23', 9, NULL, NULL),
-(9, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL),
-(10, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 4, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL),
+(9, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E1%BB%91ng', 9, '2023-10-16 19:29:45', 0, 200, 0, 0, 0, NULL, 0, 0, 0, 3, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 19:29:45', 9, NULL, NULL),
+(10, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=7OMu10cLiGM&ab_channel=Tri%E1%BA%BFtL%C3%BDCu%E1%BB%99cS%E1%BB%91ng', 9, '2023-10-16 19:30:13', 0, 1200, 0, 0, 0, NULL, 0, 0, 0, 4, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 19:30:13', 9, NULL, NULL),
 (11, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL),
 (12, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, '', 1, 0, 1, 1, '', '2023-10-16 21:49:07', 1, '2023-10-16 14:49:07', 0, NULL, NULL);
 
@@ -1990,7 +2031,8 @@ CREATE TABLE `task_rejectings` (
 
 INSERT INTO `task_rejectings` (`id`, `role_id`, `remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (1, 5, 'The 1st task rejecting remark\n', '2023-10-16 04:49:39', 9, NULL, 0, NULL, ''),
-(2, 5, 'The 2nd rejecting remark\n', '2023-10-16 05:50:30', 9, NULL, 0, NULL, '');
+(2, 5, 'The 2nd rejecting remark\n', '2023-10-16 05:50:30', 9, NULL, 0, NULL, ''),
+(3, 5, 'Task reject remark\n', '2023-10-16 19:01:01', 9, NULL, 0, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -2464,7 +2506,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2482,7 +2524,7 @@ ALTER TABLE `tasks`
 -- AUTO_INCREMENT cho bảng `task_rejectings`
 --
 ALTER TABLE `task_rejectings`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`
