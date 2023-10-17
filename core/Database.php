@@ -7,39 +7,84 @@ class Database
         global $db_config;
         $this->__conn = Connection::getInstance($db_config);
     }
+    function callStoredProcedureWithMultipleResults($procedure, $params)
+    {
+        try {
+            // Create a prepared statement for calling the stored procedure
+            $stmt = $this->__conn->prepare("CALL $procedure");
 
+            // Bind parameters
+            foreach ($params as $paramName => $paramValue) {
+                $paramType = gettype($paramValue);
+                $pdoParamType = PDO::PARAM_STR; // Default to string
 
-function callStoredProcedure($procedureName, $params = []) {
-    try {
-        // Xây dựng chuỗi truy vấn gọi stored procedure với các tham số dưới dạng placeholders
-        $paramPlaceholder = implode(',', array_fill(0, count($params), '?'));
+                // Set the PDO parameter type based on the parameter's type
+                switch ($paramType) {
+                    case 'integer':
+                        $pdoParamType = PDO::PARAM_INT;
+                        break;
+                    case 'boolean':
+                        $pdoParamType = PDO::PARAM_BOOL;
+                        break;
+                    // Add more cases as needed
 
-        // Chuẩn bị truy vấn gọi stored procedure
-        $sql = "CALL $procedureName($paramPlaceholder)";
-        $stmt = $this->__conn->prepare($sql);
-
-        // Gán giá trị cho các tham số đầu vào
-        foreach ($params as $index => $paramValue) {
-            // Kiểm tra kiểu dữ liệu của tham số và gán kiểu dữ liệu tương ứng
-            if (is_int($paramValue)) {
-                $stmt->bindValue($index + 1, $paramValue, PDO::PARAM_INT);
-            } else {
-                $stmt->bindValue($index + 1, $paramValue, PDO::PARAM_STR);
+                }
+                $stmt->bindParam($paramName, $params[$paramName], $pdoParamType);
             }
+
+            // Execute the stored procedure
+            $stmt->execute();
+
+            $results = array();
+
+            do {
+                $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                if ($result) {
+                    $results[] = $result;
+                }
+            } while ($stmt->nextRowset());
+
+            $stmt->closeCursor();
+
+            return $results;
+        } catch (PDOException $e) {
+            return false;
         }
-
-        // Thực hiện truy vấn
-        $stmt->execute();
-
-        // Lấy kết quả trả về từ stored procedure
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        return $result;
-    } catch (PDOException $e) {
-        echo "Lỗi kết nối đến cơ sở dữ liệu: " . $e->getMessage();
-        return false;
     }
-}
+
+
+    function callStoredProcedure($procedureName, $params = [])
+    {
+        try {
+            // Xây dựng chuỗi truy vấn gọi stored procedure với các tham số dưới dạng placeholders
+            $paramPlaceholder = implode(',', array_fill(0, count($params), '?'));
+
+            // Chuẩn bị truy vấn gọi stored procedure
+            $sql = "CALL $procedureName($paramPlaceholder)";
+            $stmt = $this->__conn->prepare($sql);
+
+            // Gán giá trị cho các tham số đầu vào
+            foreach ($params as $index => $paramValue) {
+                // Kiểm tra kiểu dữ liệu của tham số và gán kiểu dữ liệu tương ứng
+                if (is_int($paramValue)) {
+                    $stmt->bindValue($index + 1, $paramValue, PDO::PARAM_INT);
+                } else {
+                    $stmt->bindValue($index + 1, $paramValue, PDO::PARAM_STR);
+                }
+            }
+
+            // Thực hiện truy vấn
+            $stmt->execute();
+
+            // Lấy kết quả trả về từ stored procedure
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $result;
+        } catch (PDOException $e) {
+            echo "Lỗi kết nối đến cơ sở dữ liệu: " . $e->getMessage();
+            return false;
+        }
+    }
 
     function callFunction($f, $params)
     {
@@ -75,34 +120,34 @@ function callStoredProcedure($procedureName, $params = []) {
     {
         try {
 
-              // Xây dựng chuỗi truy vấn gọi stored procedure
-              $paramPlaceholder = implode(',', array_fill(0, count($params), '?'));
+            // Xây dựng chuỗi truy vấn gọi stored procedure
+            $paramPlaceholder = implode(',', array_fill(0, count($params), '?'));
 
-              // Chuẩn bị truy vấn gọi procedure
-              $sql = "CALL $procedureName($paramPlaceholder)";
-              $stmt = $this->__conn->prepare($sql);
-  
-              // Gán giá trị cho các tham số đầu vào
-              foreach ($params as $index => $paramValue) {
-                  $stmt->bindValue($index + 1, $paramValue);
-              }
-  
-              // Thực hiện truy vấn
-              $stmt->execute();
-  
-              // Lấy kết quả trả về từ procedure
-              $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  
-              return $result;
+            // Chuẩn bị truy vấn gọi procedure
+            $sql = "CALL $procedureName($paramPlaceholder)";
+            $stmt = $this->__conn->prepare($sql);
+
+            // Gán giá trị cho các tham số đầu vào
+            foreach ($params as $index => $paramValue) {
+                $stmt->bindValue($index + 1, $paramValue);
+            }
+
+            // Thực hiện truy vấn
+            $stmt->execute();
+
+            // Lấy kết quả trả về từ procedure
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $result;
         } catch (PDOException $e) {
             echo "Lỗi kết nối đến cơ sở dữ liệu: " . $e->getMessage();
             return false;
         }
     }
-   
+
     function executeStoredProcedure($procedureName, $params = array())
     {
-        try {           
+        try {
             $paramStr = '';
             foreach ($params as $paramName => $paramValue) {
                 $paramStr .= ":$paramName, ";

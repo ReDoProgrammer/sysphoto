@@ -77,4 +77,4 @@
     include_once "task_submit_modal.php";
     include_once "task_reject_modal.php";
 ?>
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/qa/task/task.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/dc/task/task.js"></script>

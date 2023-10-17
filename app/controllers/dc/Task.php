@@ -39,19 +39,15 @@
             }
             echo json_encode($data);
         }
-        public function fetch(){           
+        public function FilterTasks(){           
             $from_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'].":00"))->format('Y-m-d H:i:s');
             $to_date =  (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'].":00"))->format('Y-m-d H:i:s');
             $status = $_GET['status'];           
+            $search = $_GET['search'];
             $page = $_GET['page'];
             $limit = $_GET['limit'];
-            echo json_encode([
-                'code'=>200,
-                'msg'=>'Successfully fetch the tasks.',
-                'icon'=>'success',
-                'heading'=>'SUCCESSFULLY',
-                'tasks'=>$this->__task_model->GetOwnerTasks($from_date,$to_date,$status,$page,$limit)
-            ]);
+           $result = $this->__task_model->FilterTasks($from_date, $to_date, $status,$search,$page,$limit);
+           print_r($result);
         }
 
         public function Submit(){

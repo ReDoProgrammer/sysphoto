@@ -315,7 +315,6 @@ function LoadOwnTasks() {
                             </td>
                             <td class="text-center">${t.qa ? t.qa : '-'}</td>
                             <td class="text-center">${t.dc ? t.dc : '-'}</td>
-                            <td class="text-end">${t.pay == 1? t.wage:0}</td>
                             <td class="text-end">
                             <div class="dropdown action-label">
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">

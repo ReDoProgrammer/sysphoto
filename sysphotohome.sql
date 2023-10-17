@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 17, 2023 lúc 07:56 AM
+-- Thời gian đã tạo: Th10 17, 2023 lúc 04:57 PM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -498,6 +498,79 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejected` (IN `p_id` BIGINT, IN
     ELSE
         SELECT 0 as updated_rows;
     END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksFilter` (IN `p_from_date` TIMESTAMP, IN `p_to_date` TIMESTAMP, IN `p_status` INT, IN `p_search` VARCHAR(200), IN `p_page` INT, IN `p_limit` INT)   BEGIN
+    DECLARE v_sql VARCHAR(5000);
+    DECLARE v_offset INT; -- Biến để lưu trữ OFFSET
+    DECLARE v_total_rows INT; -- Biến để lưu trữ tổng số bản ghi
+    DECLARE pages INT; -- Biến để lưu trữ tổng số trang
+
+    -- Đếm tổng số bản ghi
+    SET v_sql = "SELECT COUNT(*) FROM tasks t";
+    SET v_sql = CONCAT(v_sql, " LEFT JOIN levels lv ON t.level_id = lv.id ");
+    SET v_sql = CONCAT(v_sql, " LEFT JOIN projects p ON t.project_id = p.id ");
+    SET v_sql = CONCAT(v_sql, " LEFT JOIN customers ctm ON p.customer_id =  ctm.id");
+    SET v_sql = CONCAT(v_sql, " LEFT JOIN users e ON t.editor_id = e.id");
+    SET v_sql = CONCAT(v_sql, " LEFT JOIN users qa ON t.qa_id = qa.id");
+    SET v_sql = CONCAT(v_sql, " LEFT JOIN users dc ON t.dc_id = dc.id");
+    
+    SET v_sql = CONCAT(v_sql, " WHERE p.end_date >= '", p_from_date, "' AND p.end_date <= '", p_to_date, "'");
+	-- SET v_sql = CONCAT(v_sql, " AND (p.name LIKE CONCAT('%', '", p_search, "', '%') OR ctm.acronym LIKE CONCAT('%', '", p_search, "', '%') OR lv.name LIKE CONCAT('%', '", p_search, "', '%') OR e.acronym LIKE CONCAT('%', '", p_search, "', '%') OR qa.acronym LIKE CONCAT('%', '", p_search, "', '%') OR dc.acronym LIKE CONCAT('%', '", p_search, "', '%'))");
+
+
+    IF p_status > 0 THEN 
+        SET v_sql = CONCAT(v_sql, " AND t.status_id = ", p_status);
+    END IF;
+
+    -- Prepare and execute the count query
+    PREPARE stmt FROM v_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    
+    SELECT COUNT(*) INTO v_total_rows;
+
+    SET pages = CEIL(v_total_rows / p_limit); -- Tính tổng số trang
+
+  
+ 
+
+    -- Sử dụng v_total_pages và v_offset trong truy vấn chính để lấy dữ liệu theo trang
+
+    SET v_sql = "SELECT t.id,lv.name as level,lv.color as level_color,t.quantity, t.editor_assigned,t.qa_assigned,t.status_id, 
+                    ts.name as status,ts.color as status_color,t.auto_gen,t.cc_id,
+                    p.name as project_name,DATE_FORMAT(p.start_date,'%d/%m/%Y %H:%i') as start_date, DATE_FORMAT(p.end_date,'%d/%m/%Y %H:%i') as end_date,
+                    ct.acronym as customer,
+                    t.editor_id,e.acronym as editor,editor_url,
+                    t.qa_id,qa.acronym as qa,                    
+                    t.dc_id,dc.acronym as dc
+                    FROM tasks t
+                    LEFT JOIN levels lv ON t.level_id = lv.id
+                    LEFT JOIN projects p ON t.project_id = p.id
+                    LEFT JOIN customers ct ON p.customer_id = ct.id
+                    LEFT JOIN users e ON t.editor_id = e.id
+                    LEFT JOIN users qa ON t.qa_id = qa.id
+                    LEFT JOIN users dc ON t.dc_id = dc.id
+                    LEFT JOIN task_statuses ts ON t.status_id = ts.id ";
+
+    SET v_sql = CONCAT(v_sql, "WHERE p.end_date >= '", p_from_date, "' AND p.end_date <= '", p_to_date, "'");
+
+    IF p_status > 0 THEN
+        SET v_sql = CONCAT(v_sql, " AND t.status_id = ", p_status);
+    END IF;
+    
+   -- SET v_sql = CONCAT(v_sql," AND (p.name LIKE '%'",p_search,"'%' OR ct.acronym LIKE '%'",p_search,"'%' OR lv.name LIKE '%'",p_search,"'%' OR e.acronym LIKE '%'",p_search,"'%' OR qa.acronym LIKE '%'",p_search,"'%' OR dc.acronym LIKE '%'",p_search,"'%' )");
+
+    SET v_sql = CONCAT(v_sql, " ORDER BY p.end_date");
+
+    IF p_limit > 0 THEN       
+        SET v_sql = CONCAT(v_sql, " LIMIT ", p_limit, " OFFSET  ", (p_page-1)*p_limit);
+    END IF;
+
+    -- Prepare and execute the main query
+    PREPARE stmt FROM v_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksGetByProject` (IN `p_id` BIGINT)   BEGIN
@@ -1702,7 +1775,18 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (48, 1, 8, 0, '2023-10-17 11:59:46', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with <a href=\"https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad\" target', ''),
 (49, 2, 13, 0, '2023-10-17 12:52:28', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
 (50, 2, 13, 0, '2023-10-17 12:52:49', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">Reject TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(51, 2, 15, 0, '2023-10-17 12:52:53', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', '');
+(51, 2, 15, 0, '2023-10-17 12:52:53', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
+(52, 2, 13, 0, '2023-10-17 12:59:00', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Fixed TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with <a href=\"https://www.youtube.com/watch?v=xv6k139l14A&list=RDaavYpmtGeEU&index=21&ab_channel=M%C3', ''),
+(53, 2, 11, 0, '2023-10-17 13:02:36', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
+(54, 2, 11, 0, '2023-10-17 13:02:51', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(55, 1, 1, 0, '2023-10-17 13:02:54', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
+(56, 1, 1, 0, '2023-10-17 13:03:02', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(57, 2, 13, 0, '2023-10-17 13:03:34', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(58, 2, 15, 0, '2023-10-17 13:04:03', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
+(59, 2, 11, 0, '2023-10-17 13:04:19', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
+(60, 2, 11, 0, '2023-10-17 13:04:30', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">Reject TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(61, 2, 11, 0, '2023-10-17 13:04:43', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Fixed TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(62, 2, 11, 0, '2023-10-17 13:05:13', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -1783,7 +1867,7 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:48:02', 0, NULL, NULL),
+(1, 1, NULL, 4, 9, NULL, 0, 0, 0, 1, '', 0, '2023-10-17 06:02:54', 0, 1000, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 06:03:02', 9, NULL, NULL),
 (2, 1, NULL, 1, 4, '2023-10-17 04:58:26', 0, 1400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:58:35', 4, NULL, NULL),
 (3, 1, NULL, 1, 4, '2023-10-17 04:58:37', 0, 400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:58:42', 4, NULL, NULL),
 (4, 1, NULL, 1, 4, '2023-10-17 04:58:45', 0, 2400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 4, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:58:52', 4, NULL, NULL),
@@ -1793,11 +1877,11 @@ INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`
 (8, 1, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-17 04:59:39', 0, 4000, 0, 0, 0, NULL, 0, 0, 0, 8, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:59:46', 9, NULL, NULL),
 (9, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 9, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:48:02', 0, NULL, NULL),
 (10, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 10, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:48:02', 0, NULL, NULL),
-(11, 2, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:49:03', 0, NULL, NULL),
+(11, 2, NULL, 4, 4, '2023-10-17 06:02:36', 0, 0, 0, 0, '', 9, '2023-10-17 06:04:19', 0, 1000, 1, 2, 0, NULL, 0, 0, 0, 1, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 06:05:13', 9, NULL, NULL),
 (12, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-17 04:50:05', 0, 700, 0, 0, 0, NULL, 0, 0, 0, 2, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:50:24', 9, NULL, NULL),
-(13, 2, NULL, 2, 4, '2023-10-17 04:53:49', 0, 400, 0, 1, 'https://www.youtube.com/watch?v=y_6aSG2yfe8&list=RDaavYpmtGeEU&index=10&ab_channel=Ho%C3%A0iL%C3%A2m', 9, '2023-10-17 05:52:28', 0, 0, 1, 1, 0, NULL, 0, 0, 0, 3, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 05:52:49', 9, NULL, NULL),
+(13, 2, NULL, 4, 4, '2023-10-17 04:53:49', 0, 0, 0, 0, '', 9, '2023-10-17 05:52:28', 0, 200, 1, 1, 0, NULL, 0, 0, 0, 3, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 06:03:34', 9, NULL, NULL),
 (14, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-17 04:57:16', 0, 1200, 0, 0, 0, NULL, 0, 0, 0, 4, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:25', 9, NULL, NULL),
-(15, 2, NULL, 1, 4, '2023-10-17 04:57:30', 0, 1200, 0, 1, 'https://www.youtube.com/watch?v=WQ3_5gMCVLU&ab_channel=Nh%E1%BA%A1cV%C3%A0ng24h', 9, '2023-10-17 05:52:53', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 05:52:53', 9, NULL, NULL),
+(15, 2, NULL, 4, 4, '2023-10-17 04:57:30', 0, 0, 0, 0, '', 9, '2023-10-17 05:52:53', 0, 600, 1, 0, 0, NULL, 0, 0, 0, 5, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 06:04:03', 9, NULL, NULL),
 (16, 2, NULL, 1, 4, '2023-10-17 04:57:41', 0, 6000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:46', 4, NULL, NULL),
 (17, 2, NULL, 1, 4, '2023-10-17 04:57:48', 0, 20000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 7, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:54', 4, NULL, NULL),
 (18, 2, NULL, 1, 4, '2023-10-17 04:57:55', 0, 8000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:59', 4, NULL, NULL);
@@ -2044,7 +2128,8 @@ CREATE TABLE `task_rejectings` (
 --
 
 INSERT INTO `task_rejectings` (`id`, `role_id`, `remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 5, 'Task QA reject remark\n', '2023-10-17 05:52:49', 9, NULL, 0, NULL, '');
+(1, 5, 'Task QA reject remark\n', '2023-10-17 05:52:49', 9, NULL, 0, NULL, ''),
+(2, 5, 'dssàdsfsa\n', '2023-10-17 06:04:30', 9, NULL, 0, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -2111,7 +2196,7 @@ INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`
 (2, 'Nguyễn Hoàng Yến', 'Yen.nh', 'sale1@photohome.com.vn', '81dc9bdb52d04dc20036dbd8313ed055', 2, 0, 0, '', 0, 0, 1, '2023-08-20 03:55:42', 0, NULL, 0),
 (3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, 1, '2023-08-20 03:57:13', 0, NULL, 0),
 (4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 5, 6, '', 1, 0, 2, '2023-08-20 04:40:37', 0, NULL, 0),
-(5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '37f075e83964183d460c4eca59d27d0b', 2, 0, 0, '', 0, 0, 1, '2023-08-20 09:40:39', 0, NULL, 0),
+(5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 7, 0, 0, '', 0, 0, 3, '2023-08-20 09:40:39', 0, NULL, 0),
 (6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:19:50', 0, NULL, 0),
 (7, 'Trần Tú Thành', 'Thanh.tt', 'Thanh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:36:12', 0, NULL, 0),
 (8, 'Trần Hồng Nhung', 'nhung.th', 'nhung.thphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-04 14:41:06', 0, NULL, 0),
@@ -2518,7 +2603,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2536,7 +2621,7 @@ ALTER TABLE `tasks`
 -- AUTO_INCREMENT cho bảng `task_rejectings`
 --
 ALTER TABLE `task_rejectings`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`

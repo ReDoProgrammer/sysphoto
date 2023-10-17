@@ -40,11 +40,7 @@ class TaskModel extends Model
         $params = [0 => $id];
         return $this->__db->callStoredProcedure("TaskDetailJoin", $params);
     }
-    public function getList()
-    {
 
-        return null;
-    }
 
     function destroy($id)
     {
@@ -56,6 +52,18 @@ class TaskModel extends Model
         return $this->__db->executeStoredProcedure("TaskDelete", $params);
 
         // return $this->__db->delete($this->__table,"id = ".$id);
+    }
+
+    public function FilterTasks($from_date, $to_date, $status,$search,$page,$limit){
+        $params = [
+            'p_from_date'=>$from_date,
+            'p_to_date'=>$to_date,
+            'p_status'=>$status,
+            'p_search'=>$search,
+            'p_page'=>$page,
+            'p_limit'=>$limit
+        ];
+        return $this->__db->callStoredProcedureWithMultipleResults("TasksFilter", $params);
     }
 
     public function SubmitTask($id,$read_instructions,$content,$role){
