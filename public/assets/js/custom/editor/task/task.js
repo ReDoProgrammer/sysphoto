@@ -253,9 +253,8 @@ function LoadOwnTasks() {
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                    ${(t.status_id == 1 || t.status_id == 3) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},5)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
-                                    ${(t.status_id == 0) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},6)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
-                                    ${(t.status_id == 1 || t.status_id == 3 || t.status_id == 5) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id})"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> ` : ``}
+                                    ${(t.status_id == 0 || t.status_id == 2) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id})"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
+                                    
                                 </div> 
                             </div>
                             </td>
