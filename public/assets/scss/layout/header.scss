@@ -16,7 +16,7 @@
         @extend %display-flex;
         @extend %align-items-center;
         @extend %justify-content-center;
-        background: $__primarycolor;
+        // background: $__primarycolor;
         .logo {
             @extend %display-flex;
             line-height: 60px;

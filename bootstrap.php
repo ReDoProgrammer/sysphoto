@@ -42,4 +42,5 @@
     require_once 'core/AdminController.php';// load EditorController
     require_once 'core/EditorController.php';// load EditorController
     require_once 'core/QAController.php';// load QAController
+    require_once 'core/DCController.php';// load DCController
     require_once 'core/Request.php';// load Request

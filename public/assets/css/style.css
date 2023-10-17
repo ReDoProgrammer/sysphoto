@@ -1978,7 +1978,7 @@ input[type=file].form-control {
   -webkit-transition: all 0.2s ease;
   -ms-transition: all 0.2s ease;
   transition: all 0.2s ease;
-  background: #FF7849;
+  /* background: #FF7849; */
 }
 .header .header-left .logo {
   line-height: 60px;
