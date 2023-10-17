@@ -13,7 +13,7 @@
             $this->render('__layouts/editor_layout', $this->data);
         }
         public function GetTask(){
-            $result = $this->__task_model->EditorGetTask();        
+            $result = $this->__task_model->GetTask(6);        
             echo $result['msg'];
         }
 
@@ -55,9 +55,11 @@
 
         public function Submit(){
             $id = $_POST['id'];
-            $read_instructions = $_POST['read_instructions'];
             $content = $_POST['content'];
-            $result = $this->__task_model->SubmitTask($id,$read_instructions,$content);
+            $role = 6;
+            $read_instructions = $_POST['read_instructions'];
+
+            $result = $this->__task_model->SubmitTask($id,$read_instructions,$content,$role);
 
             if($result['updated_rows']>0){
                 $data =[

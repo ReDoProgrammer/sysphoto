@@ -34,13 +34,17 @@ $('#btnSearch').click(function (e) {
     LoadOwnTasks();
 })
 $('#btnSubmitTask').click(function(){
-    let url = $('#txtUrl').val();
+    let content = $('#txtUrl').val();
     let read_instructions = $('#ckbReadInstruction').is(':checked')?1:0;
 
     $.ajax({
         url:'task/submit',
         type:'post',
-        data:{id:taskId,read_instructions,content:url},
+        data:{
+                id:taskId,
+                read_instructions,
+                content
+        },
         success:function(data){
             try {
                 let content = $.parseJSON(data);
@@ -231,25 +235,27 @@ function LoadOwnTasks() {
                             <td><span class="fw-bold ${t.level_color}">${t.level}</span> ${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger"></i>' : ''}</td>
                             <td><span class="text-danger fw-bold">${(t.start_date.split(' '))[1]}</span> <br/>${(t.start_date.split(' '))[0]}</td>
                             <td><span class="text-danger fw-bold">${(t.end_date.split(' '))[1]}</span> <br/>${(t.end_date.split(' '))[0]}</td>
-                            <td><span class="text-danger fw-bold">${(t.editor_timestamp.split(' '))[1]}</span> <br/>${(t.editor_timestamp.split(' '))[0]}</td>
+                            <td><span class="text-danger fw-bold">${(t.commencement_date.split(' '))[1]}</span> <br/>${(t.commencement_date.split(' '))[0]}</td>
                             <td class="text-center">${t.quantity}</td>
                             <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                             <td class="text-center">${t.editor ? t.editor : '-'}</td>
                             <td class="text-center">
-                                ${(t.status_id !=0 &&t.editor_url.trim().length>0)?
-                                    '<a href="'+t.editor_url+'" target="_blank"><i class="fa-solid fa-link text-info"></i></a>':
-                                    '-'}
+                                ${(t.status_id != 0 && t.editor_url.trim().length > 0) ?
+                            '<a href="' + t.editor_url + '" target="_blank"><i class="fa-solid fa-link text-info"></i></a>' :
+                            '-'}
                             </td>
                             <td class="text-center">${t.qa ? t.qa : '-'}</td>
                             <td class="text-center">${t.dc ? t.dc : '-'}</td>
-                            <td class="text-center">${t.pay == 1 ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>'}</td>
+                            <td class="text-end">${t.pay == 1? t.wage:0}</td>
                             <td class="text-end">
                             <div class="dropdown action-label">
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                    ${(t.status_id == 0 || t.status_id == 2) ? '<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(' + t.id + ')"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>' : ''}
+                                    ${(t.status_id == 1 || t.status_id == 3) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},5)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
+                                    ${(t.status_id == 0) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},6)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
+                                    ${(t.status_id == 1 || t.status_id == 3 || t.status_id == 5) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id})"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> ` : ``}
                                 </div> 
                             </div>
                             </td>
