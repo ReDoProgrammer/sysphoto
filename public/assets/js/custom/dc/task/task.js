@@ -53,16 +53,16 @@ $('#btnSearch').click(function (e) {
 })
 $('#btnSubmitTask').click(function () {
     let content = $('#txtContent').val();
-    let read_instructions = $('#ckbReadInstruction').is(':checked')?1:0;
+    let read_instructions = $('#ckbReadInstruction').is(':checked') ? 1 : 0;
     $.ajax({
         url: 'task/submit',
         type: 'post',
-        data: { 
-                id: taskId, 
-                content,
-                read_instructions,
-                role:roleId
-             },
+        data: {
+            id: taskId,
+            content,
+            read_instructions,
+            role: roleId
+        },
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
@@ -244,10 +244,10 @@ function SubmitTask(id, role) {
     taskId = id;
     roleId = role;
 
-    $('#SubmitingModalTitle').text(`Submiting task as ${role==6?`Editor`:`QA`}`);
-    if(role == 5){
+    $('#SubmitingModalTitle').text(`Submiting task as ${role == 6 ? `Editor` : role == 7?`DC`:`QA`}`);
+    if (role == 7 || role == 5) {
         $('#divSubmitTaskContent').hide();
-    }else{
+    } else {
         $('#divSubmitTaskContent').show();
     }
     $('#task_submit_modal').modal('show');
@@ -287,55 +287,54 @@ function FilterTasks() {
             from_date,
             to_date,
             status,
-            search:'',
+            search: '',
             page,
-            limit:0
+            limit: 0
         },
         success: function (data) {
             console.log(data);
-            // try {
-            //     let content = JSON.parse(data);
-            //     console.log(content);
-            //     let tasks = content.tasks;
-            //     let idx = (page - 1) * limit;
-            //     tasks.forEach(t => {
-            //         $('#tblTasks').append(`
-            //             <tr id="${t.id}">
-            //                 <td>${++idx}</td>
-            //                 <td class="text-center"> <span class="fw-bold">${t.project_name}</span> <br/> [${t.customer}]</td>                            
-            //                 <td><span class="fw-bold ${t.level_color}">${t.level}</span> ${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger"></i>' : ''}</td>
-            //                 <td><span class="text-danger fw-bold">${(t.start_date.split(' '))[1]}</span> <br/>${(t.start_date.split(' '))[0]}</td>
-            //                 <td><span class="text-danger fw-bold">${(t.end_date.split(' '))[1]}</span> <br/>${(t.end_date.split(' '))[0]}</td>
-            //                 <td><span class="text-danger fw-bold">${(t.commencement_date.split(' '))[1]}</span> <br/>${(t.commencement_date.split(' '))[0]}</td>
-            //                 <td class="text-center">${t.quantity}</td>
-            //                 <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
-            //                 <td class="text-center">${t.editor ? t.editor : '-'}</td>
-            //                 <td class="text-center">
-            //                     ${(t.status_id != 0 && t.editor_url.trim().length > 0) ?
-            //                 '<a href="' + t.editor_url + '" target="_blank"><i class="fa-solid fa-link text-info"></i></a>' :
-            //                 '-'}
-            //                 </td>
-            //                 <td class="text-center">${t.qa ? t.qa : '-'}</td>
-            //                 <td class="text-center">${t.dc ? t.dc : '-'}</td>
-            //                 <td class="text-end">${t.pay == 1? t.wage:0}</td>
-            //                 <td class="text-end">
-            //                 <div class="dropdown action-label">
-            //                     <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-            //                     <i class="fas fa-cog"></i>								</a>	
-            //                     <div class="dropdown-menu dropdown-menu-right">
-            //                         <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-            //                         ${(t.status_id == 1 || t.status_id == 3) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},5)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
-            //                         ${(t.status_id == 0) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},6)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
-            //                         ${(t.status_id == 1 || t.status_id == 3 || t.status_id == 5) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id})"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> ` : ``}
-            //                     </div> 
-            //                 </div>
-            //                 </td>
-            //             </tr>
-            //         `);
-            //     })
-            // } catch (error) {
-            //     console.log(data, error);
-            // }
+            try {
+                let content = JSON.parse(data);
+                console.log(content);
+                let tasks = content.tasks;
+                let idx = (page - 1) * limit;
+                tasks.forEach(t => {
+                    $('#tblTasks').append(`
+                        <tr id="${t.id}">
+                            <td>${++idx}</td>
+                            <td class="text-center"> <span class="fw-bold">${t.project_name}</span> <br/> [${t.customer}]</td>                            
+                            <td><span class="fw-bold ${t.level_color}">${t.level}</span> ${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger"></i>' : ''}</td>
+                            <td><span class="fw-bold">${(t.start_date.split(' '))[1]}</span> <br/>${(t.start_date.split(' '))[0]}</td>
+                            <td><span class="fw-bold">${(t.end_date.split(' '))[1]}</span> <br/>${(t.end_date.split(' '))[0]}</td>
+                            <td class="text-center">${t.quantity}</td>
+                            
+                            <td class="text-center">${t.editor ? t.editor : '-'}</td>
+                            <td class="text-center">
+                                ${(t.status_id != 0 && t.editor_url.trim().length > 0) ?
+                            '<a href="' + t.editor_url + '" target="_blank"><i class="fa-solid fa-link text-info"></i></a>' :
+                            '-'}
+                            </td>
+                            <td class="text-center">${t.qa ? t.qa : '-'}</td>
+                            <td class="text-center">${t.dc ? t.dc : '-'}</td>
+                            <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
+                            <td class="text-end">
+                                <div class="dropdown action-label">
+                                    <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-cog"></i>								</a>	
+                                    <div class="dropdown-menu dropdown-menu-right">
+                                        <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
+                                        ${(t.status_id == 4 ||((t.status_id == 1 || t.status_id == 3) && t.qa_id >0)) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},7)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
+                                        ${(t.status_id == 4) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id},7)"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> ` : ``}
+                                    </div> 
+                                </div>
+                            </td>
+                        </tr>
+                    `);
+                    console.log(t.status_id,t.qa_id);
+                })
+            } catch (error) {
+                console.log(data, error);
+            }
 
         }
     })

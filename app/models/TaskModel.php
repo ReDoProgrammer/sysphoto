@@ -54,39 +54,42 @@ class TaskModel extends Model
         // return $this->__db->delete($this->__table,"id = ".$id);
     }
 
-    public function FilterTasks($from_date, $to_date, $status,$search,$page,$limit){
+    public function FilterTasks($from_date, $to_date, $status, $search, $page, $limit)
+    {
         $params = [
-            'p_from_date'=>$from_date,
-            'p_to_date'=>$to_date,
-            'p_status'=>$status,
-            'p_search'=>$search,
-            'p_page'=>$page,
-            'p_limit'=>$limit
+            0 => $from_date,
+            1 => $to_date,
+            2 => $status,
+            3 => $search,
+            4 => $page,
+            5 => $limit
         ];
-        return $this->__db->callStoredProcedureWithMultipleResults("TasksFilter", $params);
+        return $this->__db->callStoredProcedure("TasksFilter", $params);       
     }
 
-    public function SubmitTask($id,$read_instructions,$content,$role){
+    public function SubmitTask($id, $read_instructions, $content, $role)
+    {
         $user = unserialize($_SESSION['user']);
         $params = [
-            'p_id'=>$id,
-            'p_actioner'=>$user->id,
-            'p_role'=>$role,
-            'p_read_instructions'=>$read_instructions,
-            'p_content'=>$content            
+            'p_id' => $id,
+            'p_actioner' => $user->id,
+            'p_role' => $role,
+            'p_read_instructions' => $read_instructions,
+            'p_content' => $content
         ];
-        return $this->__db->executeStoredProcedure("TaskSubmited",$params);
+        return $this->__db->executeStoredProcedure("TaskSubmited", $params);
     }
-    public function RejectTask($id,$remark,$read_instructions){
+    public function RejectTask($id, $remark, $read_instructions)
+    {
         $user = unserialize($_SESSION['user']);
         $params = [
-            'p_id'=>$id,
-            'p_remark'=>$remark,
-            'p_actioner'=>$user->id,
-            'p_role'=>$user->role_id,
-            'p_read_instructions'=>$read_instructions
+            'p_id' => $id,
+            'p_remark' => $remark,
+            'p_actioner' => $user->id,
+            'p_role' => $user->role_id,
+            'p_read_instructions' => $read_instructions
         ];
-        return $this->__db->executeStoredProcedure("TaskRejected",$params);
+        return $this->__db->executeStoredProcedure("TaskRejected", $params);
     }
 
     public function GetTasksByProject($id)
@@ -114,10 +117,11 @@ class TaskModel extends Model
 
         return $this->__db->select($this->__table . " t", $columns, $join, $where, [], 1, 0, $orderby);
     }
-   
-    public function GetTask($role){
+
+    public function GetTask($role)
+    {
         $user = unserialize($_SESSION['user']);
-        $params = ['p_actioner' => $user->id,'p_role'=>$role];
+        $params = ['p_actioner' => $user->id, 'p_role' => $role];
         return $this->__db->executeStoredProcedure("TaskGetting", $params);
     }
     public function GetOwnerTasks($from_date, $to_date, $status, $page = 1, $limit = 0)
@@ -132,9 +136,9 @@ class TaskModel extends Model
             5 => $user->id,
             6 => $user->role_id
         );
-        $procedureName = "TasksGottenByOwner";      
+        $procedureName = "TasksGottenByOwner";
 
-       return $this->__db->callAnyStoredProcedure($procedureName, $params);
-       
+        return $this->__db->callAnyStoredProcedure($procedureName, $params);
+
     }
 }

@@ -18,20 +18,12 @@
             <i class="fas fa-search me-2"></i>
             Load Tasks
         </a>
-    </div>
-    <!-- <div class="col-xxl-2 col-lg-2 col-md-2 col-sm-12 col-xs-12">
-        <div class="add-emp-section">
-            <button class="btn btn-success btn-add-emp" id="btnGetTask">
-                <i class="fas fa-plus"></i>
-                Get more task
-            </button>
-        </div>
-    </div> -->
+    </div>   
 </div>
 <!-- /Search Filter -->
 <div class="card">
     <div class="card-header">
-        <h4 class="card-title mb-0">Your Tasks List</h4>
+        <h4 class="card-title mb-0">Your Own Tasks List</h4>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -44,15 +36,15 @@
                         <th>From date</th>
                         <th>To date</th>
                         <th class="text-center">Q.ty</th>
+                        <th>Status</th>
                         <th class="text-center">Editor</th>
                         <th class="text-center">Link</th>
                         <th class="text-center">QA</th>
                         <th class="text-center">DC</th>
-                        <th>Status</th>
                         <th></th>
                     </tr>
                 </thead>
-                <tbody id="tblTasks" ></tbody>
+                <tbody id="tblOwnTasks" ></tbody>
             </table>
         </div>
     </div>
@@ -70,9 +62,5 @@
         </select>
     </div>    
 </div>
-<?php 
-    $this->render('common/task_detail_modal'); 
-    include_once "task_submit_modal.php";
-    include_once "task_reject_modal.php";
-?>
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/dc/task/task.js"></script>
+
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/dc/task/own-task.js"></script>

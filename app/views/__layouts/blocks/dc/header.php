@@ -26,7 +26,7 @@
             <a href="#" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Projects</a>
             <div class="dropdown-menu">
                 <a class="dropdown-item" href="<?php echo _WEB_ROOT?>/dc/task">Tasks</a>
-                <a class="dropdown-item" href="<?php echo _WEB_ROOT?>/dc/own-task">Your tasks</a>
+                <a class="dropdown-item" href="<?php echo _WEB_ROOT?>/dc/task/owntask">Your tasks</a>
             </div>
         </li>       
     </ul>

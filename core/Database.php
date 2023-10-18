@@ -7,50 +7,7 @@ class Database
         global $db_config;
         $this->__conn = Connection::getInstance($db_config);
     }
-    function callStoredProcedureWithMultipleResults($procedure, $params)
-    {
-        try {
-            // Create a prepared statement for calling the stored procedure
-            $stmt = $this->__conn->prepare("CALL $procedure");
 
-            // Bind parameters
-            foreach ($params as $paramName => $paramValue) {
-                $paramType = gettype($paramValue);
-                $pdoParamType = PDO::PARAM_STR; // Default to string
-
-                // Set the PDO parameter type based on the parameter's type
-                switch ($paramType) {
-                    case 'integer':
-                        $pdoParamType = PDO::PARAM_INT;
-                        break;
-                    case 'boolean':
-                        $pdoParamType = PDO::PARAM_BOOL;
-                        break;
-                    // Add more cases as needed
-
-                }
-                $stmt->bindParam($paramName, $params[$paramName], $pdoParamType);
-            }
-
-            // Execute the stored procedure
-            $stmt->execute();
-
-            $results = array();
-
-            do {
-                $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                if ($result) {
-                    $results[] = $result;
-                }
-            } while ($stmt->nextRowset());
-
-            $stmt->closeCursor();
-
-            return $results;
-        } catch (PDOException $e) {
-            return false;
-        }
-    }
 
 
     function callStoredProcedure($procedureName, $params = [])
