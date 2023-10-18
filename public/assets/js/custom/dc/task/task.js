@@ -349,7 +349,7 @@ function FilterTasks() {
                                         <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
                                         ${t.status_id == 4 && t.tla_id == 0 && t.dc_id == 0 ? `<a class="dropdown-item" href="javascript:void(0)" onClick="GetTask(${t.id})"><i class="fa-solid fa-plus"></i> Get task</a>` : ``}
                                         ${(t.status_id == 4 ||
-                            ((t.status_id == 1 || t.status_id == 3) && t.qa_id == 0)) ?
+                            ((t.status_id == 1 || t.status_id == 3) && t.qa_id == 0 ) && t.dc_id == 0 && t.tla_id == 0) ?
                             `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},7)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>
                                             <a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id},7)"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a>
                                             `:
