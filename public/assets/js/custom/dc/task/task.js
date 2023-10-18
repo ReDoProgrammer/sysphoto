@@ -240,11 +240,36 @@ function ViewTaskDetail(id) {
     })
 }
 
+function GetTask(id) {
+    $.ajax({
+        url: 'task/gettask',
+        type: 'get',
+        data:{id},
+        success: function (data) {
+
+            try {
+                let content = $.parseJSON(data);
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    showHideTransition: 'fade',
+                    icon: content.icon
+                })
+                if (content.code == 200) {
+                    FilterTasks();
+                }
+            } catch (error) {
+                console.log(data, error);
+            }
+        }
+    })
+}
+
 function SubmitTask(id, role) {
     taskId = id;
     roleId = role;
 
-    $('#SubmitingModalTitle').text(`Submiting task as ${role == 6 ? `Editor` : role == 7?`DC`:`QA`}`);
+    $('#SubmitingModalTitle').text(`Submiting task as ${role == 6 ? `Editor` : role == 7 ? `DC` : `QA`}`);
     if (role == 7 || role == 5) {
         $('#divSubmitTaskContent').hide();
     } else {
@@ -295,7 +320,6 @@ function FilterTasks() {
             console.log(data);
             try {
                 let content = JSON.parse(data);
-                console.log(content);
                 let tasks = content.tasks;
                 let idx = (page - 1) * limit;
                 tasks.forEach(t => {
@@ -323,20 +347,20 @@ function FilterTasks() {
                                     <i class="fas fa-cog"></i>								</a>	
                                     <div class="dropdown-menu dropdown-menu-right">
                                         <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                        ${
-                                            (t.status_id == 4 ||
-                                            ((t.status_id == 1 || t.status_id == 3) && t.qa_id ==0))?
-                                            `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},7)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>
+                                        ${t.status_id == 4 && t.tla_id == 0 && t.dc_id == 0 ? `<a class="dropdown-item" href="javascript:void(0)" onClick="GetTask(${t.id})"><i class="fa-solid fa-plus"></i> Get task</a>` : ``}
+                                        ${(t.status_id == 4 ||
+                            ((t.status_id == 1 || t.status_id == 3) && t.qa_id == 0)) ?
+                            `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},7)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>
                                             <a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id},7)"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a>
                                             `:
-                                            ``
-                                        }                                        
+                            ``
+                        }                                        
                                     </div> 
                                 </div>
                             </td>
                         </tr>
                     `);
-                    console.log(t.status_id,t.qa_id);
+
                 })
             } catch (error) {
                 console.log(data, error);

@@ -35,7 +35,7 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover mb-0" style="min-height: 200px;max-height:300px; overflow-y: auto;border: 1px solid #ccc; padding-left:20px; padding-top:10px; padding-bottom: 10px; ">
+            <table class="table table-hover mb-0" style=" max-height: 300px; overflow-y: auto;">
                 <thead>
                     <tr>
                         <th>#</th>

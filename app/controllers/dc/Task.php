@@ -13,8 +13,8 @@
             $this->render('__layouts/dc_layout', $this->data);
         }
         public function GetTask(){
-            $role = $_GET['role'];
-            $result = $this->__task_model->GetTask($role);        
+            $id = $_GET['id'];
+            $result = $this->__task_model->GetTask(7,$id);     //7:DC   
             echo $result['msg'];
         }
 

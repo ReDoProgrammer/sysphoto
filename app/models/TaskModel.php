@@ -118,10 +118,10 @@ class TaskModel extends Model
         return $this->__db->select($this->__table . " t", $columns, $join, $where, [], 1, 0, $orderby);
     }
 
-    public function GetTask($role)
+    public function GetTask($role,$task_id=0)
     {
         $user = unserialize($_SESSION['user']);
-        $params = ['p_actioner' => $user->id, 'p_role' => $role];
+        $params = ['p_actioner' => $user->id, 'p_role' => $role,'p_task'=>$task_id];
         return $this->__db->executeStoredProcedure("TaskGetting", $params);
     }
     public function GetOwnerTasks($from_date, $to_date, $status, $page = 1, $limit = 0)
