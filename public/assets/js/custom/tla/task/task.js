@@ -6,46 +6,6 @@ $(document).ready(function () {
     FilterTasks();
     LoadTaskStatuses();
 })
-$('#btnGetTask').click(function () {
-    Swal.fire({
-        icon: 'question',
-        title: 'What role do you want to take on for the task?',
-        showDenyButton: true,
-        showCancelButton: false,
-        confirmButtonText: 'Editor',
-        denyButtonText: `QA`,
-    }).then((result) => {
-        let role = 0;
-        if (result.isConfirmed) {
-            role = 6;
-        } else if (result.isDenied) {
-            role = 5;
-        }
-        $.ajax({
-            url: 'task/gettask',
-            type: 'get',
-            data: { role },
-            success: function (data) {
-
-                try {
-                    let content = $.parseJSON(data);
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        showHideTransition: 'fade',
-                        icon: content.icon
-                    })
-                    if (content.code == 200) {
-                        FilterTasks();
-                    }
-                } catch (error) {
-                    console.log(data, error);
-                }
-            }
-        })
-    })
-
-})
 
 $('#btnSearch').click(function (e) {
     e.preventDefault();
@@ -270,7 +230,7 @@ function SubmitTask(id, role) {
     roleId = role;
 
     $('#SubmitingModalTitle').text(`Submiting task as ${role == 6 ? `Editor` : role == 7 ? `DC` : `QA`}`);
-    if (role == 7 || role == 5) {
+    if (role == 7 || role == 5 || role==4) {
         $('#divSubmitTaskContent').hide();
     } else {
         $('#divSubmitTaskContent').show();
@@ -317,12 +277,13 @@ function FilterTasks() {
             limit: 0
         },
         success: function (data) {
-            console.log(data);
             try {
                 let content = JSON.parse(data);
                 let tasks = content.tasks;
+                let ownid = content.ownid;
                 let idx = (page - 1) * limit;
-                tasks.forEach(t => {
+
+                tasks.forEach(t => {                  
                     $('#tblTasks').append(`
                         <tr id="${t.id}">
                             <td>${++idx}</td>
@@ -340,6 +301,7 @@ function FilterTasks() {
                             </td>
                             <td class="text-center">${t.qa ? t.qa : '-'}</td>
                             <td class="text-center">${t.dc ? t.dc : '-'}</td>
+                            <td class="text-center">${t.tla ? t.tla : '-'}</td>
                             <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                             <td class="text-end">
                                 <div class="dropdown action-label">
@@ -347,14 +309,25 @@ function FilterTasks() {
                                     <i class="fas fa-cog"></i>								</a>	
                                     <div class="dropdown-menu dropdown-menu-right">
                                         <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                        ${t.status_id == 4 && t.tla_id == 0 && t.dc_id == 0 ? `<a class="dropdown-item" href="javascript:void(0)" onClick="GetTask(${t.id})"><i class="fa-solid fa-plus"></i> Get task</a>` : ``}
-                                        ${(t.status_id == 4 ||
-                            ((t.status_id == 1 || t.status_id == 3) && t.qa_id == 0 ) && t.dc_id == 0 && t.tla_id == 0) ?
-                            `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},7)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>
-                                            <a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id},7)"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a>
-                                            `:
-                            ``
-                        }                                        
+                                        ${
+                                            t.tla_id == 0 && 
+                                            (
+                                                t.status_id == 6 ||
+                                                (t.status_id == 4 && t.dc_id == 0)||
+                                                (t.status_id == 1 && t.qa_id == 0 && t.dc_id == 0)
+                                            )
+                                            ?`<a class="dropdown-item" href="javascript:void(0)" onClick="GetTask(${t.id})"><i class="fa-solid fa-plus"></i> Get task</a>`:``}
+                                        
+                                        ${
+                                            (t.tla_id == 0 || (t.tla_id>0 && t.tla_id == ownid )) 
+                                            && (
+                                                t.status_id == 6 ||
+                                                (t.status_id == 4 && t.dc_id == 0)||
+                                                (t.status_id == 1 && t.qa_id == 0 && t.dc_id == 0)
+                                            )
+                                            ?`<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},4)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>
+                                            <a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id},4)"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a>`:``
+                                        }                                                     
                                     </div> 
                                 </div>
                             </td>

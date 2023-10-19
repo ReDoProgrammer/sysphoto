@@ -48,6 +48,7 @@
                         <th class="text-center">Link</th>
                         <th class="text-center">QA</th>
                         <th class="text-center">DC</th>
+                        <th class="text-center">TLA</th>
                         <th>Status</th>
                         <th></th>
                     </tr>
@@ -75,4 +76,4 @@
     include_once "task_submit_modal.php";
     include_once "task_reject_modal.php";
 ?>
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/dc/task/task.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/tla/task/task.js"></script>

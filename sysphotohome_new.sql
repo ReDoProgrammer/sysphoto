@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 18, 2023 lúc 07:45 PM
+-- Thời gian đã tạo: Th10 19, 2023 lúc 05:18 PM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -718,51 +718,70 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskSubmited` (IN `p_id` BIGINT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` TINYINT, IN `p_content` TEXT)   BEGIN
     DECLARE v_wage FLOAT DEFAULT 0;
     DECLARE v_price INT DEFAULT 0;
-    DECLARE v_role INT DEFAULT 0;
 
-    SET v_role = (SELECT type_id FROM users WHERE id = p_actioner);
+    -- Lấy vai trò trực tiếp từ p_role
     SET v_price = (SELECT price FROM levels WHERE id = (SELECT level_id FROM tasks WHERE id = p_id));
-    SET v_wage = (SELECT wage FROM user_types WHERE id = v_role)/100*v_price;
+    SET v_wage = (SELECT wage FROM user_types WHERE id = p_role) / 100 * v_price;
 
-	UPDATE tasks
+    UPDATE tasks
     SET updated_at = NOW(), updated_by = p_actioner,
-    editor_fix = CASE WHEN p_role = 6 THEN -- editor submit
-                        CASE WHEN status_id = 2 THEN 1 -- reject -> true
-                        ELSE 0 -- done->false
-                 		END
-    END,
-    status_id = CASE
-        WHEN p_role = 6 THEN
-            CASE WHEN v_role = 6 THEN -- editor role
-                    CASE
-                        WHEN status_id = 0 THEN 1 -- done
-                        ELSE 3 -- fixed
-                    END
-                WHEN v_role = 5 THEN 4 -- QA role
-                ELSE 6
-            END           
-        WHEN p_role = 5 THEN 4 -- QA OK
-        WHEN p_role = 7 THEN 
-        	CASE 	WHEN editor_fix = 1 THEN 8 -- DC FIX 
-            		ELSE 6 -- OK DC
-            END
-        ELSE 7 -- TLA upload
-    END,
-    dc_id = p_actioner * (p_role = 7), -- set dc id neu ng submit la DC
-    editor_read_instructions = p_read_instructions * (p_role = 6),
-    qa_read_instructions = p_read_instructions * (p_role = 5),
-    dc_read_instructions = p_read_instructions * (p_role = 7),
-    editor_url = CASE 
-        WHEN p_role = 6 AND IsURL(p_content) THEN p_content
-        ELSE ''
-    END,
-    tla_content = CASE 
-        WHEN p_role = 4 THEN NormalizeContent(p_content)
-        ELSE ''
-    END,
-    editor_wage = v_wage*(v_role = 6),
-    qa_wage = v_wage*(v_role = 5),
-    dc_wage = v_wage*(v_role = 7)
+        editor_fix = CASE
+            WHEN p_role = 6 THEN
+                CASE
+                    WHEN status_id = 2 THEN 1 -- từ chối -> đúng
+                    ELSE 0 -- đã xong -> sai
+                END
+        END,
+        status_id = CASE
+            WHEN p_role = 6 THEN
+                CASE
+                    WHEN p_role = 6 THEN
+                        CASE
+                            WHEN status_id = 0 THEN 1 -- đã xong
+                            ELSE 3 -- đã sửa
+                        END
+                    WHEN p_role = 5 THEN 4 -- vai trò QA
+                    ELSE 6
+                END           
+            WHEN p_role = 5 THEN 4 -- QA OK
+            WHEN p_role = 7 THEN 
+                CASE
+                    WHEN editor_fix = 1 THEN 8 -- Sửa DC
+                    ELSE 6 -- OK DC
+                END
+            ELSE 7 -- Tải lên TLA
+        END,
+        editor_read_instructions = p_read_instructions * (p_role = 6),
+        qa_read_instructions = p_read_instructions * (p_role = 5),
+        dc_read_instructions = p_read_instructions * (p_role = 7),
+        tla_read_instructions = p_read_instructions * (p_role = 4),
+        dc_id = CASE
+            WHEN dc_id = 0 AND p_role = 7 THEN p_actioner
+            ELSE dc_id
+        END,
+        dc_timestamp = CASE
+            WHEN dc_id = 0 AND p_role = 7 THEN NOW()
+            ELSE dc_timestamp
+        END,
+        tla_id = CASE
+            WHEN tla_id = 0 AND p_role = 4 THEN p_actioner
+            ELSE tla_id
+        END,
+        tla_timestamp = CASE
+            WHEN tla_id = 0 AND p_role = 4 THEN NOW()
+            ELSE tla_timestamp
+        END,
+        editor_url = CASE
+            WHEN p_role = 6 AND p_content LIKE 'http%' THEN p_content
+            ELSE editor_url
+        END,
+        tla_content = CASE
+            WHEN p_role = 4 THEN NormalizeContent(p_content)
+            ELSE tla_content
+        END,
+        editor_wage = v_wage * (p_role = 6),
+        qa_wage = v_wage * (p_role = 5),
+        dc_wage = v_wage * (p_role = 7)
     WHERE id = p_id;
     SELECT ROW_COUNT() as updated_rows;
 END$$
@@ -1865,7 +1884,11 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (62, 2, 11, 0, '2023-10-17 13:05:13', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
 (63, 2, 11, 0, '2023-10-18 11:46:32', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">OK-DC TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
 (64, 2, 12, 0, '2023-10-18 11:47:11', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC-RJ TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
-(65, 2, 13, 0, '2023-10-18 11:48:48', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC-RJ TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', '');
+(65, 2, 13, 0, '2023-10-18 11:48:48', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC-RJ TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(66, 1, 2, 0, '2023-10-19 21:47:24', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
+(67, 1, 3, 0, '2023-10-19 22:17:07', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(68, 1, 4, 0, '2023-10-19 22:17:29', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
+(69, 1, 8, 0, '2023-10-19 22:17:43', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-DTE</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -1952,23 +1975,23 @@ CREATE TABLE `tasks` (
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (1, 1, NULL, 4, 9, NULL, 0, 0, 0, 1, '', 0, '2023-10-16 23:02:54', 0, 1000, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 23:03:02', 9, NULL, NULL),
-(2, 1, NULL, 1, 4, '2023-10-16 21:58:26', 0, 1400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:58:35', 4, NULL, NULL),
-(3, 1, NULL, 1, 4, '2023-10-16 21:58:37', 0, 400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:58:42', 4, NULL, NULL),
-(4, 1, NULL, 1, 4, '2023-10-16 21:58:45', 0, 2400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 4, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:58:52', 4, NULL, NULL),
+(2, 1, NULL, 7, 4, '2023-10-16 21:58:26', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 14:47:24', 3, NULL, NULL),
+(3, 1, NULL, 7, 4, '2023-10-16 21:58:37', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 3, NULL, 0, 1, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 15:17:07', 3, NULL, NULL),
+(4, 1, NULL, 7, 4, '2023-10-16 21:58:45', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 4, 3, NULL, 0, 1, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 15:17:29', 3, NULL, NULL),
 (5, 1, NULL, 1, 4, '2023-10-16 21:58:54', 0, 1200, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:59:00', 4, NULL, NULL),
 (6, 1, NULL, 1, 4, '2023-10-16 21:59:04', 0, 6000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:59:08', 4, NULL, NULL),
 (7, 1, NULL, 1, 4, '2023-10-16 21:59:11', 0, 20000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 7, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:59:18', 4, NULL, NULL),
-(8, 1, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-16 21:59:39', 0, 4000, 0, 0, 0, NULL, 0, 0, 0, 8, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:59:46', 9, NULL, NULL),
+(8, 1, NULL, 7, 9, NULL, 0, 0, 0, 0, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-16 21:59:39', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, 3, NULL, 0, 1, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 15:17:43', 3, NULL, NULL),
 (9, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 9, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:48:02', 0, NULL, NULL),
 (10, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 10, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 21:48:02', 0, NULL, NULL),
-(11, 2, NULL, 6, 4, '2023-10-16 23:02:36', 0, 0, 0, 0, '', 9, '2023-10-16 23:04:19', 0, 0, 0, 2, 5, NULL, 1250, 1, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 21:46:32', 5, NULL, NULL),
+(11, 2, NULL, 6, 4, '2023-10-16 23:02:36', 0, 0, 0, 0, '', 9, '2023-10-16 23:04:19', 0, 0, 0, 2, 0, NULL, 1250, 1, 0, 1, 3, '2023-10-19 14:44:11', 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 14:44:11', 3, NULL, NULL),
 (12, 2, NULL, 5, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-16 21:50:05', 0, 700, 0, 0, 5, NULL, 0, 1, 3, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 21:47:11', 5, NULL, NULL),
 (13, 2, NULL, 5, 4, '2023-10-16 21:53:49', 0, 0, 0, 0, '', 9, '2023-10-16 22:52:28', 0, 200, 0, 0, 5, NULL, 0, 1, 4, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 21:48:48', 5, NULL, NULL),
 (14, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-16 21:57:16', 0, 1200, 0, 0, 5, '2023-10-18 17:45:08', 0, 0, 0, 4, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-18 17:45:08', 5, NULL, NULL),
 (15, 2, NULL, 4, 4, '2023-10-16 21:57:30', 0, 0, 0, 0, '', 9, '2023-10-16 22:52:53', 0, 600, 1, 0, 5, '2023-10-18 17:45:19', 0, 0, 0, 5, 0, '2023-10-18 17:37:26', 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-18 17:45:19', 5, NULL, NULL),
-(16, 2, NULL, 1, 4, '2023-10-16 21:57:41', 0, 6000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-16 21:57:46', 4, NULL, NULL),
-(17, 2, NULL, 1, 4, '2023-10-16 21:57:48', 0, 20000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 7, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-16 21:57:54', 4, NULL, NULL),
-(18, 2, NULL, 1, 4, '2023-10-16 21:57:55', 0, 8000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-16 21:57:59', 4, NULL, NULL);
+(16, 2, NULL, 1, 4, '2023-10-16 21:57:41', 0, 6000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 5, '2023-10-19 04:10:26', 0, 0, 0, 6, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 04:10:26', 5, NULL, NULL),
+(17, 2, NULL, 1, 4, '2023-10-16 21:57:48', 0, 20000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 5, '2023-10-19 04:10:40', 0, 0, 0, 7, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 04:10:40', 5, NULL, NULL),
+(18, 2, NULL, 1, 4, '2023-10-16 21:57:55', 0, 8000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, 3, '2023-10-19 14:44:55', 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 14:44:55', 3, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2295,7 +2318,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`, `editor_group_id`, `qa_group_id`, `avatar`, `task_getable`, `status`, `group_id`, `created_at`, `created_by`, `updated_at`, `update_by`) VALUES
 (1, 'Administrator', 'admin', 'admin@admin.com', '2db5228517bf8473a1dda3cab7cb4b8c', 1, 0, 0, '', 0, 0, 4, '2020-11-25 20:57:04', 0, NULL, 0),
 (2, 'Nguyễn Hoàng Yến', 'Yen.nh', 'sale1@photohome.com.vn', '81dc9bdb52d04dc20036dbd8313ed055', 2, 0, 0, '', 0, 0, 1, '2023-08-19 20:55:42', 0, NULL, 0),
-(3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, 1, '2023-08-19 20:57:13', 0, NULL, 0),
+(3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, 3, '2023-08-19 20:57:13', 0, NULL, 0),
 (4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 5, 6, '', 1, 0, 2, '2023-08-19 21:40:37', 0, NULL, 0),
 (5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 7, 0, 0, '', 0, 0, 3, '2023-08-20 02:40:39', 0, NULL, 0),
 (6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-24 21:19:50', 0, NULL, 0),
@@ -2714,7 +2737,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
