@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 19, 2023 lúc 06:14 PM
+-- Thời gian đã tạo: Th10 19, 2023 lúc 06:46 PM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -1914,6 +1914,7 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 CREATE TABLE `project_statuses` (
   `id` int(11) NOT NULL,
   `name` varchar(30) NOT NULL,
+  `description` varchar(100) NOT NULL,
   `color` varchar(50) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(10) NOT NULL,
@@ -1925,15 +1926,16 @@ CREATE TABLE `project_statuses` (
 -- Đang đổ dữ liệu cho bảng `project_statuses`
 --
 
-INSERT INTO `project_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'wait', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(2, 'Processing', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(3, 'Sent', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
-(4, 'Paid', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
-(5, 'Unpay', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
-(6, 'Upload Link', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
-(7, 'Ask again', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0),
-(8, 'Responded', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0);
+INSERT INTO `project_statuses` (`id`, `name`, `description`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
+(2, 'Processing', 'Đang trong quá trình xử lý task', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
+(3, 'Ready', 'Các task của project đã đc upload', 'badge badge-success', '2023-10-19 16:28:45', 1, NULL, 0),
+(4, 'Upload Link', 'TLA tiến hành upload link thành phẩm của project ', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
+(5, 'Sent', 'CSS gửi link thành phẩm cho khách hàng', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
+(6, 'Paid', 'Được thanh toán', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
+(7, 'Unpaid', 'Không được thanh toán', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
+(8, 'Ask again', 'Yêu cầu làm lại', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0),
+(9, 'Responded', 'Quy trách nhiệm cho nhân viên', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -2043,6 +2045,10 @@ CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
     
     INSERT INTO project_logs(project_id,task_id,timestamp,action)
     VALUES(NEW.project_id,NEW.id,NEW.created_at,v_action);
+    
+    IF (SELECT status_id FROM projects WHERE id = NEW.project_id ) = 0 THEN
+    	UPDATE projects SET status_id = 2 WHERE id = NEW.project_id; -- chuyen status project sang processing
+    END IF;
     
 END
 $$
@@ -2207,7 +2213,9 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
         END IF;
     -- //paid
     
-
+	IF (SELECT COUNT(*) FROM tasks WHERE status_id <> 7) = 0 THEN
+    	UPDATE projects SET status_id = 3 WHERE id = NEW.project_id; -- chuyển project sang trạng thái ready để TLA biết đường upload link
+    END IF;
     
     -- insert logs
     IF v_changes = TRUE THEN
@@ -2216,6 +2224,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
         INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
         VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_actions,v_content);
     END IF;
+
 END
 $$
 DELIMITER ;
@@ -2440,6 +2449,7 @@ CREATE TABLE `user_productivities` (
 CREATE TABLE `user_types` (
   `id` int(11) NOT NULL,
   `name` varchar(30) NOT NULL,
+  `description` varchar(200) NOT NULL,
   `wage` float NOT NULL COMMENT 'Tính theo % đơn giá của task level',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(12) NOT NULL,
@@ -2451,14 +2461,14 @@ CREATE TABLE `user_types` (
 -- Đang đổ dữ liệu cho bảng `user_types`
 --
 
-INSERT INTO `user_types` (`id`, `name`, `wage`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'CEO', 100, '0000-00-00 00:00:00', 0, NULL, 0),
-(2, 'CSO', 70, '0000-00-00 00:00:00', 0, NULL, 0),
-(3, 'CSS', 60, '0000-00-00 00:00:00', 0, NULL, 0),
-(4, 'TLA', 50, '0000-00-00 00:00:00', 0, NULL, 0),
-(5, 'QA', 20, '0000-00-00 00:00:00', 0, NULL, 0),
-(6, 'EDITOR', 40, '0000-00-00 00:00:00', 0, NULL, 0),
-(7, 'DC', 25, '2023-10-13 10:21:51', 1, NULL, 0);
+INSERT INTO `user_types` (`id`, `name`, `description`, `wage`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'CEO', 'Toàn quyền hệ thống', 100, '0000-00-00 00:00:00', 0, NULL, 0),
+(2, 'CSO', 'Kế toán', 70, '0000-00-00 00:00:00', 0, NULL, 0),
+(3, 'CSS', 'Giao dịch với khách hàng', 60, '0000-00-00 00:00:00', 0, NULL, 0),
+(4, 'TLA', 'Quản lý công việc', 50, '0000-00-00 00:00:00', 0, NULL, 0),
+(5, 'QA', 'Thẩm định ảnh lv1', 20, '0000-00-00 00:00:00', 0, NULL, 0),
+(6, 'EDITOR', 'Xử lý ảnh', 40, '0000-00-00 00:00:00', 0, NULL, 0),
+(7, 'DC', 'Thẩm định ảnh lv2', 25, '2023-10-13 10:21:51', 1, NULL, 0);
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -2759,7 +2769,7 @@ ALTER TABLE `project_logs`
 -- AUTO_INCREMENT cho bảng `project_statuses`
 --
 ALTER TABLE `project_statuses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT cho bảng `tasks`
