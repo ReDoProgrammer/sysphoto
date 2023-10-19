@@ -53,13 +53,15 @@
             $page = $_GET['page'];
             $limit = $_GET['limit'];
            $result = $this->__task_model->FilterTasks($from_date, $to_date, $status,$search,$page,$limit);
+           $user = unserialize($_SESSION['user']);
            echo json_encode(
             [
                 'code'=>200,
                 'msg'=>'Filter tasks successfully',
                 'icon'=>'success',
                 'heading'=>'SUCCESSFULLY',
-                'tasks'=>$result
+                'tasks'=>$result,
+                'ownid'=>$user->id
             ]
            );
         }
@@ -69,11 +71,13 @@
             $status = $_GET['status'];           
             $page = $_GET['page'];
             $limit = $_GET['limit'];
+            $user = unserialize($_SESSION['user']);
             echo json_encode([
                 'code'=>200,
                 'msg'=>'Successfully fetch the tasks.',
                 'icon'=>'success',
                 'heading'=>'SUCCESSFULLY',
+                'ownid'=>$user->id,
                 'tasks'=>$this->__task_model->GetOwnerTasks($from_date,$to_date,$status,$page,$limit)
             ]);
         }
