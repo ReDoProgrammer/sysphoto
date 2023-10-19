@@ -109,6 +109,7 @@ function ViewTaskDetail(id) {
                 let content = $.parseJSON(data);
 
                 let t = content.task;
+                console.log(t);
 
                 $('#level').addClass(t.level_color);
                 $('#level').text(t.level);
@@ -125,7 +126,7 @@ function ViewTaskDetail(id) {
 
                 $('#divTaskDescription').empty();
                 let s = $.parseJSON(t.styles);
-                console.log(s);
+
                 $('#divTaskDescription').append(`
                     <div class="row">
                         <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color ? s.color : ''}</span></div>
@@ -191,6 +192,7 @@ function ViewTaskDetail(id) {
                 $('#editor').text(t.editor ? t.editor : '-');
                 $('#qa').text(t.qa ? t.qa : '-');
                 $('#dc').text(t.dc ? t.dc : '-');
+                $('#tla').text(t.tla ? t.tla : '-');
 
                 $('#task_detail_modal').modal('show');
             } catch (error) {

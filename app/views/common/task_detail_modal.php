@@ -49,17 +49,21 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-sm-4 form-group">
+                    <div class="col-sm-3 form-group">
                         <label for="">Editor</label>
                         <h4 id="editor" class="mt-2 text-info"></h4>
                     </div>
-                    <div class="col-sm-4 form-group">
+                    <div class="col-sm-3 form-group">
                         <label for="">QA</label>
                         <h4 id="qa" class="mt-2 text-info"></h4>
                     </div>
-                    <div class="col-sm-4 form-group">
+                    <div class="col-sm-3 form-group">
                         <label for="">DC</label>
                         <h4 id="dc" class="mt-2 text-info"></h4>
+                    </div>
+                    <div class="col-sm-3 form-group">
+                        <label for="">TLA</label>
+                        <h4 id="tla" class="mt-2 text-info"></h4>
                     </div>
                 </div>
 

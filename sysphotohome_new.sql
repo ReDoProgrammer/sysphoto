@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 19, 2023 lúc 05:18 PM
+-- Thời gian đã tạo: Th10 19, 2023 lúc 06:14 PM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -397,6 +397,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
         d.acronym as dc,
         t.dc_read_instructions,
         DATE_FORMAT(t.dc_timestamp, '%d/%m/%Y %H:%i:%s') as dc_timestamp ,
+        
+         tla.acronym as tla,
+        t.tla_read_instructions,
+        DATE_FORMAT(t.tla_timestamp, '%d/%m/%Y %H:%i:%s') as tla_timestamp ,
 
         DATE_FORMAT(t.created_at, '%d/%m/%Y %H:%i:%s') as created_at,
         c.acronym as created_by,
@@ -439,7 +443,8 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
 	JOIN levels lv ON t.level_id = lv.id
     LEFT JOIN users e ON t.editor_id = e.id
     LEFT JOIN users q ON t.qa_id = q.id
-    LEFT JOIN users d ON t.dc_id = e.id
+    LEFT JOIN users d ON t.dc_id = d.id
+    LEFT JOIN users tla ON t.tla_id = tla.id
     LEFT JOIN task_statuses ts ON t.status_id = ts.id
     JOIN users c ON t.created_by = c.id
     LEFT JOIN users u ON t.updated_by = u.id
@@ -480,7 +485,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskInsert` (IN `p_project` BIGINT,
     SELECT LAST_INSERT_ID() as last_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejected` (IN `p_id` BIGINT, IN `p_remark` TEXT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` INT)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejecting` (IN `p_id` BIGINT, IN `p_remark` TEXT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` INT, IN `p_status` INT)   BEGIN
     INSERT INTO task_rejectings(role_id, remark, created_by)
     VALUES (p_role, NormalizeContent(p_remark), p_actioner);
     
@@ -492,13 +497,21 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejected` (IN `p_id` BIGINT, IN
                 status_id = CASE
                     WHEN p_role = 5 THEN 2 -- QA role
                     WHEN p_role = 7 THEN 5 -- DC role
+                    WHEN p_role = 4 THEN p_status -- TLA change status
                 END,
                 qa_reject_id = LAST_INSERT_ID() * (p_role = 5),
                 qa_read_instructions =  p_read_instructions * (p_role = 5),
-                dc_id = p_actioner * (p_role = 7),
-                dc_reject_id = LAST_INSERT_ID() * (p_role = 7),
+
+
                 dc_read_instructions = p_read_instructions * (p_role = 7),
-                tla_read_instructions = p_read_instructions * (p_role = 4)
+                dc_id = CASE WHEN dc_id = 0 AND p_role = 7 THEN p_actioner ELSE dc_id END,
+                dc_timestamp = CASE WHEN dc_id = 0 AND p_role = 7 THEN NOW() ELSE dc_timestamp END,
+                dc_reject_id = LAST_INSERT_ID() * (p_role = 7),
+
+                tla_read_instructions = p_read_instructions * (p_role = 4),
+                tla_id = CASE WHEN tla_id = 0 AND p_role = 4 THEN p_actioner ELSE tla_id END,
+                tla_timestamp = CASE WHEN tla_id = 0 AND p_role = 4 THEN NOW() ELSE tla_timestamp END,
+                tla_reject_id = LAST_INSERT_ID() * (p_role = 4)
             WHERE id = p_id;
             SELECT ROW_COUNT() as updated_rows;
         END;
@@ -1888,7 +1901,9 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (66, 1, 2, 0, '2023-10-19 21:47:24', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
 (67, 1, 3, 0, '2023-10-19 22:17:07', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
 (68, 1, 4, 0, '2023-10-19 22:17:29', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
-(69, 1, 8, 0, '2023-10-19 22:17:43', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-DTE</span>]', '');
+(69, 1, 8, 0, '2023-10-19 22:17:43', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-DTE</span>]', ''),
+(70, 1, 1, 0, '2023-10-19 23:01:22', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">DC Reject TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(71, 2, 18, 0, '2023-10-19 23:04:32', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-DTE</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -1974,7 +1989,7 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 1, NULL, 4, 9, NULL, 0, 0, 0, 1, '', 0, '2023-10-16 23:02:54', 0, 1000, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-16 23:03:02', 9, NULL, NULL),
+(1, 1, NULL, 5, 9, NULL, 0, 0, 0, 1, '', 0, '2023-10-16 23:02:54', 0, 1000, 0, 0, 0, NULL, 0, 0, 0, 1, 3, NULL, 0, 1, 5, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 16:01:22', 3, NULL, NULL),
 (2, 1, NULL, 7, 4, '2023-10-16 21:58:26', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 14:47:24', 3, NULL, NULL),
 (3, 1, NULL, 7, 4, '2023-10-16 21:58:37', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 3, NULL, 0, 1, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 15:17:07', 3, NULL, NULL),
 (4, 1, NULL, 7, 4, '2023-10-16 21:58:45', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 4, 3, NULL, 0, 1, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-19 15:17:29', 3, NULL, NULL),
@@ -1991,7 +2006,7 @@ INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`
 (15, 2, NULL, 4, 4, '2023-10-16 21:57:30', 0, 0, 0, 0, '', 9, '2023-10-16 22:52:53', 0, 600, 1, 0, 5, '2023-10-18 17:45:19', 0, 0, 0, 5, 0, '2023-10-18 17:37:26', 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-18 17:45:19', 5, NULL, NULL),
 (16, 2, NULL, 1, 4, '2023-10-16 21:57:41', 0, 6000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 5, '2023-10-19 04:10:26', 0, 0, 0, 6, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 04:10:26', 5, NULL, NULL),
 (17, 2, NULL, 1, 4, '2023-10-16 21:57:48', 0, 20000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 5, '2023-10-19 04:10:40', 0, 0, 0, 7, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 04:10:40', 5, NULL, NULL),
-(18, 2, NULL, 1, 4, '2023-10-16 21:57:55', 0, 8000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, 3, '2023-10-19 14:44:55', 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 14:44:55', 3, NULL, NULL);
+(18, 2, NULL, 7, 4, '2023-10-16 21:57:55', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, 3, '2023-10-19 14:44:55', 0, 1, 0, 'https://www.youtube.com/watch?v=isXjoUWFR9k&ab_channel=Qu%C3%A0ngAT%C5%A9nLive\n', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-19 16:04:32', 3, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2231,7 +2246,8 @@ INSERT INTO `task_rejectings` (`id`, `role_id`, `remark`, `created_at`, `created
 (1, 5, 'Task QA reject remark\n', '2023-10-16 22:52:49', 9, NULL, 0, NULL, ''),
 (2, 5, 'dssàdsfsa\n', '2023-10-16 23:04:30', 9, NULL, 0, NULL, ''),
 (3, 7, 'This is DC reject task remark\n', '2023-10-17 21:47:11', 5, NULL, 0, NULL, ''),
-(4, 7, 'This is reject remark\n', '2023-10-17 21:48:48', 5, NULL, 0, NULL, '');
+(4, 7, 'This is reject remark\n', '2023-10-17 21:48:48', 5, NULL, 0, NULL, ''),
+(5, 4, 'Test reject task by TLA\n', '2023-10-19 16:01:22', 3, NULL, 0, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -2284,7 +2300,7 @@ CREATE TABLE `task_suggestions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `updated_by` int(11) NOT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2737,7 +2753,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2755,7 +2771,7 @@ ALTER TABLE `tasks`
 -- AUTO_INCREMENT cho bảng `task_rejectings`
 --
 ALTER TABLE `task_rejectings`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`
