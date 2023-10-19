@@ -12,7 +12,7 @@ $('#btnSearch').click(function (e) {
     FilterTasks();
 })
 $('#btnSubmitTask').click(function () {
-    let content = $('#txtContent').val();
+    let content = qTaskSubmitingRemark.getText();
     let read_instructions = $('#ckbReadInstruction').is(':checked') ? 1 : 0;
     $.ajax({
         url: 'task/submit',
@@ -230,11 +230,7 @@ function SubmitTask(id, role) {
     roleId = role;
 
     $('#SubmitingModalTitle').text(`Submiting task as ${role == 6 ? `Editor` : role == 7 ? `DC` : `QA`}`);
-    if (role == 7 || role == 5 || role==4) {
-        $('#divSubmitTaskContent').hide();
-    } else {
-        $('#divSubmitTaskContent').show();
-    }
+    qTaskSubmitingRemark.setText('');
     $('#task_submit_modal').modal('show');
 
 }
@@ -367,6 +363,24 @@ var qTaskRejectingRemark = new Quill('#divTaskRejectingRemark', {
         ]
     },
     placeholder: "Enter Rejecting Remark here...",
+    // Đặt chiều cao cho trình soạn thảo
+    // Ví dụ: Chiều cao 300px
+    height: '300px'
+    // Hoặc chiều cao 5 dòng
+    // height: '10em'
+});
+
+var qTaskSubmitingRemark = new Quill('#divTaskSubmitingRemark', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter Upload content here...",
     // Đặt chiều cao cho trình soạn thảo
     // Ví dụ: Chiều cao 300px
     height: '300px'
