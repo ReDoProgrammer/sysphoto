@@ -8,6 +8,12 @@
             </div>
             <div class="modal-body">
                 <div class="row">
+                    <div class="col-sm-12 form-group">
+                        <label for="">Reject into status:</label>
+                        <select name="" id="slRejectIntoStatus" class="form-control"></select>
+                    </div>
+                </div>
+                <div class="row mt-3">
                     <div class="col-sm-12">
                         <div class="input-block mb-3">
                             <label class="col-form-label">Rejecting Remark</label>

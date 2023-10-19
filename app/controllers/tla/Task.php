@@ -110,8 +110,9 @@
             $id = $_POST['id'];
             $remark = $_POST['remark'];
             $read_instructions = $_POST['read_instructions'];
+            $status = $_POST['status'];
 
-            $result = $this->__task_model->RejectTask($id,$remark,$read_instructions);
+            $result = $this->__task_model->RejectTask($id,$remark,$read_instructions,$status);
             if($result['updated_rows']>0){
                 $data =[
                     'code'=>200,

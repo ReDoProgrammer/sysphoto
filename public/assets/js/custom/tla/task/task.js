@@ -49,7 +49,7 @@ $('#btnSubmitRejectingTask').click(function () {
     $.ajax({
         url: 'task/reject',
         type: 'post',
-        data: { id: taskId, remark, read_instructions },
+        data: { id: taskId, remark, read_instructions,status:$('#slRejectIntoStatus option:selected').val() },
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
@@ -204,7 +204,7 @@ function GetTask(id) {
     $.ajax({
         url: 'task/gettask',
         type: 'get',
-        data:{id},
+        data: { id },
         success: function (data) {
 
             try {
@@ -245,6 +245,9 @@ function LoadTaskStatuses() {
                 if (content.code == 200) {
                     content.taskstatuses.forEach(t => {
                         selectizeTaskStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
+                        if (t.id != 7) {
+                            $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
+                        }
                     })
                 }
             } catch (error) {
@@ -279,7 +282,7 @@ function FilterTasks() {
                 let ownid = content.ownid;
                 let idx = (page - 1) * limit;
 
-                tasks.forEach(t => {                  
+                tasks.forEach(t => {
                     $('#tblTasks').append(`
                         <tr id="${t.id}">
                             <td>${++idx}</td>
@@ -305,25 +308,23 @@ function FilterTasks() {
                                     <i class="fas fa-cog"></i>								</a>	
                                     <div class="dropdown-menu dropdown-menu-right">
                                         <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                        ${
-                                            t.tla_id == 0 && 
-                                            (
-                                                t.status_id == 6 ||
-                                                (t.status_id == 4 && t.dc_id == 0)||
-                                                (t.status_id == 1 && t.qa_id == 0 && t.dc_id == 0)
-                                            )
-                                            ?`<a class="dropdown-item" href="javascript:void(0)" onClick="GetTask(${t.id})"><i class="fa-solid fa-plus"></i> Get task</a>`:``}
+                                        ${t.tla_id == 0 &&
+                            (
+                                t.status_id == 6 ||
+                                (t.status_id == 4 && t.dc_id == 0) ||
+                                (t.status_id == 1 && t.qa_id == 0 && t.dc_id == 0)
+                            )
+                            ? `<a class="dropdown-item" href="javascript:void(0)" onClick="GetTask(${t.id})"><i class="fa-solid fa-plus"></i> Get task</a>` : ``}
                                         
-                                        ${
-                                            (t.tla_id == 0 || (t.tla_id>0 && t.tla_id == ownid )) 
-                                            && (
-                                                t.status_id == 6 ||
-                                                (t.status_id == 4 && t.dc_id == 0)||
-                                                (t.status_id == 1 && t.qa_id == 0 && t.dc_id == 0)
-                                            )
-                                            ?`<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},4)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>
-                                            <a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id},4)"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a>`:``
-                                        }                                                     
+                                        ${(t.tla_id == 0 || (t.tla_id > 0 && t.tla_id == ownid))
+                            && (
+                                t.status_id == 6 ||
+                                (t.status_id == 4 && t.dc_id == 0) ||
+                                (t.status_id == 1 && t.qa_id == 0 && t.dc_id == 0)
+                            )
+                            ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},4)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>
+                                            <a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id},4)"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a>` : ``
+                        }                                                     
                                     </div> 
                                 </div>
                             </td>
@@ -351,6 +352,8 @@ $selectizeTaskStatuses.selectize({
     placeholder: 'Task Status'
 });
 var selectizeTaskStatus = $selectizeTaskStatuses[0].selectize;
+
+
 
 var qTaskRejectingRemark = new Quill('#divTaskRejectingRemark', {
     theme: 'snow', // Chọn giao diện "snow"

@@ -79,7 +79,7 @@ class TaskModel extends Model
         ];
         return $this->__db->executeStoredProcedure("TaskSubmited", $params);
     }
-    public function RejectTask($id, $remark, $read_instructions)
+    public function RejectTask($id, $remark, $read_instructions, $status = 0)
     {
         $user = unserialize($_SESSION['user']);
         $params = [
@@ -87,9 +87,10 @@ class TaskModel extends Model
             'p_remark' => $remark,
             'p_actioner' => $user->id,
             'p_role' => $user->role_id,
-            'p_read_instructions' => $read_instructions
+            'p_read_instructions' => $read_instructions,
+            'p_status' => $status
         ];
-        return $this->__db->executeStoredProcedure("TaskRejected", $params);
+        return $this->__db->executeStoredProcedure("TaskRejecting", $params);
     }
 
     public function GetTasksByProject($id)
