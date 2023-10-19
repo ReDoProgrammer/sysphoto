@@ -11,6 +11,7 @@
     $routes['editor/login']='editor/auth/login';
     $routes['qa/login']='qa/auth/login';
     $routes['dc/login']='dc/auth/login';
+    $routes['tla/login']='tla/auth/login';
 
 
     $routes['trang-chu'] = 'home';
