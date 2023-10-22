@@ -36,7 +36,8 @@
                 <th>Job</th>
                 <th>Start</th>
                 <th>Deadline</th>
-                <th>Status</th>
+                <th>Product Url</th>
+                <th class="text-center">Status</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -83,4 +84,4 @@ require_once 'modal_instruction.php';
 
 
 
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/tla/project/project.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/css/project/project.js"></script>

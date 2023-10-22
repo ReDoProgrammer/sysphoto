@@ -45,7 +45,7 @@
         }
 
         public function GetList($from_date,$to_date,$stt,$search,$page = 1,$limit = 10){
-            $columns = "p.id,c.acronym,p.name,p.status_id,
+            $columns = "p.id,c.acronym,p.name,p.status_id,p.product_url,
             DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') start_date, DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') end_date, 
             s.name as status_name,s.color status_color";
             $join = " JOIN customers c ON p.customer_id = c.id ";
