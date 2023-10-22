@@ -1,1 +1,1 @@
-<h1>DC dasboard index</h1>
+<h1>CSS dasboard index</h1>

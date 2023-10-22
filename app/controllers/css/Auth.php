@@ -6,11 +6,11 @@ class Auth extends Controller
     function __construct()
     {
         $this->__employee_model = $this->model("EmployeeModel");
-        $this->__role = 4;//DC
+        $this->__role = 3;//DC
     }
     public function login()
     {
-        $this->render('tla/user/login');
+        $this->render('css/user/login');
     }
     public function AuthLogin()
     {
