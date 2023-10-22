@@ -10,7 +10,7 @@ $(document).ready(function () {
     page = 1;
     limit = $('#slPageSize option:selected').val();
     $('#btnSearch').click();
-    setInterval(fetch, 10000);// gọi hàm load lại dữ liệu sau mỗi 10s
+    setInterval(fetch, 100000);// gọi hàm load lại dữ liệu sau mỗi 1p
 })
 
 function UpdateProject(id) {
