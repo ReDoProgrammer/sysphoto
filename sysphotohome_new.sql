@@ -1665,7 +1665,10 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
         	SET v_changed = TRUE;
         	SET v_old_status = (SELECT name FROM project_statuses WHERE id = OLD.status_id);
         	SET v_new_status = (SELECT name FROM project_statuses WHERE id = NEW.status_id);
-            SET v_actions = CONCAT(v_actions,' <span class="text-warning">CHANGE STATUS</span> FROM [<span class="text-secondary">',v_old_status,'</span>] TO [<span class="text-info">',v_new_status,'</span>],');            
+          IF v_old_status IS NULL THEN
+            SET v_old_status ='Initital';
+          END IF;
+          SET v_actions = CONCAT(v_actions,' <span class="text-warning">CHANGE STATUS</span> FROM [<span class="text-secondary">',v_old_status,'</span>] TO [<span class="text-info">',v_new_status,'</span>],');            
         END IF;
     -- //status
     

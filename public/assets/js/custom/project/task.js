@@ -11,6 +11,7 @@ $("#task_modal").on('shown.bs.modal', function () {
 $("#task_modal").on("hidden.bs.modal", function () {
     pId = 0;
     ccId = 0;
+    fetch();
 });
 
 
