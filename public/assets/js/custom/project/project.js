@@ -214,8 +214,7 @@ function fetch() {
                         <td>${p.start_date}</td>
                         <td>${p.end_date}</td>
                         <td class="text-center">
-                      
-                                    <span class="badge ${p.status_color}">${p.status_name}</span>
+                            <span class="badge ${p.status_color?p.status_color:`text-secondary fw-bold`}">${p.status_name?p.status_name:'Initial'}</span>
                         </td>                       
                         <td class="text-center">
                             <div class="dropdown action-label">

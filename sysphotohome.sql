@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 18, 2023 lúc 07:44 AM
--- Phiên bản máy phục vụ: 10.4.27-MariaDB
--- Phiên bản PHP: 8.2.0
+-- Thời gian đã tạo: Th10 22, 2023 lúc 12:22 PM
+-- Phiên bản máy phục vụ: 10.4.28-MariaDB
+-- Phiên bản PHP: 8.0.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -347,6 +347,18 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusAll` ()   BEGIN
 	SELECT * FROM project_statuses;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectSubmit` (IN `p_id` BIGINT, IN `p_content` TEXT, IN `p_status` TINYINT, IN `p_actioner` INT)   BEGIN
+	UPDATE projects
+    SET	
+    	updated_at = NOW(),updated_by = p_actioner,
+        product_url = CASE WHEN IsURL(p_content) THEN p_content ELSE product_url END,
+       	status_id = p_status
+    WHERE id = p_id;
+    
+    SELECT ROW_COUNT() as rows_changed;
+        
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectUpdate` (IN `p_id` BIGINT, IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(250), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_updated_by` INT)   BEGIN
 	UPDATE projects    
     SET
@@ -397,6 +409,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
         d.acronym as dc,
         t.dc_read_instructions,
         DATE_FORMAT(t.dc_timestamp, '%d/%m/%Y %H:%i:%s') as dc_timestamp ,
+        
+         tla.acronym as tla,
+        t.tla_read_instructions,
+        DATE_FORMAT(t.tla_timestamp, '%d/%m/%Y %H:%i:%s') as tla_timestamp ,
 
         DATE_FORMAT(t.created_at, '%d/%m/%Y %H:%i:%s') as created_at,
         c.acronym as created_by,
@@ -439,42 +455,64 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskDetailJoin` (IN `p_id` BIGINT) 
 	JOIN levels lv ON t.level_id = lv.id
     LEFT JOIN users e ON t.editor_id = e.id
     LEFT JOIN users q ON t.qa_id = q.id
-    LEFT JOIN users d ON t.dc_id = e.id
+    LEFT JOIN users d ON t.dc_id = d.id
+    LEFT JOIN users tla ON t.tla_id = tla.id
     LEFT JOIN task_statuses ts ON t.status_id = ts.id
     JOIN users c ON t.created_by = c.id
     LEFT JOIN users u ON t.updated_by = u.id
     WHERE t.id = p_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskGetting` (IN `p_actioner` INT, IN `p_role` INT)   BEGIN
-   DECLARE v_rows_changed INT DEFAULT 0;
-	
-   IF CheckRoleSettingLevel(p_actioner,p_role) = 0 THEN
-        SELECT JSON_OBJECT('code', '403', 'msg', CONCAT('You have not been assigned levels to access tasks. Please contact your administrator.'), 'icon', 'danger', 'heading', 'Forbidden') AS msg;
-   ELSE       
-        IF CountProcessingTasks(p_actioner,p_role) > 0 THEN
-            SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'), 'icon', 'danger', 'heading', 'Locked') AS msg;
-        ELSE
-            IF CountAvailableTasks(p_actioner,p_role) > 0 THEN               
-                IF GetTask(p_actioner,p_role) > 0 THEN
-                    SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task successfully') AS msg;
-                ELSE
-                    SELECT JSON_OBJECT('code', '503', 'msg', CONCAT('Unable to fetch additional tasks.'), 'icon', 'danger', 'heading', 'Locked') AS msg;
-                END IF;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskGetting` (IN `p_actioner` INT, IN `p_role` INT, IN `p_task` BIGINT)   BEGIN
+    IF (p_role = 5 OR p_role = 6) AND p_task = 0 THEN	
+        IF CheckRoleSettingLevel(p_actioner,p_role) = 0 THEN
+                SELECT JSON_OBJECT('code', '403', 'msg', CONCAT('You have not been assigned levels to access tasks. Please contact your administrator.'), 'icon', 'danger', 'heading', 'Forbidden') AS msg;
+        ELSE       
+            IF CountProcessingTasks(p_actioner,p_role) > 0 THEN
+                SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'), 'icon', 'danger', 'heading', 'Locked') AS msg;
             ELSE
-                SELECT JSON_OBJECT('code', '404', 'msg', CONCAT('No available task found.'), 'icon', 'warning', 'heading', 'Not Found') AS msg;
+                IF CountAvailableTasks(p_actioner,p_role) > 0 THEN               
+                    IF GetTask(p_actioner,p_role,p_task) > 0 THEN
+                        SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task successfully') AS msg;
+                    ELSE
+                        SELECT JSON_OBJECT('code', '503', 'msg', CONCAT('Unable to fetch additional tasks.'), 'icon', 'danger', 'heading', 'Locked') AS msg;
+                    END IF;
+                ELSE
+                    SELECT JSON_OBJECT('code', '404', 'msg', CONCAT('No available task found.'), 'icon', 'warning', 'heading', 'Not Found') AS msg;
+                END IF;
             END IF;
+        END IF;
+    ELSE 
+        IF GetTask(p_actioner,p_role,p_task) > 0 THEN
+            SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task successfully') AS msg;
+        ELSE
+            SELECT JSON_OBJECT('code', '503', 'msg', CONCAT('Unable to fetch additional tasks.'), 'icon', 'danger', 'heading', 'Locked') AS msg;
         END IF;
     END IF;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskInsert` (IN `p_project` BIGINT, IN `p_description` TEXT, IN `p_editor` INT, IN `p_qa` INT, IN `p_quantity` INT, IN `p_level` INT, IN `p_cc` INT, IN `p_created_by` INT)   BEGIN
+	DECLARE v_last_id BIGINT;
+    DECLARE v_project_status TINYINT;
+    
 	INSERT INTO tasks(project_id,description,editor_id,qa_id,quantity,level_id,cc_id,created_by)
     VALUES(p_project,p_description,p_editor,p_qa,p_quantity,p_level,p_cc,p_created_by);
-    SELECT LAST_INSERT_ID() as last_id;
+    
+    SET v_last_id =  (SELECT LAST_INSERT_ID());
+    SET v_project_status = (SELECT status_id FROM projects WHERE id = p_project);
+    
+    IF v_last_id > 0 AND v_project_status = 0 THEN
+    	UPDATE projects
+        SET updated_at = NOW(), updated_by = p_created_by, status_id = 2 -- processing
+        WHERE id = p_project;
+     END IF;
+     
+     SELECT v_last_id as last_id;
+     
+        	
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejected` (IN `p_id` BIGINT, IN `p_remark` TEXT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` INT)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejecting` (IN `p_id` BIGINT, IN `p_remark` TEXT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` INT, IN `p_status` INT)   BEGIN
     INSERT INTO task_rejectings(role_id, remark, created_by)
     VALUES (p_role, NormalizeContent(p_remark), p_actioner);
     
@@ -486,12 +524,21 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejected` (IN `p_id` BIGINT, IN
                 status_id = CASE
                     WHEN p_role = 5 THEN 2 -- QA role
                     WHEN p_role = 7 THEN 5 -- DC role
+                    WHEN p_role = 4 THEN p_status -- TLA change status
                 END,
                 qa_reject_id = LAST_INSERT_ID() * (p_role = 5),
                 qa_read_instructions =  p_read_instructions * (p_role = 5),
-                dc_id = p_actioner * (p_role = 7),
+
+
+                dc_read_instructions = p_read_instructions * (p_role = 7),
+                dc_id = CASE WHEN dc_id = 0 AND p_role = 7 THEN p_actioner ELSE dc_id END,
+                dc_timestamp = CASE WHEN dc_id = 0 AND p_role = 7 THEN NOW() ELSE dc_timestamp END,
                 dc_reject_id = LAST_INSERT_ID() * (p_role = 7),
-                dc_read_instructions = p_read_instructions * (p_role = 7)
+
+                tla_read_instructions = p_read_instructions * (p_role = 4),
+                tla_id = CASE WHEN tla_id = 0 AND p_role = 4 THEN p_actioner ELSE tla_id END,
+                tla_timestamp = CASE WHEN tla_id = 0 AND p_role = 4 THEN NOW() ELSE tla_timestamp END,
+                tla_reject_id = LAST_INSERT_ID() * (p_role = 4)
             WHERE id = p_id;
             SELECT ROW_COUNT() as updated_rows;
         END;
@@ -509,7 +556,8 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksFilter` (IN `p_from_date` TIME
                     ct.acronym as customer,
                     t.editor_id,e.acronym as editor,editor_url,
                     t.qa_id,qa.acronym as qa,                    
-                    t.dc_id,dc.acronym as dc
+                    t.dc_id,dc.acronym as dc,
+                    t.tla_id,tla.acronym as tla
                     FROM tasks t
                     LEFT JOIN levels lv ON t.level_id = lv.id
                     LEFT JOIN projects p ON t.project_id = p.id
@@ -517,6 +565,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksFilter` (IN `p_from_date` TIME
                     LEFT JOIN users e ON t.editor_id = e.id
                     LEFT JOIN users qa ON t.qa_id = qa.id
                     LEFT JOIN users dc ON t.dc_id = dc.id
+                    LEFT JOIN users tla ON t.tla_id = tla.id
                     LEFT JOIN task_statuses ts ON t.status_id = ts.id ";
 
     SET v_sql = CONCAT(v_sql, "WHERE p.end_date >= '", p_from_date, "' AND p.end_date <= '", p_to_date, "'");
@@ -709,51 +758,70 @@ END$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskSubmited` (IN `p_id` BIGINT, IN `p_actioner` INT, IN `p_role` INT, IN `p_read_instructions` TINYINT, IN `p_content` TEXT)   BEGIN
     DECLARE v_wage FLOAT DEFAULT 0;
     DECLARE v_price INT DEFAULT 0;
-    DECLARE v_role INT DEFAULT 0;
 
-    SET v_role = (SELECT type_id FROM users WHERE id = p_actioner);
+    -- Lấy vai trò trực tiếp từ p_role
     SET v_price = (SELECT price FROM levels WHERE id = (SELECT level_id FROM tasks WHERE id = p_id));
-    SET v_wage = (SELECT wage FROM user_types WHERE id = v_role)/100*v_price;
+    SET v_wage = (SELECT wage FROM user_types WHERE id = p_role) / 100 * v_price;
 
-	UPDATE tasks
+    UPDATE tasks
     SET updated_at = NOW(), updated_by = p_actioner,
-    editor_fix = CASE WHEN p_role = 6 THEN -- editor submit
-                        CASE WHEN status_id = 2 THEN 1 -- reject -> true
-                        ELSE 0 -- done->false
-                 		END
-    END,
-    status_id = CASE
-        WHEN p_role = 6 THEN
-            CASE WHEN v_role = 6 THEN -- editor role
-                    CASE
-                        WHEN status_id = 0 THEN 1 -- done
-                        ELSE 3 -- fixed
-                    END
-                WHEN v_role = 5 THEN 4 -- QA role
-                ELSE 6
-            END           
-        WHEN p_role = 5 THEN 4 -- QA OK
-        WHEN p_role = 7 THEN 
-        	CASE 	WHEN editor_fix = 1 THEN 8 -- DC FIX 
-            		ELSE 6 -- OK DC
-            END
-        ELSE 7 -- TLA upload
-    END,
-    dc_id = p_actioner * (p_role = 7), -- set dc id neu ng submit la DC
-    editor_read_instructions = p_read_instructions * (p_role = 6),
-    qa_read_instructions = p_read_instructions * (p_role = 5),
-    dc_read_instructions = p_read_instructions * (p_role = 7),
-    editor_url = CASE 
-        WHEN p_role = 6 AND IsURL(p_content) THEN p_content
-        ELSE ''
-    END,
-    tla_content = CASE 
-        WHEN p_role = 4 THEN NormalizeContent(p_content)
-        ELSE ''
-    END,
-    editor_wage = v_wage*(v_role = 6),
-    qa_wage = v_wage*(v_role = 5),
-    dc_wage = v_wage*(v_role = 7)
+        editor_fix = CASE
+            WHEN p_role = 6 THEN
+                CASE
+                    WHEN status_id = 2 THEN 1 -- từ chối -> đúng
+                    ELSE 0 -- đã xong -> sai
+                END
+        END,
+        status_id = CASE
+            WHEN p_role = 6 THEN
+                CASE
+                    WHEN p_role = 6 THEN
+                        CASE
+                            WHEN status_id = 0 THEN 1 -- đã xong
+                            ELSE 3 -- đã sửa
+                        END
+                    WHEN p_role = 5 THEN 4 -- vai trò QA
+                    ELSE 6
+                END           
+            WHEN p_role = 5 THEN 4 -- QA OK
+            WHEN p_role = 7 THEN 
+                CASE
+                    WHEN editor_fix = 1 THEN 8 -- Sửa DC
+                    ELSE 6 -- OK DC
+                END
+            ELSE 7 -- Tải lên TLA
+        END,
+        editor_read_instructions = p_read_instructions * (p_role = 6),
+        qa_read_instructions = p_read_instructions * (p_role = 5),
+        dc_read_instructions = p_read_instructions * (p_role = 7),
+        tla_read_instructions = p_read_instructions * (p_role = 4),
+        dc_id = CASE
+            WHEN dc_id = 0 AND p_role = 7 THEN p_actioner
+            ELSE dc_id
+        END,
+        dc_timestamp = CASE
+            WHEN dc_id = 0 AND p_role = 7 THEN NOW()
+            ELSE dc_timestamp
+        END,
+        tla_id = CASE
+            WHEN tla_id = 0 AND p_role = 4 THEN p_actioner
+            ELSE tla_id
+        END,
+        tla_timestamp = CASE
+            WHEN tla_id = 0 AND p_role = 4 THEN NOW()
+            ELSE tla_timestamp
+        END,
+        editor_url = CASE
+            WHEN p_role = 6 AND p_content LIKE 'http%' THEN p_content
+            ELSE editor_url
+        END,
+        tla_content = CASE
+            WHEN p_role = 4 THEN NormalizeContent(p_content)
+            ELSE tla_content
+        END,
+        editor_wage = v_wage * (p_role = 6),
+        qa_wage = v_wage * (p_role = 5),
+        dc_wage = v_wage * (p_role = 7)
     WHERE id = p_id;
     SELECT ROW_COUNT() as updated_rows;
 END$$
@@ -925,20 +993,21 @@ CREATE DEFINER=`root`@`localhost` FUNCTION `GetInitials` (`p_name` VARCHAR(255))
     RETURN result;
 END$$
 
-CREATE DEFINER=`root`@`localhost` FUNCTION `GetTask` (`p_actioner` INT, `p_role` INT) RETURNS INT(11)  BEGIN
+CREATE DEFINER=`root`@`localhost` FUNCTION `GetTask` (`p_actioner` INT, `p_role` INT, `p_task` BIGINT) RETURNS INT(11)  BEGIN
 	DECLARE v_task_id bigint;
-    DECLARE v_levels varchar(100);
-    DECLARE v_role int DEFAULT 0;
-    
-    SET v_role = (SELECT type_id FROM users WHERE id = p_actioner); -- get actioner role
-    
-    SET v_levels = (	SELECT levels FROM employee_groups 
-                    	WHERE id = CASE WHEN p_role = 5 THEN (SELECT qa_group_id FROM users WHERE id = p_actioner) 
-        								ELSE (SELECT editor_group_id FROM users WHERE id = p_actioner) 
-        							END
-                   );
-                   
-    IF p_role = 6 THEN -- Get task as Editor(p_role:6)
+		DECLARE v_levels varchar(100);
+		DECLARE v_role int DEFAULT 0;
+    IF (p_role = 5 OR p_role = 6 ) AND p_task = 0 THEN -- Editor/QA
+		
+		SET v_role = (SELECT type_id FROM users WHERE id = p_actioner); -- get actioner role
+		
+		SET v_levels = (	SELECT levels FROM employee_groups 
+							WHERE id = CASE WHEN p_role = 5 THEN (SELECT qa_group_id FROM users WHERE id = p_actioner) 
+											ELSE (SELECT editor_group_id FROM users WHERE id = p_actioner) 
+										END
+					);
+					
+		IF p_role = 6 THEN -- Get task as Editor(p_role:6)
     	SET v_task_id = (
             				SELECT t.id FROM tasks t INNER JOIN projects p ON t.project_id = p.id
             				WHERE t.editor_id = 0 
@@ -973,7 +1042,21 @@ CREATE DEFINER=`root`@`localhost` FUNCTION `GetTask` (`p_actioner` INT, `p_role`
             	qa_id = p_actioner,qa_timestamp = NOW(), qa_assigned = 0
          WHERE id = v_task_id;
      END IF;
-     
+	ELSE -- DC, TLA, CSS, CSO, CEO
+		UPDATE tasks
+		SET updated_at = NOW(), updated_by = p_actioner,
+			dc_id = p_actioner * (p_role = 7), -- DC
+			tla_id = p_actioner * (p_role = 4), -- TLA
+			dc_timestamp = CASE
+				WHEN p_role = 7 THEN NOW()
+				ELSE dc_timestamp
+			END,
+			tla_timestamp = CASE
+				WHEN p_role = 4 THEN NOW()
+				ELSE tla_timestamp
+			END
+		WHERE id = p_task;
+	END IF;
     RETURN ROW_COUNT();
 END$$
 
@@ -1114,8 +1197,8 @@ CREATE TABLE `clouds` (
 --
 
 INSERT INTO `clouds` (`id`, `name`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'Google Drive', '2023-10-06 07:13:35', 1, NULL, 0),
-(2, 'Dropbox', '2023-10-06 07:13:35', 1, NULL, 0);
+(1, 'Google Drive', '2023-10-06 00:13:35', 1, NULL, 0),
+(2, 'Dropbox', '2023-10-06 00:13:35', 1, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1137,8 +1220,8 @@ CREATE TABLE `color_modes` (
 --
 
 INSERT INTO `color_modes` (`id`, `name`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'Adobe 1998', '2023-10-06 07:11:29', 1, NULL, 0),
-(2, 'sRGB', '2023-10-06 07:11:29', 1, NULL, 0);
+(1, 'Adobe 1998', '2023-10-06 00:11:29', 1, NULL, 0),
+(2, 'sRGB', '2023-10-06 00:11:29', 1, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1161,9 +1244,9 @@ CREATE TABLE `comboes` (
 --
 
 INSERT INTO `comboes` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'combo 1', 'bg-danger text-white', '2023-10-02 16:00:22', 0, NULL, 0),
-(2, 'combo 2', 'bg-primary text-light', '2023-10-02 16:00:22', 0, NULL, 0),
-(3, 'combo 3', 'bg-success text-dark', '2023-10-02 16:00:22', 0, NULL, 0);
+(1, 'combo 1', 'bg-danger text-white', '2023-10-02 09:00:22', 0, NULL, 0),
+(2, 'combo 2', 'bg-primary text-light', '2023-10-02 09:00:22', 0, NULL, 0),
+(3, 'combo 3', 'bg-success text-dark', '2023-10-02 09:00:22', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1186,7 +1269,7 @@ CREATE TABLE `companies` (
 --
 
 INSERT INTO `companies` (`id`, `name`, `description`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'PHOTOHOME', '											', '2023-02-18 00:00:00', 0, '2023-10-02 16:00:51', 0);
+(1, 'PHOTOHOME', '											', '2023-02-18 00:00:00', 0, '2023-10-02 09:00:51', 0);
 
 -- --------------------------------------------------------
 
@@ -1209,7 +1292,7 @@ CREATE TABLE `configs` (
 --
 
 INSERT INTO `configs` (`id`, `cf_key`, `cf_value`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'Quản lý công việc', 'contactphotohome@gmail.com', '2023-10-02 22:55:37', 0, '2023-10-02 16:01:15', 0);
+(1, 'Quản lý công việc', 'contactphotohome@gmail.com', '2023-10-02 22:55:37', 0, '2023-10-02 09:01:15', 0);
 
 -- --------------------------------------------------------
 
@@ -1250,18 +1333,18 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`id`, `company_id`, `name`, `acronym`, `email`, `customer_url`, `pwd`, `avatar`, `group_id`, `color_mode_id`, `output_id`, `size`, `is_straighten`, `straighten_remark`, `tv`, `fire`, `sky`, `grass`, `national_style_id`, `cloud_id`, `style_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 0, 'Test 1234', 'C431651-T1', 'emailtes1t1@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:51:28', 1, '2023-10-10 09:43:51', 0),
-(4, 0, 'Test2', 'C431651-T', 'emailtest2@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:54:11', 1, '2023-10-10 09:43:51', 0),
-(5, 0, 'Test3', 'C431651-T', 'emailtest3@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:55:06', 1, '2023-10-10 09:43:51', 0),
-(6, 0, 'Test4 Ra Fdasf ', 'C431651-TRF', 'emailtest4@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 2, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 1, 1, 'style remark\n', '2023-10-06 20:55:51', 1, '2023-10-10 09:43:51', 0),
-(8, 0, 'Truong Nguyen Huu', 'C431651-TNH', 'emailtest21@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 2, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:22', 1, '2023-10-10 09:43:51', 0),
-(9, 0, 'Truong Nguyen Huu', 'C441635-TNH', 'emailtest221@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 1, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:40', 1, '2023-10-10 09:44:35', 1),
-(10, 0, 'Spyder Man', 'C431651-SM', 'syperman@gmail.com', 'spyder man url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, 'origin', 1, '1234', '', '', '', '411', 1, 1, 'style remark\n', '2023-10-06 21:04:23', 1, '2023-10-10 09:43:51', 0),
-(11, 0, 'Jocker Allain', 'C431651-JA', 'testemail123@gmail.com', 'adsfá', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:08:07', 1, '2023-10-10 09:43:51', 0),
-(12, 0, 'Test  New Acronym', 'C451601-TNA', 'testnewacronym@gmail.com', 'sdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'dfsấ', 'fsadfsa', 'fdsấ', 'fdsấ', 'fdsàdsa', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:14:11', 1, '2023-10-10 09:45:01', 1),
-(13, 0, 'Test  New Acronym ', 'C431651-TNA', 'testnewacronym1@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, '', '', '', '', '', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:15:11', 1, '2023-10-10 09:43:51', 0),
-(15, 0, 'This Is New Customer1', 'C481631-TINCEMA', 'emailtes1t11@gmail.com', 'dsfấ', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:19:23', 1, '2023-10-10 09:48:31', 1),
-(16, 0, 'Test Straighten1', 'C481615-TSTES', 'teststraighten@gmail.com', 'straighten url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, 'straighten note', 'tvnote', 'fire note', 'sky note', 'grass note', 1, 1, 'straighten style remark\n\nremark \n\ndfafasd fdasf                     fsdjfsalkfj \n\n\n\n\nfdsafsadjf\nfsadfjsdal\n\n1234124\n\nfdsafsa\n', '2023-10-06 22:02:34', 1, '2023-10-10 09:48:15', 1);
+(1, 0, 'Test 1234', 'C431651-T1', 'emailtes1t1@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:51:28', 1, '2023-10-10 02:43:51', 0),
+(4, 0, 'Test2', 'C431651-T', 'emailtest2@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 2, 'style remark\n', '2023-10-06 20:54:11', 1, '2023-10-10 02:43:51', 0),
+(5, 0, 'Test3', 'C431651-T', 'emailtest3@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:55:06', 1, '2023-10-10 02:43:51', 0),
+(6, 0, 'Test4 Ra Fdasf ', 'C431651-TRF', 'emailtest4@gmail.com', 'adsfasdf', '202cb962ac59075b964b07152d234b70', '', 2, 1, 2, '1234fazfdxdsrqw', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 1, 1, 'style remark\n', '2023-10-06 20:55:51', 1, '2023-10-10 02:43:51', 0),
+(8, 0, 'Truong Nguyen Huu', 'C431651-TNH', 'emailtest21@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 2, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:22', 1, '2023-10-10 02:43:51', 0),
+(9, 0, 'Truong Nguyen Huu', 'C441635-TNH', 'emailtest221@gmail.com', 'url ', '202cb962ac59075b964b07152d234b70', '', 1, 2, 1, '2134x1234', 1, 'straighten', 'tv', 'fire', 'fire', 'grass', 2, 1, 'style remark\n', '2023-10-06 20:59:40', 1, '2023-10-10 02:44:35', 1),
+(10, 0, 'Spyder Man', 'C431651-SM', 'syperman@gmail.com', 'spyder man url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, 'origin', 1, '1234', '', '', '', '411', 1, 1, 'style remark\n', '2023-10-06 21:04:23', 1, '2023-10-10 02:43:51', 0),
+(11, 0, 'Jocker Allain', 'C431651-JA', 'testemail123@gmail.com', 'adsfá', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:08:07', 1, '2023-10-10 02:43:51', 0),
+(12, 0, 'Test  New Acronym', 'C451601-TNA', 'testnewacronym@gmail.com', 'sdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'dfsấ', 'fsadfsa', 'fdsấ', 'fdsấ', 'fdsàdsa', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:14:11', 1, '2023-10-10 02:45:01', 1),
+(13, 0, 'Test  New Acronym ', 'C431651-TNA', 'testnewacronym1@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, '', '', '', '', '', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:15:11', 1, '2023-10-10 02:43:51', 0),
+(15, 0, 'This Is New Customer1', 'C481631-TINCEMA', 'emailtes1t11@gmail.com', 'dsfấ', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:19:23', 1, '2023-10-10 02:48:31', 1),
+(16, 0, 'Test Straighten1', 'C481615-TSTES', 'teststraighten@gmail.com', 'straighten url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, 'straighten note', 'tvnote', 'fire note', 'sky note', 'grass note', 1, 1, 'straighten style remark\n\nremark \n\ndfafasd fdasf                     fsdjfsalkfj \n\n\n\n\nfdsafsadjf\nfsadfjsdal\n\n1234124\n\nfdsafsa\n', '2023-10-06 22:02:34', 1, '2023-10-10 02:48:15', 1);
 
 -- --------------------------------------------------------
 
@@ -1285,8 +1368,8 @@ CREATE TABLE `customer_groups` (
 --
 
 INSERT INTO `customer_groups` (`id`, `name`, `description`, `levels`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'Group 1', NULL, NULL, '2023-10-02 17:03:33', 0, '2023-10-02 17:03:33', 0),
-(2, 'Group 2', NULL, NULL, '2023-10-02 17:03:53', 1, '2023-10-02 17:04:07', 0);
+(1, 'Group 1', NULL, NULL, '2023-10-02 10:03:33', 0, '2023-10-02 10:03:33', 0),
+(2, 'Group 2', NULL, NULL, '2023-10-02 10:03:53', 1, '2023-10-02 10:04:07', 0);
 
 -- --------------------------------------------------------
 
@@ -1310,12 +1393,12 @@ CREATE TABLE `employee_groups` (
 --
 
 INSERT INTO `employee_groups` (`id`, `name`, `description`, `levels`, `created_by`, `created_at`, `updated_at`, `updated_by`) VALUES
-(1, 'Nhóm Mattport', '', '1,2,3', 1, '2023-09-03 06:10:28', '2023-09-03 05:26:02', 0),
-(2, 'Nhóm Mattport pro', '', '1,2,3,4,5,6,7', 1, '2023-09-03 06:12:36', '2023-09-03 05:25:57', 0),
-(3, 'Nhóm pro', '', '1,2,3,4,5,6,7', 1, '2023-09-03 06:23:04', '2023-09-03 06:23:04', 0),
-(4, 'Nhóm training', '', '1,2,3', 1, '2023-09-03 06:24:13', '2023-09-03 06:24:13', 0),
-(5, 'Nhóm QA Pro', '', '1,2,3,4,5,6,7,8', 1, '2023-09-05 08:59:11', '2023-09-05 08:59:11', 0),
-(6, 'Nhóm DTE', '', '8', 1, '2023-09-05 09:03:26', '2023-09-05 09:03:26', 0);
+(1, 'Nhóm Mattport', '', '1,2,3', 1, '2023-09-02 23:10:28', '2023-09-02 22:26:02', 0),
+(2, 'Nhóm Mattport pro', '', '1,2,3,4,5,6,7', 1, '2023-09-02 23:12:36', '2023-09-02 22:25:57', 0),
+(3, 'Nhóm pro', '', '1,2,3,4,5,6,7', 1, '2023-09-02 23:23:04', '2023-09-02 23:23:04', 0),
+(4, 'Nhóm training', '', '1,2,3', 1, '2023-09-02 23:24:13', '2023-09-02 23:24:13', 0),
+(5, 'Nhóm QA Pro', '', '1,2,3,4,5,6,7,8', 1, '2023-09-05 01:59:11', '2023-09-05 01:59:11', 0),
+(6, 'Nhóm DTE', '', '8', 1, '2023-09-05 02:03:26', '2023-09-05 02:03:26', 0);
 
 -- --------------------------------------------------------
 
@@ -1359,9 +1442,9 @@ CREATE TABLE `invoice_statuses` (
 --
 
 INSERT INTO `invoice_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'wait', 'badge badge-secondary', '2023-04-16 00:00:00', 0, '2023-10-02 16:04:44', 0),
-(2, 'Sent', 'badge badge-success', '2023-04-16 00:00:00', 0, '2023-10-02 16:04:44', 0),
-(3, 'Paid', 'badge badge-info', '2023-04-16 00:00:00', 0, '2023-10-02 16:04:44', 0);
+(1, 'wait', 'badge badge-secondary', '2023-04-16 00:00:00', 0, '2023-10-02 09:04:44', 0),
+(2, 'Sent', 'badge badge-success', '2023-04-16 00:00:00', 0, '2023-10-02 09:04:44', 0),
+(3, 'Paid', 'badge badge-info', '2023-04-16 00:00:00', 0, '2023-10-02 09:04:44', 0);
 
 -- --------------------------------------------------------
 
@@ -1444,8 +1527,8 @@ CREATE TABLE `national_styles` (
 --
 
 INSERT INTO `national_styles` (`id`, `name`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'US Style', '2023-10-06 07:15:18', 1, '2023-10-06 07:15:18', 0),
-(2, 'US AU', '2023-10-06 07:15:18', 1, '2023-10-06 07:15:18', 0);
+(1, 'US Style', '2023-10-06 00:15:18', 1, '2023-10-06 00:15:18', 0),
+(2, 'US AU', '2023-10-06 00:15:18', 1, '2023-10-06 00:15:18', 0);
 
 -- --------------------------------------------------------
 
@@ -1467,8 +1550,8 @@ CREATE TABLE `outputs` (
 --
 
 INSERT INTO `outputs` (`id`, `name`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'JPG', '2023-10-06 09:01:17', 1, NULL, 0),
-(2, 'TIFF', '2023-10-06 09:01:17', 1, NULL, 0);
+(1, 'JPG', '2023-10-06 02:01:17', 1, NULL, 0),
+(2, 'TIFF', '2023-10-06 02:01:17', 1, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1481,12 +1564,12 @@ CREATE TABLE `projects` (
   `customer_id` bigint(30) NOT NULL,
   `name` varchar(200) NOT NULL,
   `description` text NOT NULL,
-  `status_id` tinyint(1) NOT NULL DEFAULT 1,
+  `status_id` tinyint(1) NOT NULL DEFAULT 0,
   `start_date` datetime DEFAULT NULL,
   `end_date` datetime DEFAULT NULL,
   `levels` varchar(100) NOT NULL COMMENT 'Danh sách level khi sử dụng template',
   `invoice_id` varchar(11) NOT NULL,
-  `done_link` varchar(255) DEFAULT NULL,
+  `product_url` text DEFAULT NULL,
   `wait_note` varchar(255) DEFAULT NULL,
   `combo_id` int(11) NOT NULL DEFAULT 0,
   `priority` tinyint(1) NOT NULL DEFAULT 0,
@@ -1502,9 +1585,10 @@ CREATE TABLE `projects` (
 -- Đang đổ dữ liệu cho bảng `projects`
 --
 
-INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `done_link`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 11, 'test 123 update', 'test 123 description	\n', 1, '2023-10-17 11:47:00', '2023-10-17 16:47:00', '1,2,3,4,5,6,7,8,9,10', '', NULL, NULL, 2, 0, '2023-10-17 11:48:02', 1, NULL, 0, NULL, ''),
-(2, 10, 'the 1710 project', 'The 1710 project description\n', 1, '2023-10-17 11:47:00', '2023-10-17 14:47:00', '1,2,3,4,5,6,7,8', '', NULL, NULL, 3, 1, '2023-10-17 11:49:03', 1, NULL, 0, NULL, '');
+INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `product_url`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(4, 10, 'Test 22102023', 'Test 221023 description\n', 5, '2023-10-22 14:10:00', '2023-10-22 19:10:00', '1,2,3,4,5,6', '', 'https://www.youtube.com/watch?v=T7aVAIAiRKY&ab_channel=RomanticGuitar', NULL, 2, 0, '2023-10-22 14:47:22', 1, '2023-10-22 16:19:51', 6, NULL, ''),
+(5, 13, 'Test no task', 'No task description\n', 2, '2023-10-22 14:57:00', '2023-10-22 17:57:00', '', '', NULL, NULL, 1, 0, '2023-10-22 16:58:13', 1, NULL, 0, NULL, ''),
+(6, 12, 'No task 2', 'NO task 2 description\n', 2, '2023-10-22 16:58:00', '2023-10-22 21:58:00', '', '', NULL, NULL, 3, 0, '2023-10-22 17:01:43', 1, '2023-10-22 17:21:55', 1, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -1609,7 +1693,10 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
         	SET v_changed = TRUE;
         	SET v_old_status = (SELECT name FROM project_statuses WHERE id = OLD.status_id);
         	SET v_new_status = (SELECT name FROM project_statuses WHERE id = NEW.status_id);
-            SET v_actions = CONCAT(v_actions,' <span class="text-warning">CHANGE STATUS</span> FROM [<span class="text-secondary">',v_old_status,'</span>] TO [<span class="text-info">',v_new_status,'</span>],');            
+          IF v_old_status IS NULL THEN
+            SET v_old_status ='Initital';
+          END IF;
+          SET v_actions = CONCAT(v_actions,' <span class="text-warning">CHANGE STATUS</span> FROM [<span class="text-secondary">',v_old_status,'</span>] TO [<span class="text-info">',v_new_status,'</span>],');            
         END IF;
     -- //status
     
@@ -1711,8 +1798,9 @@ CREATE TABLE `project_instructions` (
 --
 
 INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(1, 1, 'test 123 instruction\n', '2023-10-17 11:48:02', 1, NULL, 0, NULL, NULL),
-(2, 2, 'the 1710 instruction\n', '2023-10-17 11:49:03', 1, NULL, 0, NULL, NULL);
+(1, 4, 'tesst 221023 instruction\n', '2023-10-22 14:47:22', 1, NULL, 0, NULL, NULL),
+(2, 5, 'No task instruction\n', '2023-10-22 16:58:13', 1, NULL, 0, NULL, NULL),
+(3, 6, 'No task instruction\n', '2023-10-22 17:01:43', 1, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -1777,71 +1865,55 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
-(1, 1, 0, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-JA</span>]', ''),
-(2, 1, 1, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(3, 1, 2, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(4, 1, 3, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(5, 1, 4, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [1]', ''),
-(6, 1, 5, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [1]', ''),
-(7, 1, 6, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [1]', ''),
-(8, 1, 7, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>] with quantity: [1]', ''),
-(9, 1, 8, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [1]', ''),
-(10, 1, 9, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">VHS</span>] with quantity: [1]', ''),
-(11, 1, 10, 0, '2023-10-17 11:48:02', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">VIDEO</span>] with quantity: [1]', ''),
-(12, 2, 0, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-SM</span>]', ''),
-(13, 2, 11, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(14, 2, 12, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(15, 2, 13, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(16, 2, 14, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [1]', ''),
-(17, 2, 15, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [1]', ''),
-(18, 2, 16, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [1]', ''),
-(19, 2, 17, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>] with quantity: [1]', ''),
-(20, 2, 18, 0, '2023-10-17 11:49:03', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with quantity: [1]', ''),
-(21, 2, 12, 0, '2023-10-17 11:50:05', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', ''),
-(22, 2, 12, 0, '2023-10-17 11:50:24', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with <a href=\"https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad\" targ', ''),
-(23, 2, 13, 0, '2023-10-17 11:53:49', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
-(24, 2, 13, 0, '2023-10-17 11:56:50', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with <a href=\"https://www.youtube.com/watch?v=y_6aSG2yfe8&list=RDaavYpmtGeEU&index=10&ab_channel=Ho%C3', ''),
-(25, 2, 14, 0, '2023-10-17 11:57:16', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
-(26, 2, 14, 0, '2023-10-17 11:57:25', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with <a href=\"https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad\" targ', ''),
-(27, 2, 15, 0, '2023-10-17 11:57:30', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
-(28, 2, 15, 0, '2023-10-17 11:57:39', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with <a href=\"https://www.youtube.com/watch?v=WQ3_5gMCVLU&ab_channel=Nh%E1%BA%A1cV%C3%A0ng24h\" target=\"_blan', ''),
-(29, 2, 16, 0, '2023-10-17 11:57:41', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-ADV]', ''),
-(30, 2, 16, 0, '2023-10-17 11:57:46', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-ADV</span>]', ''),
-(31, 2, 17, 0, '2023-10-17 11:57:48', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Extreme]', ''),
-(32, 2, 17, 0, '2023-10-17 11:57:54', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>]', ''),
-(33, 2, 18, 0, '2023-10-17 11:57:55', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-DTE]', ''),
-(34, 2, 18, 0, '2023-10-17 11:57:59', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-DTE</span>]', ''),
-(35, 1, 2, 0, '2023-10-17 11:58:26', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', ''),
-(36, 1, 2, 0, '2023-10-17 11:58:35', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
-(37, 1, 3, 0, '2023-10-17 11:58:37', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
-(38, 1, 3, 0, '2023-10-17 11:58:42', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(39, 1, 4, 0, '2023-10-17 11:58:45', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
-(40, 1, 4, 0, '2023-10-17 11:58:52', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
-(41, 1, 5, 0, '2023-10-17 11:58:54', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
-(42, 1, 5, 0, '2023-10-17 11:59:00', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
-(43, 1, 6, 0, '2023-10-17 11:59:04', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-ADV]', ''),
-(44, 1, 6, 0, '2023-10-17 11:59:08', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-ADV</span>]', ''),
-(45, 1, 7, 0, '2023-10-17 11:59:11', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Extreme]', ''),
-(46, 1, 7, 0, '2023-10-17 11:59:18', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">Re-Extreme</span>]', ''),
-(47, 1, 8, 0, '2023-10-17 11:59:39', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-DTE]', ''),
-(48, 1, 8, 0, '2023-10-17 11:59:46', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-DTE</span>] with <a href=\"https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad\" target', ''),
-(49, 2, 13, 0, '2023-10-17 12:52:28', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
-(50, 2, 13, 0, '2023-10-17 12:52:49', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">Reject TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(51, 2, 15, 0, '2023-10-17 12:52:53', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
-(52, 2, 13, 0, '2023-10-17 12:59:00', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Fixed TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with <a href=\"https://www.youtube.com/watch?v=xv6k139l14A&list=RDaavYpmtGeEU&index=21&ab_channel=M%C3', ''),
-(53, 2, 11, 0, '2023-10-17 13:02:36', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
-(54, 2, 11, 0, '2023-10-17 13:02:51', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(55, 1, 1, 0, '2023-10-17 13:02:54', 'EDITOR: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
-(56, 1, 1, 0, '2023-10-17 13:03:02', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(57, 2, 13, 0, '2023-10-17 13:03:34', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(58, 2, 15, 0, '2023-10-17 13:04:03', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
-(59, 2, 11, 0, '2023-10-17 13:04:19', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
-(60, 2, 11, 0, '2023-10-17 13:04:30', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">Reject TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(61, 2, 11, 0, '2023-10-17 13:04:43', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Fixed TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(62, 2, 11, 0, '2023-10-17 13:05:13', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA-Done TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(63, 2, 11, 0, '2023-10-18 11:46:32', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">OK-DC TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(64, 2, 12, 0, '2023-10-18 11:47:11', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC-RJ TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
-(65, 2, 13, 0, '2023-10-18 11:48:48', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC-RJ TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', '');
+(4, 4, 4, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
+(5, 4, 5, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
+(6, 4, 6, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
+(7, 4, 7, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [1]', ''),
+(8, 4, 8, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [1]', ''),
+(9, 4, 9, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [1]', ''),
+(10, 4, 0, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-SM</span>]', ''),
+(11, 4, 4, 0, '2023-10-22 14:51:21', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
+(12, 4, 4, 0, '2023-10-22 14:51:27', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(13, 4, 5, 0, '2023-10-22 14:51:28', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', ''),
+(14, 4, 5, 0, '2023-10-22 14:51:34', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
+(15, 4, 6, 0, '2023-10-22 14:51:35', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
+(16, 4, 6, 0, '2023-10-22 14:51:40', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(17, 4, 7, 0, '2023-10-22 14:51:41', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
+(18, 4, 7, 0, '2023-10-22 14:51:46', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
+(19, 4, 8, 0, '2023-10-22 14:51:48', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
+(20, 4, 8, 0, '2023-10-22 14:51:52', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
+(21, 4, 9, 0, '2023-10-22 14:52:09', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-ADV]', ''),
+(22, 4, 4, 0, '2023-10-22 14:52:43', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
+(23, 4, 4, 0, '2023-10-22 14:52:49', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(24, 4, 5, 0, '2023-10-22 14:52:51', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', ''),
+(25, 4, 5, 0, '2023-10-22 14:52:56', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
+(26, 4, 6, 0, '2023-10-22 14:52:58', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
+(27, 4, 6, 0, '2023-10-22 14:53:02', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(28, 4, 7, 0, '2023-10-22 14:53:05', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
+(29, 4, 7, 0, '2023-10-22 14:53:09', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
+(30, 4, 8, 0, '2023-10-22 14:53:11', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
+(31, 4, 8, 0, '2023-10-22 14:53:15', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
+(32, 4, 6, 0, '2023-10-22 14:53:57', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(33, 4, 5, 0, '2023-10-22 14:54:01', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
+(34, 4, 8, 0, '2023-10-22 14:54:06', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
+(35, 4, 4, 0, '2023-10-22 14:54:10', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(36, 4, 7, 0, '2023-10-22 14:54:14', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
+(37, 4, 6, 0, '2023-10-22 14:54:33', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
+(38, 4, 5, 0, '2023-10-22 14:54:38', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
+(39, 4, 8, 0, '2023-10-22 14:54:44', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
+(40, 4, 4, 0, '2023-10-22 14:54:47', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
+(41, 4, 0, 0, '2023-10-22 14:57:10', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Processing</span>] TO [<span class=\"text-info\">Ready</span>]', ''),
+(42, 4, 7, 0, '2023-10-22 14:57:10', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
+(43, 4, 0, 0, '2023-10-22 15:46:54', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Ready</span>] TO [<span class=\"text-info\">Upload Link</span>]', ''),
+(44, 4, 0, 0, '2023-10-22 16:19:51', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Upload Link</span>] TO [<span class=\"text-info\">Sent</span>]', ''),
+(45, 5, 0, 0, '2023-10-22 16:58:13', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
+(46, 6, 0, 0, '2023-10-22 17:01:43', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
+(47, 6, 10, 0, '2023-10-22 17:07:35', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
+(48, 6, 11, 0, '2023-10-22 17:16:28', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
+(49, 6, 12, 0, '2023-10-22 17:17:21', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
+(50, 6, 13, 0, '2023-10-22 17:18:44', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
+(51, 6, 14, 0, '2023-10-22 17:21:55', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
+(52, 6, 0, 0, '2023-10-22 17:21:55', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -1852,6 +1924,7 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 CREATE TABLE `project_statuses` (
   `id` int(11) NOT NULL,
   `name` varchar(30) NOT NULL,
+  `description` varchar(100) NOT NULL,
   `color` varchar(50) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(10) NOT NULL,
@@ -1863,15 +1936,16 @@ CREATE TABLE `project_statuses` (
 -- Đang đổ dữ liệu cho bảng `project_statuses`
 --
 
-INSERT INTO `project_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'wait', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(2, 'Processing', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(3, 'Sent', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
-(4, 'Paid', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
-(5, 'Unpay', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
-(6, 'Upload Link', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
-(7, 'Ask again', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0),
-(8, 'Responded', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0);
+INSERT INTO `project_statuses` (`id`, `name`, `description`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
+(2, 'Processing', 'Đang trong quá trình xử lý task', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
+(3, 'Ready', 'Các task của project đã đc upload', 'badge badge-success', '2023-10-19 16:28:45', 1, NULL, 0),
+(4, 'Upload Link', 'TLA tiến hành upload link thành phẩm của project ', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
+(5, 'Sent', 'CSS gửi link thành phẩm cho khách hàng', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
+(6, 'Paid', 'Được thanh toán', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
+(7, 'Unpaid', 'Không được thanh toán', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
+(8, 'Ask again', 'Yêu cầu làm lại', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0),
+(9, 'Responded', 'Quy trách nhiệm cho nhân viên', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1903,6 +1977,11 @@ CREATE TABLE `tasks` (
   `dc_read_instructions` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'DC đã đọc instructions',
   `dc_reject_id` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Tham chiếu tới id của task_rejectings',
   `level_id` int(30) NOT NULL,
+  `tla_id` int(11) NOT NULL,
+  `tla_timestamp` timestamp NULL DEFAULT NULL,
+  `tla_wage` float NOT NULL DEFAULT 0,
+  `tla_read_instructions` tinyint(4) NOT NULL DEFAULT 0,
+  `tla_reject_id` bigint(20) NOT NULL DEFAULT 0,
   `tla_content` text NOT NULL COMMENT 'Nội dung khi TLA upload task',
   `auto_gen` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu task được gen tự động hay là insert thủ công. 1: auto, 0: insert',
   `cc_id` int(11) NOT NULL DEFAULT 0 COMMENT 'CC id nếu có (>0). Mặc định sẽ là 0',
@@ -1921,25 +2000,17 @@ CREATE TABLE `tasks` (
 -- Đang đổ dữ liệu cho bảng `tasks`
 --
 
-INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 1, NULL, 4, 9, NULL, 0, 0, 0, 1, '', 0, '2023-10-17 06:02:54', 0, 1000, 0, 0, 0, NULL, 0, 0, 0, 1, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 06:03:02', 9, NULL, NULL),
-(2, 1, NULL, 1, 4, '2023-10-17 04:58:26', 0, 1400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:58:35', 4, NULL, NULL),
-(3, 1, NULL, 1, 4, '2023-10-17 04:58:37', 0, 400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:58:42', 4, NULL, NULL),
-(4, 1, NULL, 1, 4, '2023-10-17 04:58:45', 0, 2400, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 4, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:58:52', 4, NULL, NULL),
-(5, 1, NULL, 1, 4, '2023-10-17 04:58:54', 0, 1200, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:59:00', 4, NULL, NULL),
-(6, 1, NULL, 1, 4, '2023-10-17 04:59:04', 0, 6000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:59:08', 4, NULL, NULL),
-(7, 1, NULL, 1, 4, '2023-10-17 04:59:11', 0, 20000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 7, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:59:18', 4, NULL, NULL),
-(8, 1, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-17 04:59:39', 0, 4000, 0, 0, 0, NULL, 0, 0, 0, 8, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:59:46', 9, NULL, NULL),
-(9, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 9, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:48:02', 0, NULL, NULL),
-(10, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 10, '', 1, 0, 1, 1, '', '2023-10-17 11:48:02', 1, '2023-10-17 04:48:02', 0, NULL, NULL),
-(11, 2, NULL, 6, 4, '2023-10-17 06:02:36', 0, 0, 0, 0, '', 9, '2023-10-17 06:04:19', 0, 0, 0, 2, 5, NULL, 1250, 1, 0, 1, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-18 04:46:32', 5, NULL, NULL),
-(12, 2, NULL, 5, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-17 04:50:05', 0, 700, 0, 0, 5, NULL, 0, 1, 3, 2, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-18 04:47:11', 5, NULL, NULL),
-(13, 2, NULL, 5, 4, '2023-10-17 04:53:49', 0, 0, 0, 0, '', 9, '2023-10-17 05:52:28', 0, 200, 0, 0, 5, NULL, 0, 1, 4, 3, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-18 04:48:48', 5, NULL, NULL),
-(14, 2, NULL, 4, 9, NULL, 0, 0, 0, 1, 'https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&index=7&ab_channel=TDBallad', 0, '2023-10-17 04:57:16', 0, 1200, 0, 0, 0, NULL, 0, 0, 0, 4, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:25', 9, NULL, NULL),
-(15, 2, NULL, 4, 4, '2023-10-17 04:57:30', 0, 0, 0, 0, '', 9, '2023-10-17 05:52:53', 0, 600, 1, 0, 0, NULL, 0, 0, 0, 5, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 06:04:03', 9, NULL, NULL),
-(16, 2, NULL, 1, 4, '2023-10-17 04:57:41', 0, 6000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:46', 4, NULL, NULL),
-(17, 2, NULL, 1, 4, '2023-10-17 04:57:48', 0, 20000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 7, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:54', 4, NULL, NULL),
-(18, 2, NULL, 1, 4, '2023-10-17 04:57:55', 0, 8000, 0, 1, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, '', 1, 0, 1, 1, '', '2023-10-17 11:49:03', 1, '2023-10-17 04:57:59', 4, NULL, NULL);
+INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(4, 4, NULL, 7, 4, '2023-10-22 07:51:21', 0, 0, 0, 0, '', 9, '2023-10-22 07:52:43', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 1, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:47', 3, NULL, NULL),
+(5, 4, NULL, 7, 4, '2023-10-22 07:51:28', 0, 0, 0, 0, '', 9, '2023-10-22 07:52:51', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 2, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:38', 3, NULL, NULL),
+(6, 4, NULL, 7, 4, '2023-10-22 07:51:35', 0, 0, 0, 0, '', 9, '2023-10-22 07:52:58', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 3, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:33', 3, NULL, NULL),
+(7, 4, NULL, 7, 4, '2023-10-22 07:51:41', 0, 0, 0, 0, '', 9, '2023-10-22 07:53:05', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 4, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:57:10', 3, NULL, NULL),
+(8, 4, NULL, 7, 4, '2023-10-22 07:51:48', 0, 0, 0, 0, '', 9, '2023-10-22 07:53:11', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 5, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:44', 3, NULL, NULL),
+(10, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-10-22 17:07:35', 1, '2023-10-22 10:07:35', 0, NULL, NULL),
+(11, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:16:28', 1, '2023-10-22 10:16:28', 0, NULL, NULL),
+(12, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:17:21', 1, '2023-10-22 10:17:21', 0, NULL, NULL),
+(13, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:18:44', 1, '2023-10-22 10:18:44', 0, NULL, NULL),
+(14, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:21:55', 1, '2023-10-22 10:21:55', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -1976,7 +2047,7 @@ CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
     
     INSERT INTO project_logs(project_id,task_id,timestamp,action)
     VALUES(NEW.project_id,NEW.id,NEW.created_at,v_action);
-    
+   
 END
 $$
 DELIMITER ;
@@ -2114,14 +2185,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
             	IF OLD.dc_id <> NEW.dc_id THEN -- thay doi DC
                 	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.dc_id);    
                     SET v_action = CONCAT('<span class="text-warning">CHANGE DC</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],'); 
-                   	SET v_actions = CONCAT(v_actions,' ',v_action); 
-                ELSE  -- DC submit hoac reject task
-                	IF NEW.dc_submit = 1 THEN -- submit task
-                    	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">SUBMIT TASK</span> [',v_new_level,']');               
-                    ELSE -- reject task
-                    	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-danger">REJECT TASK</span> [',v_new_level,']');  
-                    END IF;
-                     SET v_actions = v_action;
+                   	SET v_actions = CONCAT(v_actions,' ',v_action);
                 END IF;
             END IF;
         END IF;  
@@ -2147,7 +2211,11 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
         END IF;
     -- //paid
     
-
+	IF (SELECT COUNT(*) FROM tasks WHERE status_id <> 7) = 0 THEN
+    	UPDATE projects 
+        SET status_id = 3,updated_at = NOW(),updated_by = NEW.updated_by
+        WHERE id = NEW.project_id; -- chuyển project sang trạng thái ready để TLA biết đường upload link
+    END IF;
     
     -- insert logs
     IF v_changes = TRUE THEN
@@ -2156,6 +2224,7 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
         INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
         VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_actions,v_content);
     END IF;
+
 END
 $$
 DELIMITER ;
@@ -2178,16 +2247,6 @@ CREATE TABLE `task_rejectings` (
   `deleted_by` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Đang đổ dữ liệu cho bảng `task_rejectings`
---
-
-INSERT INTO `task_rejectings` (`id`, `role_id`, `remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 5, 'Task QA reject remark\n', '2023-10-17 05:52:49', 9, NULL, 0, NULL, ''),
-(2, 5, 'dssàdsfsa\n', '2023-10-17 06:04:30', 9, NULL, 0, NULL, ''),
-(3, 7, 'This is DC reject task remark\n', '2023-10-18 04:47:11', 5, NULL, 0, NULL, ''),
-(4, 7, 'This is reject remark\n', '2023-10-18 04:48:48', 5, NULL, 0, NULL, '');
-
 -- --------------------------------------------------------
 
 --
@@ -2209,15 +2268,37 @@ CREATE TABLE `task_statuses` (
 --
 
 INSERT INTO `task_statuses` (`id`, `name`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'Editor OK', 'badge badge-success', '2023-10-13 08:37:09', 1, NULL, 0),
-(2, 'QA Reject', 'badge badge-danger', '2023-10-13 08:37:09', 1, NULL, 0),
-(3, 'Editor Fixed', 'badge badge-info', '2023-10-13 08:37:09', 1, NULL, 0),
-(4, 'QA OK', 'badge badge-info', '2023-10-13 08:37:09', 1, NULL, 0),
-(5, 'DC Reject', 'badge badge-danger', '2023-10-13 08:37:09', 1, NULL, 0),
-(6, 'DC OK', 'badge badge-success', '2023-10-13 08:37:09', 1, NULL, 0),
-(7, 'Upload', 'badge badge-warning', '2023-10-13 08:37:09', 1, NULL, 0),
-(8, 'DC Fixed', 'badge badge-ligh', '2023-10-13 08:37:09', 1, NULL, 0),
-(9, 'Wait', 'badge badge-dark', '2023-10-13 08:37:09', 1, NULL, 0);
+(1, 'Editor OK', 'badge badge-success', '2023-10-13 01:37:09', 1, NULL, 0),
+(2, 'QA Reject', 'badge badge-danger', '2023-10-13 01:37:09', 1, NULL, 0),
+(3, 'Editor Fixed', 'badge badge-info', '2023-10-13 01:37:09', 1, NULL, 0),
+(4, 'QA OK', 'badge badge-info', '2023-10-13 01:37:09', 1, NULL, 0),
+(5, 'DC Reject', 'badge badge-danger', '2023-10-13 01:37:09', 1, NULL, 0),
+(6, 'DC OK', 'badge badge-success', '2023-10-13 01:37:09', 1, NULL, 0),
+(7, 'Upload', 'badge badge-warning', '2023-10-13 01:37:09', 1, NULL, 0),
+(8, 'DC Fixed', 'badge badge-ligh', '2023-10-13 01:37:09', 1, NULL, 0),
+(9, 'Wait', 'badge badge-dark', '2023-10-13 01:37:09', 1, NULL, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `task_suggestions`
+--
+
+CREATE TABLE `task_suggestions` (
+  `id` bigint(20) NOT NULL,
+  `project_id` bigint(20) NOT NULL,
+  `level_id` int(11) NOT NULL,
+  `editor_id` int(11) NOT NULL,
+  `qa_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `description` text NOT NULL,
+  `applied` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0: mặc định. 1 được tạo. -1 từ chối',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(11) NOT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `updated_by` int(11) NOT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2249,60 +2330,60 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `fullname`, `acronym`, `email`, `password`, `type_id`, `editor_group_id`, `qa_group_id`, `avatar`, `task_getable`, `status`, `group_id`, `created_at`, `created_by`, `updated_at`, `update_by`) VALUES
-(1, 'Administrator', 'admin', 'admin@admin.com', '2db5228517bf8473a1dda3cab7cb4b8c', 1, 0, 0, '', 0, 0, 4, '2020-11-26 03:57:04', 0, NULL, 0),
-(2, 'Nguyễn Hoàng Yến', 'Yen.nh', 'sale1@photohome.com.vn', '81dc9bdb52d04dc20036dbd8313ed055', 2, 0, 0, '', 0, 0, 1, '2023-08-20 03:55:42', 0, NULL, 0),
-(3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, 1, '2023-08-20 03:57:13', 0, NULL, 0),
-(4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 5, 6, '', 1, 0, 2, '2023-08-20 04:40:37', 0, NULL, 0),
-(5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 7, 0, 0, '', 0, 0, 3, '2023-08-20 09:40:39', 0, NULL, 0),
-(6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:19:50', 0, NULL, 0),
-(7, 'Trần Tú Thành', 'Thanh.tt', 'Thanh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-25 04:36:12', 0, NULL, 0),
-(8, 'Trần Hồng Nhung', 'nhung.th', 'nhung.thphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-04 14:41:06', 0, NULL, 0),
-(9, 'Phạm Năng Bình', 'binh.pn', 'binh@photohome.com', '202cb962ac59075b964b07152d234b70', 5, 5, 5, '', 1, 1, 3, '2023-09-05 08:00:36', 0, NULL, 0),
-(10, 'Bùi Đức Hiếu', 'hieu.bd', 'hieu.bdphotohome@gmai.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:52:26', 0, NULL, 0),
-(11, 'Phạm Phương Nam', 'nam.pp', 'nam.ppphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:53:05', 0, NULL, 0),
-(12, 'Nguyễn Đức Việt', 'viet.nd', 'viet.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:53:39', 0, NULL, 0),
-(13, 'Vũ văn Đạt', 'dat.vv', 'dat.vvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:54:18', 0, NULL, 0),
-(14, 'Bùi Văn Tuấn', 'tuan.bv', 'tuan.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:54:50', 0, NULL, 0),
-(15, 'Vi Đức Trịnh', 'trinh.vd', 'trinh.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:55:23', 0, NULL, 0),
-(16, 'Phùng Minh Phong', 'phong.pm', 'phong.pmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:55:56', 0, NULL, 0),
-(17, 'Nguyễn Hồng Sơn', 'son.nh', 'son.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:56:33', 0, NULL, 0),
-(18, 'Vũ Đức Thắng', 'thang.vd', 'thang.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:57:58', 0, NULL, 0),
-(19, 'Chu Thị Thúy', 'thuy.ct', 'thuy.ctphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:58:36', 0, NULL, 0),
-(20, 'Trần Văn Đoàn', 'doan.tv', 'doan.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 16:59:01', 0, NULL, 0),
-(21, 'Vũ Hồng Sơn', 'son.vh', 'son.vhphotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 5, 6, 5, '', 1, 0, 1, '2023-09-10 02:40:43', 0, NULL, 0),
-(22, 'Nguyễn Tuấn Nam', 'nam.nt', 'nam.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:02', 0, NULL, 0),
-(23, 'Bùi Văn Hưng', 'hung.bv', 'hung.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:26', 0, NULL, 0),
-(24, 'Bùi Ngọc Hoàng', 'hoang.bn', 'hoang.bnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:12:55', 0, NULL, 0),
-(25, 'Nguyễn Quốc Cường', 'cuong.nq', 'cuong.nqphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:13:21', 0, NULL, 0),
-(26, 'Phùng Hữu Tình', 'tinh.ph', 'tinh.phphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:14:41', 0, NULL, 0),
-(27, 'Phan Văn Thiêm', 'thiem.pv', 'thiem.pvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:15:05', 0, NULL, 0),
-(28, 'Nguyễn Việt Hoàng', 'hoang.nv', 'hoang.nvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:15:33', 0, NULL, 0),
-(29, 'Nguyễn Duy Tú', 'tu.nd', 'tu.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:15:54', 0, NULL, 0),
-(30, 'Nguyễn Đức Chính', 'chinh.nd', 'chinh.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:16:21', 0, NULL, 0),
-(31, 'Dương Văn Hưng', 'hung.dv', 'hung.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:16:52', 0, NULL, 0),
-(32, 'Dương nguyễn kiên', 'kien.dn', 'kien.dnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:17:14', 0, NULL, 0),
-(33, 'Bùi Thị Hoa', 'hoa.bt', 'hoa.btphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:17:34', 0, NULL, 0),
-(34, 'Phạm Thị thùy Trang', 'trang.pt', 'trang.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:18:03', 0, NULL, 0),
-(35, 'Nguyễn Thị Thu', 'thu.nt', 'thu.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:18:26', 0, NULL, 0),
-(36, 'Lê Thu Hiên', 'hien.lt', 'hien.ltphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:18:53', 0, NULL, 0),
-(37, 'Phạm Thúy Hảo', 'hao.pt', 'hoa.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:19:15', 0, NULL, 0),
-(38, 'Hoàng Thị Thanh Lam', 'lam.ht', 'Lam.htphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:19:40', 0, NULL, 0),
-(39, 'Đinh Thị Minh Thi', 'thi.dt', 'thi.dmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:20:06', 0, NULL, 0),
-(40, 'Trần Mạnh Hùng', 'hung.tm', 'hung.tmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:20:28', 0, NULL, 0),
-(41, 'Trần Văn Chung', 'chung.tv', 'chung.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:20:51', 0, NULL, 0),
-(42, 'Nguyễn Tuấn Đạt', 'dat.nt', 'dat.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:21:14', 0, NULL, 0),
-(43, 'Đặng Đức Anh', 'anh.dd', 'anh.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:21:36', 0, NULL, 0),
-(44, 'Lê Minh Thành', 'thanh.lm', 'thanh.lmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:22:09', 0, NULL, 0),
-(45, 'Cấn Việt Ánh', 'anh.cv', 'anh.cvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:22:28', 0, NULL, 0),
-(46, 'Nguyễn Công Thành', 'thanh.nc', 'thanh.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:22:55', 0, NULL, 0),
-(47, 'Đinh Công Hưng', 'hung.dc', 'hung.dcphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:23:17', 0, NULL, 0),
-(48, 'Nguyễn Công Lực', 'luc.nc', 'luc.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-11 04:23:38', 0, NULL, 0),
-(49, 'Hoàng Anh Dũng', 'dung.ha', 'dung.haphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-11 04:51:45', 0, NULL, 0),
-(50, 'Đỗ Văn Chủ', 'chu.dv', 'chu.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-11 05:01:17', 0, NULL, 0),
-(51, 'Đỗ Tiến Duy', 'duy.dd', 'duy.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-11 05:01:50', 0, NULL, 0),
-(52, 'Trần Xuân Thịnh', 'thinh.tx', 'thinh.txphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-12 05:07:42', 0, NULL, 0),
-(53, 'Phạm Thị Dung', 'dung.pt', 'dung.pt@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-13 04:00:12', 0, NULL, 0),
-(54, 'Lê Minh Quân', 'Quan.lm', 'Quan.lm@photohome.com', 'cdf28f8b7d14ab02d12a2329d71e4079', 1, 0, 0, '', 0, 0, 1, '2023-09-14 07:07:22', 0, NULL, 0);
+(1, 'Administrator', 'admin', 'admin@admin.com', '2db5228517bf8473a1dda3cab7cb4b8c', 1, 0, 0, '', 0, 0, 4, '2020-11-25 20:57:04', 0, NULL, 0),
+(2, 'Nguyễn Hoàng Yến', 'Yen.nh', 'sale1@photohome.com.vn', '81dc9bdb52d04dc20036dbd8313ed055', 2, 0, 0, '', 0, 0, 1, '2023-08-19 20:55:42', 0, NULL, 0),
+(3, 'Nguyễn Hữu Bình', 'Binh.nh', 'binh.nhphotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 4, 0, 0, '1693061220_12 228 Main Photo 62.JPG', 0, 0, 3, '2023-08-19 20:57:13', 0, NULL, 0),
+(4, 'Thiện', 'thien.pd', 'thien@gmail.com', '202cb962ac59075b964b07152d234b70', 6, 5, 6, '', 1, 0, 2, '2023-08-19 21:40:37', 0, NULL, 0),
+(5, 'Đỗ Thị Ngọc Mai', 'Mai.dn', 'Mai.dnPhotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 7, 0, 0, '', 0, 0, 3, '2023-08-20 02:40:39', 0, NULL, 0),
+(6, 'Trịnh Thanh Bình', 'binh.tt', 'binh.ttphotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 3, 0, 0, '', 0, 0, 3, '2023-08-24 21:19:50', 0, NULL, 0),
+(7, 'Trần Tú Thành', 'Thanh.tt', 'Thanh.ttphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-08-24 21:36:12', 0, NULL, 0),
+(8, 'Trần Hồng Nhung', 'nhung.th', 'nhung.thphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-04 07:41:06', 0, NULL, 0),
+(9, 'Phạm Năng Bình', 'binh.pn', 'binh@photohome.com', '202cb962ac59075b964b07152d234b70', 5, 5, 5, '', 1, 1, 3, '2023-09-05 01:00:36', 0, NULL, 0),
+(10, 'Bùi Đức Hiếu', 'hieu.bd', 'hieu.bdphotohome@gmai.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:52:26', 0, NULL, 0),
+(11, 'Phạm Phương Nam', 'nam.pp', 'nam.ppphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:53:05', 0, NULL, 0),
+(12, 'Nguyễn Đức Việt', 'viet.nd', 'viet.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:53:39', 0, NULL, 0),
+(13, 'Vũ văn Đạt', 'dat.vv', 'dat.vvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:54:18', 0, NULL, 0),
+(14, 'Bùi Văn Tuấn', 'tuan.bv', 'tuan.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:54:50', 0, NULL, 0),
+(15, 'Vi Đức Trịnh', 'trinh.vd', 'trinh.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:55:23', 0, NULL, 0),
+(16, 'Phùng Minh Phong', 'phong.pm', 'phong.pmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:55:56', 0, NULL, 0),
+(17, 'Nguyễn Hồng Sơn', 'son.nh', 'son.nhphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:56:33', 0, NULL, 0),
+(18, 'Vũ Đức Thắng', 'thang.vd', 'thang.vdphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:57:58', 0, NULL, 0),
+(19, 'Chu Thị Thúy', 'thuy.ct', 'thuy.ctphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:58:36', 0, NULL, 0),
+(20, 'Trần Văn Đoàn', 'doan.tv', 'doan.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-09 09:59:01', 0, NULL, 0),
+(21, 'Vũ Hồng Sơn', 'son.vh', 'son.vhphotohome@gmail.com', '202cb962ac59075b964b07152d234b70', 5, 6, 5, '', 1, 0, 1, '2023-09-09 19:40:43', 0, NULL, 0),
+(22, 'Nguyễn Tuấn Nam', 'nam.nt', 'nam.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:12:02', 0, NULL, 0),
+(23, 'Bùi Văn Hưng', 'hung.bv', 'hung.bvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:12:26', 0, NULL, 0),
+(24, 'Bùi Ngọc Hoàng', 'hoang.bn', 'hoang.bnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:12:55', 0, NULL, 0),
+(25, 'Nguyễn Quốc Cường', 'cuong.nq', 'cuong.nqphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:13:21', 0, NULL, 0),
+(26, 'Phùng Hữu Tình', 'tinh.ph', 'tinh.phphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:14:41', 0, NULL, 0),
+(27, 'Phan Văn Thiêm', 'thiem.pv', 'thiem.pvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:15:05', 0, NULL, 0),
+(28, 'Nguyễn Việt Hoàng', 'hoang.nv', 'hoang.nvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:15:33', 0, NULL, 0),
+(29, 'Nguyễn Duy Tú', 'tu.nd', 'tu.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:15:54', 0, NULL, 0),
+(30, 'Nguyễn Đức Chính', 'chinh.nd', 'chinh.ndphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:16:21', 0, NULL, 0),
+(31, 'Dương Văn Hưng', 'hung.dv', 'hung.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:16:52', 0, NULL, 0),
+(32, 'Dương nguyễn kiên', 'kien.dn', 'kien.dnphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:17:14', 0, NULL, 0),
+(33, 'Bùi Thị Hoa', 'hoa.bt', 'hoa.btphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:17:34', 0, NULL, 0),
+(34, 'Phạm Thị thùy Trang', 'trang.pt', 'trang.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:18:03', 0, NULL, 0),
+(35, 'Nguyễn Thị Thu', 'thu.nt', 'thu.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:18:26', 0, NULL, 0),
+(36, 'Lê Thu Hiên', 'hien.lt', 'hien.ltphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:18:53', 0, NULL, 0),
+(37, 'Phạm Thúy Hảo', 'hao.pt', 'hoa.ptphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:19:15', 0, NULL, 0),
+(38, 'Hoàng Thị Thanh Lam', 'lam.ht', 'Lam.htphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:19:40', 0, NULL, 0),
+(39, 'Đinh Thị Minh Thi', 'thi.dt', 'thi.dmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:20:06', 0, NULL, 0),
+(40, 'Trần Mạnh Hùng', 'hung.tm', 'hung.tmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:20:28', 0, NULL, 0),
+(41, 'Trần Văn Chung', 'chung.tv', 'chung.tvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:20:51', 0, NULL, 0),
+(42, 'Nguyễn Tuấn Đạt', 'dat.nt', 'dat.ntphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:21:14', 0, NULL, 0),
+(43, 'Đặng Đức Anh', 'anh.dd', 'anh.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:21:36', 0, NULL, 0),
+(44, 'Lê Minh Thành', 'thanh.lm', 'thanh.lmphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:22:09', 0, NULL, 0),
+(45, 'Cấn Việt Ánh', 'anh.cv', 'anh.cvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:22:28', 0, NULL, 0),
+(46, 'Nguyễn Công Thành', 'thanh.nc', 'thanh.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:22:55', 0, NULL, 0),
+(47, 'Đinh Công Hưng', 'hung.dc', 'hung.dcphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:23:17', 0, NULL, 0),
+(48, 'Nguyễn Công Lực', 'luc.nc', 'luc.ncphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 6, 1, 0, '', 1, 0, 1, '2023-09-10 21:23:38', 0, NULL, 0),
+(49, 'Hoàng Anh Dũng', 'dung.ha', 'dung.haphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-10 21:51:45', 0, NULL, 0),
+(50, 'Đỗ Văn Chủ', 'chu.dv', 'chu.dvphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-10 22:01:17', 0, NULL, 0),
+(51, 'Đỗ Tiến Duy', 'duy.dd', 'duy.ddphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-10 22:01:50', 0, NULL, 0),
+(52, 'Trần Xuân Thịnh', 'thinh.tx', 'thinh.txphotohome@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 5, 6, 5, '', 1, 0, 1, '2023-09-11 22:07:42', 0, NULL, 0),
+(53, 'Phạm Thị Dung', 'dung.pt', 'dung.pt@gmail.com', '81dc9bdb52d04dc20036dbd8313ed055', 3, 0, 0, '', 0, 0, 1, '2023-09-12 21:00:12', 0, NULL, 0),
+(54, 'Lê Minh Quân', 'Quan.lm', 'Quan.lm@photohome.com', 'cdf28f8b7d14ab02d12a2329d71e4079', 1, 0, 0, '', 0, 0, 1, '2023-09-14 00:07:22', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -2327,10 +2408,10 @@ CREATE TABLE `user_groups` (
 --
 
 INSERT INTO `user_groups` (`id`, `name`, `riv`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 'Full-time employee', 1, '2023-10-12 12:02:31', 0, NULL, 0, NULL, ''),
-(2, 'Part-time employee', 0, '2023-10-12 12:02:31', 1, NULL, 0, NULL, ''),
-(3, 'Supervisor', 0, '2023-10-12 12:03:52', 1, NULL, 0, NULL, ''),
-(4, 'Administrator', 0, '2023-10-12 12:04:51', 1, NULL, 0, NULL, '');
+(1, 'Full-time employee', 1, '2023-10-12 05:02:31', 0, NULL, 0, NULL, ''),
+(2, 'Part-time employee', 0, '2023-10-12 05:02:31', 1, NULL, 0, NULL, ''),
+(3, 'Supervisor', 0, '2023-10-12 05:03:52', 1, NULL, 0, NULL, ''),
+(4, 'Administrator', 0, '2023-10-12 05:04:51', 1, NULL, 0, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -2357,6 +2438,7 @@ CREATE TABLE `user_productivities` (
 CREATE TABLE `user_types` (
   `id` int(11) NOT NULL,
   `name` varchar(30) NOT NULL,
+  `description` varchar(200) NOT NULL,
   `wage` float NOT NULL COMMENT 'Tính theo % đơn giá của task level',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(12) NOT NULL,
@@ -2368,14 +2450,14 @@ CREATE TABLE `user_types` (
 -- Đang đổ dữ liệu cho bảng `user_types`
 --
 
-INSERT INTO `user_types` (`id`, `name`, `wage`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'CEO', 100, '0000-00-00 00:00:00', 0, NULL, 0),
-(2, 'CSO', 70, '0000-00-00 00:00:00', 0, NULL, 0),
-(3, 'CSS', 60, '0000-00-00 00:00:00', 0, NULL, 0),
-(4, 'TLA', 50, '0000-00-00 00:00:00', 0, NULL, 0),
-(5, 'QA', 20, '0000-00-00 00:00:00', 0, NULL, 0),
-(6, 'EDITOR', 40, '0000-00-00 00:00:00', 0, NULL, 0),
-(7, 'DC', 25, '2023-10-13 17:21:51', 1, NULL, 0);
+INSERT INTO `user_types` (`id`, `name`, `description`, `wage`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'CEO', 'Toàn quyền hệ thống', 100, '0000-00-00 00:00:00', 0, NULL, 0),
+(2, 'CSO', 'Kế toán', 70, '0000-00-00 00:00:00', 0, NULL, 0),
+(3, 'CSS', 'Giao dịch với khách hàng', 60, '0000-00-00 00:00:00', 0, NULL, 0),
+(4, 'TLA', 'Quản lý công việc', 50, '0000-00-00 00:00:00', 0, NULL, 0),
+(5, 'QA', 'Thẩm định ảnh lv1', 20, '0000-00-00 00:00:00', 0, NULL, 0),
+(6, 'EDITOR', 'Xử lý ảnh', 40, '0000-00-00 00:00:00', 0, NULL, 0),
+(7, 'DC', 'Thẩm định ảnh lv2', 25, '2023-10-13 10:21:51', 1, NULL, 0);
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -2526,6 +2608,16 @@ ALTER TABLE `task_statuses`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Chỉ mục cho bảng `task_suggestions`
+--
+ALTER TABLE `task_suggestions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_project` (`project_id`),
+  ADD KEY `fk_level` (`level_id`),
+  ADD KEY `fk_editor` (`editor_id`),
+  ADD KEY `fk_qa` (`qa_id`);
+
+--
 -- Chỉ mục cho bảng `users`
 --
 ALTER TABLE `users`
@@ -2648,43 +2740,49 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
 --
 ALTER TABLE `project_statuses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`
 --
 ALTER TABLE `task_rejectings`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `task_statuses`
 --
 ALTER TABLE `task_statuses`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT cho bảng `task_suggestions`
+--
+ALTER TABLE `task_suggestions`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
@@ -2764,6 +2862,15 @@ ALTER TABLE `tasks`
 --
 ALTER TABLE `task_rejectings`
   ADD CONSTRAINT `task_rejectings_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `user_types` (`id`);
+
+--
+-- Các ràng buộc cho bảng `task_suggestions`
+--
+ALTER TABLE `task_suggestions`
+  ADD CONSTRAINT `fk_editor` FOREIGN KEY (`editor_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `fk_level` FOREIGN KEY (`level_id`) REFERENCES `levels` (`id`),
+  ADD CONSTRAINT `fk_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  ADD CONSTRAINT `fk_qa` FOREIGN KEY (`qa_id`) REFERENCES `users` (`id`);
 
 --
 -- Các ràng buộc cho bảng `users`

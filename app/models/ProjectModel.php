@@ -49,7 +49,7 @@
             DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') start_date, DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') end_date, 
             s.name as status_name,s.color status_color";
             $join = " JOIN customers c ON p.customer_id = c.id ";
-            $join .= " JOIN project_statuses s ON p.status_id = s.id ";
+            $join .= "LEFT JOIN project_statuses s ON p.status_id = s.id ";
             $where =" (date(p.end_date) BETWEEN STR_TO_DATE('$from_date', '%d/%m/%Y') AND STR_TO_DATE('$to_date', '%d/%m/%Y')) " ;
             $where .=" AND p.name LIKE '%".$search."%' ";
             $params = [];
