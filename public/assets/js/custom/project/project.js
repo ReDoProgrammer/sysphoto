@@ -213,6 +213,9 @@ function fetch() {
                         <td>${p.name}</td>
                         <td>${p.start_date}</td>
                         <td>${p.end_date}</td>
+                        <td>
+                            ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
+                        </td>
                         <td class="text-center">
                             <span class="badge ${p.status_color?p.status_color:`text-secondary fw-bold`}">${p.status_name?p.status_name:'Initial'}</span>
                         </td>                       

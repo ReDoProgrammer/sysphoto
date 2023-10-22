@@ -43,7 +43,8 @@
                 <th>Job</th>
                 <th>Start</th>
                 <th>Deadline</th>
-                <th>Status</th>
+                <th>Product Url</th>
+                <th class="text-center">Status</th>
                 <th>Action</th>
             </tr>
         </thead>
