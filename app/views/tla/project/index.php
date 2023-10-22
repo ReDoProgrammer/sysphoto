@@ -23,7 +23,7 @@
     <div class="col-xxl-1 col-lg-1 col-md-2 col-xs-6">
         <a href="#" id="btnSearch" class="btn btn-success btn-search"><i class="fas fa-search me-2"></i>
         </a>
-    </div>    
+    </div>
 </div>
 <!-- /Search Filter -->
 
@@ -72,7 +72,13 @@
     </div>
 </div>
 
-
+<?php
+require_once "project_submit_modal.php";
+require_once 'modal_project.php';
+require_once 'modal_task.php';
+require_once 'modal_cc.php';
+require_once 'modal_instruction.php';
+?>
 
 
 

@@ -82,4 +82,15 @@
             ];
             return $this->__db->executeStoredProcedure("ProjectInstructionInsert",$params);
         }
+
+        public function Submit($id,$content,$status = 4){
+            $user = unserialize($_SESSION["user"]);
+            $params = [
+                'p_id'=>$id,
+                'p_content'=>$content,
+                'status'=>$status,
+                'p_actioner'=>$user->id               
+            ];
+            return $this->__db->executeStoredProcedure("ProjectSubmit",$params);
+        }
     }

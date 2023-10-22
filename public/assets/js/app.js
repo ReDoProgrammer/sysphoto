@@ -715,7 +715,16 @@ $(window).on('load', function () {
 
 
 
-
+function isURL(str) {
+	var pattern = new RegExp('^(https?:\\/\\/)?' + // Giao thức (http, https)
+							 '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // Tên miền
+							 '((\\d{1,3}\\.){3}\\d{1,3}))' + // Địa chỉ IP (ví dụ: 192.168.1.1)
+							 '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // Số cổng và đường dẫn
+							 '(\\?[;&a-z\\d%_.~+=-]*)?' + // Tham số truy vấn
+							 '(\\#[-a-z\\d_]*)?$', 'i'); // Mảng gốc và mảng hướng
+  
+	return !!pattern.test(str);
+  }
 
 function isEmail(email) {
 	var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;

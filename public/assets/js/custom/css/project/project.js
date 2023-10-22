@@ -13,6 +13,19 @@ $(document).ready(function () {
     setInterval(fetch, 100000);// gọi hàm load lại dữ liệu sau mỗi 1p
 })
 
+function SendProject(id) {
+    Swal.fire({
+        title: 'Do you want to send this project?',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Submit',
+        denyButtonText: `Cancel`,
+    }).then((result) => {       
+        if (result.isConfirmed) {
+           
+        } 
+    })
+}
 
 function UploadProject(id) {
     pId = id;
@@ -238,9 +251,8 @@ function fetch() {
                                     ${p.status == 1 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(' + p.id + ')"><i class="fas fa-trash-alt"></i>  Destroy</a>' : ''}
                                     `:
                                 `
-                                ${p.status_id == 3 ? `
                                 <a class="dropdown-item" href="javascript:void(0)" onClick="UploadProject(${p.id})"><i class="fa-solid fa-cloud-arrow-up text-success"></i>  Submit</a>
-                                `: ``}
+                                <a class="dropdown-item" href="javascript:void(0)" onClick="SendProject(${p.id})"><i class="fa-solid fa-paper-plane text-primary"></i>  Send</a>
                                 `
                             }
                                     

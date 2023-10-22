@@ -17,12 +17,52 @@ class Project extends TLAController
     }
     public function detail()
     {
-        $id = $_GET['id'];
-
         $this->data['title'] = 'Projects detail';
         $this->data['content'] = 'tla/project/detail';
         $this->data['sub_content'] = [];
         $this->render('__layouts/tla_layout', $this->data);
+    }
+
+    public function Send(){
+        $id = $_POST['id'];
+        $rs = $this->__project_model->Submit($id,'',5);
+        if($rs['rows_changed']>0){
+            $data = array(
+                'code' => 200,
+                'msg' => 'The project has been sent!',
+                'icon'=>'success',
+                'heading'=>'SUCCESSFULLY'               
+            );
+        }else{
+            $data = array(
+                'code' => 204,
+                'msg' => 'Send project failed!',
+                'icon' => 'success',
+                'heading' => 'NO CONTENT!!'
+            );
+        }
+        echo json_encode($data);
+    }
+    public function Upload(){
+        $id = $_POST['id'];
+        $url = $_POST['url'];
+        $rs = $this->__project_model->Submit($id,$url);
+        if($rs['rows_changed']>0){
+            $data = array(
+                'code' => 200,
+                'msg' => 'The project has been uploaded with link!',
+                'icon'=>'success',
+                'heading'=>'SUCCESSFULLY'               
+            );
+        }else{
+            $data = array(
+                'code' => 204,
+                'msg' => 'Upload project failed!',
+                'icon' => 'success',
+                'heading' => 'NO CONTENT!!'
+            );
+        }
+        echo json_encode($data);
     }
 
     public function getList()
