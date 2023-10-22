@@ -10,7 +10,7 @@ $(document).ready(function () {
     page = 1;
     limit = $('#slPageSize option:selected').val();
     $('#btnSearch').click();
-    setInterval(fetch, 10000);// gọi hàm load lại dữ liệu sau mỗi 10s
+    setInterval(fetch, 100000);// gọi hàm load lại dữ liệu sau mỗi 1p
 })
 
 function UpdateProject(id) {
@@ -222,7 +222,7 @@ function fetch() {
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
+                                    <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment"></i>  Add new Instruction</a>

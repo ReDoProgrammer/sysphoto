@@ -2046,7 +2046,7 @@ CREATE TRIGGER `after_task_inserted` AFTER INSERT ON `tasks` FOR EACH ROW BEGIN
     INSERT INTO project_logs(project_id,task_id,timestamp,action)
     VALUES(NEW.project_id,NEW.id,NEW.created_at,v_action);
     
-    IF (SELECT status_id FROM projects WHERE id = NEW.project_id ) = 0 THEN
+    IF (SELECT status_id FROM projects WHERE id = NEW.project_id ) = 0 OR  (SELECT status_id FROM projects WHERE id = NEW.project_id ) = 1 THEN
     	UPDATE projects SET status_id = 2 WHERE id = NEW.project_id; -- chuyen status project sang processing
     END IF;
     
