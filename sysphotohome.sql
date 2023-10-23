@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 23, 2023 lúc 11:20 AM
+-- Thời gian đã tạo: Th10 23, 2023 lúc 11:32 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -192,6 +192,36 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT) 
             END IF;
         END IF;
     END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `EmployeePages` (IN `p_group` INT, IN `p_search` VARCHAR(200), IN `p_limit` INT)   BEGIN
+    DECLARE count INT;
+    DECLARE total_count INT;
+
+    SET p_search = CONCAT('%', p_search, '%');
+
+    SELECT COUNT(*) INTO total_count
+    FROM users u
+    LEFT JOIN user_types ut ON u.type_id = ut.id
+    LEFT JOIN employee_groups e ON u.editor_group_id = e.id
+    LEFT JOIN employee_groups q ON u.qa_group_id = q.id
+    LEFT JOIN user_groups ug ON u.group_id = ug.id
+    WHERE (u.fullname LIKE p_search OR u.acronym LIKE p_search OR u.email LIKE p_search);
+
+    IF p_group > 0 THEN
+        SELECT COUNT(*) INTO count
+        FROM users u
+        LEFT JOIN user_types ut ON u.type_id = ut.id
+        LEFT JOIN employee_groups e ON u.editor_group_id = e.id
+        LEFT JOIN employee_groups q ON u.qa_group_id = q.id
+        LEFT JOIN user_groups ug ON u.group_id = ug.id
+        WHERE (u.fullname LIKE p_search OR u.acronym LIKE p_search OR u.email LIKE p_search)
+        AND u.group_id = p_group;
+    ELSE
+        SET count = total_count;
+    END IF;
+
+    SELECT CEIL(count / p_limit) as pages;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `EmployeeSearch` (IN `p_search` VARCHAR(255), IN `p_group` INT, IN `p_limit` INT, IN `p_page` INT)   BEGIN
