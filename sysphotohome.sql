@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 23, 2023 lúc 09:23 AM
+-- Thời gian đã tạo: Th10 23, 2023 lúc 11:20 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -192,6 +192,41 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EditorGetTask` (IN `p_editor` INT) 
             END IF;
         END IF;
     END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `EmployeeSearch` (IN `p_search` VARCHAR(255), IN `p_group` INT, IN `p_limit` INT, IN `p_page` INT)   BEGIN
+    SET @sql = CONCAT(
+        "SELECT u.id, u.fullname, u.acronym, u.email, ",
+        "CASE WHEN u.status = 1 THEN 'Active' ELSE 'Inactive' END as status, ",
+        "ut.name as role, ug.name as egroup, ",
+        "e.name as editor, q.name as qa, ",
+        "DATE_FORMAT(u.created_at, '%d/%m/%Y %H:%i') as joined_date ",
+        "FROM users u ",
+        "LEFT JOIN user_types ut ON u.type_id = ut.id ",
+        "LEFT JOIN employee_groups e ON u.editor_group_id = e.id ",
+        "LEFT JOIN employee_groups q ON u.qa_group_id = q.id ",
+        "LEFT JOIN user_groups ug ON u.group_id = ug.id ",
+        "WHERE (u.fullname LIKE ? OR u.acronym LIKE ? OR u.email LIKE ?)"
+    );
+
+    IF p_group > 0 THEN
+        SET @sql = CONCAT(@sql, " AND u.group_id = ?");
+    END IF;
+
+    SET @sql = CONCAT(@sql, " LIMIT ? OFFSET ?");
+
+    -- Prepare and execute the main query
+    PREPARE stmt FROM @sql;
+
+    SET @p_search = CONCAT('%', p_search, '%');
+
+    IF p_group > 0 THEN
+        EXECUTE stmt USING @p_search, @p_search, @p_search, p_group, p_limit, (p_page-1)*p_limit;
+    ELSE
+        EXECUTE stmt USING @p_search, @p_search, @p_search, p_limit, (p_page-1)*p_limit;
+    END IF;
+
+    DEALLOCATE PREPARE stmt;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `PrjectGetCCsWithTasks` (IN `p_project` BIGINT)   BEGIN
@@ -838,6 +873,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskUpdate` (IN `p_id` BIGINT, IN `
         updated_at = NOW(), updated_by = p_updated_by
     WHERE id = p_id;
     SELECT ROW_COUNT() as updated_rows;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UserGroupsAll` ()   BEGIN
+	SELECT * FROM user_groups;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `UserLogin` (IN `p_email` VARCHAR(200), IN `p_password` VARCHAR(200), IN `p_role` INT, IN `p_ip` VARCHAR(50))   BEGIN
@@ -2334,7 +2373,7 @@ CREATE TABLE `users` (
   `qa_group_id` int(11) NOT NULL,
   `avatar` text NOT NULL,
   `task_getable` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Đánh dấu được get task hay không. Áp dụng cho cả Editor và QA',
-  `status` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Trạng thái hoạt động của tài khoản. 0 hoặc 1',
+  `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Trạng thái hoạt động của tài khoản. 0 hoặc 1',
   `group_id` int(10) NOT NULL COMMENT 'Tham chiếu tới group user. exp: nhân viên chính thức, cộng tác viên',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(11) NOT NULL,

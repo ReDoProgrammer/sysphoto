@@ -46,8 +46,15 @@ class Employee extends AdminController
         $group = $_GET['group'];
         $search = $_GET['search'];
         $page = $_GET['page'];
+        $limit = $_GET['limit'];
 
-        echo $group." - ".$search." - ".$page;
+        echo json_encode([
+            'code'=>200,
+            'icon'=>'success',
+            'heading'=>'SUCCESSFULLY',
+            'pages'=>$this->employee_model->pages($group,$search),
+            'employees'=>$this->employee_model->filter($group,$search,$page,$limit)
+        ]);
     }
 
     public function index()

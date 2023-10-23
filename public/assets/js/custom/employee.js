@@ -1,4 +1,4 @@
-var page = 1, empId = 0;
+var page = 1, empId = 0, limit = 10;
 
 $(document).ready(function(){
     LoadEmployeeGroups();
@@ -83,7 +83,7 @@ function FetchEmployees(){
     $.ajax({
         url:'employee/filter',
         type:'get',
-        data:{group,search,page},
+        data:{group,search,page,limit},
         success:function(data){
             console.log(data);
         }
