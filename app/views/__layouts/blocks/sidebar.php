@@ -8,12 +8,7 @@
                     home
                 </span>
             </a>
-            <a class="nav-link" id="v-pills-apps-tab" title="Apps" data-bs-toggle="pill" href="#v-pills-apps" role="tab"
-                aria-controls="v-pills-apps" aria-selected="false">
-                <span class="material-icons-outlined">
-                    dashboard
-                </span>
-            </a>
+           
             <a class="nav-link" id="v-pills-employees-tab" title="Employees" data-bs-toggle="pill"
                 href="#v-pills-employees" role="tab" aria-controls="v-pills-employees" aria-selected="false">
                 <span class="material-icons-outlined">
@@ -223,51 +218,12 @@
                     </li>
                 </ul>
             </div>
-            <div class="tab-pane fade" id="v-pills-apps" role="tabpanel" aria-labelledby="v-pills-apps-tab">
-                <p>App</p>
-                <ul>
-                    <li>
-                        <a href="chat.html">Chat</a>
-                    </li>
-                    <li class="sub-menu">
-                        <a href="#">Calls <span class="menu-arrow"></span></a>
-                        <ul style="display: none;">
-                            <li><a href="voice-call.html">Voice Call</a></li>
-                            <li><a href="video-call.html">Video Call</a></li>
-                            <li><a href="outgoing-call.html">Outgoing Call</a></li>
-                            <li><a href="incoming-call.html">Incoming Call</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="calender.html">Calendar</a>
-                    </li>
-                    <li>
-                        <a href="contacts.html">Contacts</a>
-                    </li>
-                    <li>
-                        <a href="inbox.html">Email</a>
-                    </li>
-                    <li>
-                        <a href="file-manager.html">File Manager</a>
-                    </li>
-                </ul>
-            </div>
+
             <div class="tab-pane fade" id="v-pills-employees" role="tabpanel" aria-labelledby="v-pills-employees-tab">
                 <p>Employees</p>
                 <ul>
-                    <li><a href="employees.html">All Employees</a></li>
-                    <li><a href="holidays.html">Holidays</a></li>
-                    <li><a href="leaves.html">Leaves (Admin) <span
-                                class="badge rounded-pill bg-primary float-end">1</span></a></li>
-                    <li><a href="leaves-employee.html">Leaves (Employee)</a></li>
-                    <li><a href="leave-settings.html">Leave Settings</a></li>
-                    <li><a href="attendance.html">Attendance (Admin)</a></li>
-                    <li><a href="attendance-employee.html">Attendance (Employee)</a></li>
-                    <li><a href="departments.html">Departments</a></li>
-                    <li><a href="designations.html">Designations</a></li>
-                    <li><a href="timesheet.html">Timesheet</a></li>
-                    <li><a href="shift-scheduling.html">Shift & Schedule</a></li>
-                    <li><a href="overtime.html">Overtime</a></li>
+                    <li><a href="<?php echo _WEB_ROOT?>/admin/employee">All Employees</a></li>
+                    
                 </ul>
             </div>
             <div class="tab-pane fade" id="v-pills-clients" role="tabpanel" aria-labelledby="v-pills-clients-tab">

@@ -42,18 +42,24 @@ class Employee extends AdminController
     }
 
    
+    public function Filter(){
+        $group = $_GET['group'];
+        $search = $_GET['search'];
+        $page = $_GET['page'];
+
+        echo $group." - ".$search." - ".$page;
+    }
+
     public function index()
     {
-        //renderview          
-        $data = $this->employee_model->getList();
-
-
         //renderview
         $this->data['title'] = 'Employee list';
-        $this->data['sub_content']['employee'] = $data;
+        $this->data['sub_content']['employee'] = [];
         $this->data['content'] = 'admin/employee/index';
         $this->render('__layouts/admin_layout', $this->data);
     }
+
+
 
     private function get_client_ip()
     {

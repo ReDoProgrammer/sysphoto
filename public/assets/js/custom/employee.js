@@ -1,3 +1,10 @@
+var page = 1, empId = 0;
+
+$(document).ready(function(){
+    LoadEmployeeGroups();
+    FetchEmployees();
+})
+
 $('#btnLogin').click(function () {
     let email = $('#txtEmail').val();
     let password = $('#txtPassword').val();
@@ -45,3 +52,47 @@ $('#btnLogin').click(function () {
     })
 
 })
+
+$('#btnSearch').click(function(){
+    FetchEmployees();
+})
+
+function LoadEmployeeGroups(){
+    $('#slEmployeeGroups').empty();
+    $.ajax({
+        url:'employeegroup/List',
+        type:'get',
+        success:function(data){
+            try {
+                let content = $.parseJSON(data);
+                console.log(content);
+                content.groups.forEach(g=>{
+                    selectizeEmployeeGroup.addOption({ value: `${g.id}`, text: `${g.name}` });
+                })
+            } catch (error) {
+                console.log(data,error);
+            }
+        }
+    })
+}
+
+function FetchEmployees(){
+    let group = $('#slEmployeeGroups option:selected').val();
+    let search = $('#txtSearch').val();
+    
+    $.ajax({
+        url:'employee/filter',
+        type:'get',
+        data:{group,search,page},
+        success:function(data){
+            console.log(data);
+        }
+    })
+
+}
+
+var $selectizeEmployeeGroups = $('#slEmployeeGroups');
+$selectizeEmployeeGroups.selectize({
+    sortField: 'text' // Sắp xếp mục theo văn bản
+});
+var selectizeEmployeeGroup = $selectizeEmployeeGroups[0].selectize;
