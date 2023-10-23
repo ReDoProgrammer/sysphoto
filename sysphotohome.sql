@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 22, 2023 lúc 12:22 PM
--- Phiên bản máy phục vụ: 10.4.28-MariaDB
--- Phiên bản PHP: 8.0.28
+-- Thời gian đã tạo: Th10 23, 2023 lúc 09:23 AM
+-- Phiên bản máy phục vụ: 10.4.27-MariaDB
+-- Phiên bản PHP: 8.2.0
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -308,8 +308,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGIN
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
-	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,created_by)
-    VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),p_created_by);
+	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,status_id,created_by)
+    VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),
+           CASE WHEN LENGTH(TRIM(p_levels)) > 0 THEN 2 ELSE 0 END
+           ,p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
 END$$
 
@@ -1588,7 +1590,9 @@ CREATE TABLE `projects` (
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `product_url`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (4, 10, 'Test 22102023', 'Test 221023 description\n', 5, '2023-10-22 14:10:00', '2023-10-22 19:10:00', '1,2,3,4,5,6', '', 'https://www.youtube.com/watch?v=T7aVAIAiRKY&ab_channel=RomanticGuitar', NULL, 2, 0, '2023-10-22 14:47:22', 1, '2023-10-22 16:19:51', 6, NULL, ''),
 (5, 13, 'Test no task', 'No task description\n', 2, '2023-10-22 14:57:00', '2023-10-22 17:57:00', '', '', NULL, NULL, 1, 0, '2023-10-22 16:58:13', 1, NULL, 0, NULL, ''),
-(6, 12, 'No task 2', 'NO task 2 description\n', 2, '2023-10-22 16:58:00', '2023-10-22 21:58:00', '', '', NULL, NULL, 3, 0, '2023-10-22 17:01:43', 1, '2023-10-22 17:21:55', 1, NULL, '');
+(6, 12, 'No task 2', 'NO task 2 description\n', 2, '2023-10-22 16:58:00', '2023-10-22 21:58:00', '', '', NULL, NULL, 3, 0, '2023-10-22 17:01:43', 1, '2023-10-22 17:21:55', 1, NULL, ''),
+(7, 12, 'Test ', 'Project description	\n', 0, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:12:17', 1, NULL, 0, NULL, ''),
+(10, 12, 'Test  new project with template', 'TEST DESCRIPTION\n', 2, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:22:51', 1, NULL, 0, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -1631,6 +1635,7 @@ CREATE TRIGGER `after_project_inserted` AFTER INSERT ON `projects` FOR EACH ROW 
     SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM projects WHERE id = NEW.id));
     SET v_customer = (SELECT acronym FROM customers WHERE id = NEW.customer_id);
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.created_by));
+    
     
     INSERT INTO project_logs(project_id,timestamp,action)
     VALUES(NEW.id,NEW.created_at,CONCAT(v_role,' [<span class="text-info fw-bold">',v_created_by,'</span>] <span class="text-success">CREATE PROJECT FOR CUSTOMER</span> [<span class="text-primary">',v_customer,'</span>]'));
@@ -1800,7 +1805,9 @@ CREATE TABLE `project_instructions` (
 INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
 (1, 4, 'tesst 221023 instruction\n', '2023-10-22 14:47:22', 1, NULL, 0, NULL, NULL),
 (2, 5, 'No task instruction\n', '2023-10-22 16:58:13', 1, NULL, 0, NULL, NULL),
-(3, 6, 'No task instruction\n', '2023-10-22 17:01:43', 1, NULL, 0, NULL, NULL);
+(3, 6, 'No task instruction\n', '2023-10-22 17:01:43', 1, NULL, 0, NULL, NULL),
+(4, 7, 'Project instruction\n', '2023-10-23 14:12:17', 1, NULL, 0, NULL, NULL),
+(5, 10, 'TEST INSTRUCTION\n', '2023-10-23 14:22:51', 1, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -1913,7 +1920,13 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (49, 6, 12, 0, '2023-10-22 17:17:21', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
 (50, 6, 13, 0, '2023-10-22 17:18:44', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
 (51, 6, 14, 0, '2023-10-22 17:21:55', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
-(52, 6, 0, 0, '2023-10-22 17:21:55', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', '');
+(52, 6, 0, 0, '2023-10-22 17:21:55', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', ''),
+(53, 7, 15, 0, '2023-10-23 14:12:17', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
+(54, 7, 16, 0, '2023-10-23 14:12:17', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
+(55, 7, 0, 0, '2023-10-23 14:12:17', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
+(60, 10, 21, 0, '2023-10-23 14:22:51', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
+(61, 10, 22, 0, '2023-10-23 14:22:51', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
+(62, 10, 0, 0, '2023-10-23 14:22:51', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2010,7 +2023,11 @@ INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`
 (11, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:16:28', 1, '2023-10-22 10:16:28', 0, NULL, NULL),
 (12, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:17:21', 1, '2023-10-22 10:17:21', 0, NULL, NULL),
 (13, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:18:44', 1, '2023-10-22 10:18:44', 0, NULL, NULL),
-(14, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:21:55', 1, '2023-10-22 10:21:55', 0, NULL, NULL);
+(14, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:21:55', 1, '2023-10-22 10:21:55', 0, NULL, NULL),
+(15, 7, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:12:17', 1, '2023-10-23 07:12:17', 0, NULL, NULL),
+(16, 7, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:12:17', 1, '2023-10-23 07:12:17', 0, NULL, NULL),
+(21, 10, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:22:51', 1, '2023-10-23 07:22:51', 0, NULL, NULL),
+(22, 10, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:22:51', 1, '2023-10-23 07:22:51', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2740,19 +2757,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2764,7 +2781,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`
