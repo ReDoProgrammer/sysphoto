@@ -82,7 +82,6 @@
 <?php
 require_once "project_submit_modal.php";
 require_once 'modal_project.php';
-require_once 'modal_task.php';
 require_once 'modal_cc.php';
 require_once 'modal_instruction.php';
 ?>

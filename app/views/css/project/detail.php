@@ -18,14 +18,8 @@
         <div class="card p-4">
             <div class="card-header">
                 <div class="row">
-                    <div class="col-sm-8">
-                        <h4>Tasks list</h4>
-                    </div>
-                    <div class="col-sm-4 text-end">
-                        <div class="add-emp-section">
-                            <a href="#" class="btn btn-success btn-add-emp" data-bs-toggle="modal"
-                                data-bs-target="#task_modal"><i class="fas fa-plus"></i> Add new task</a>
-                        </div>
+                    <div class="col-sm-12">
+                        <h4>Tasks list</h4>                    
                     </div>
                 </div>
 
@@ -160,15 +154,16 @@
     </div>
 </div>
 
-
-
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/tla/project/detail.js"></script>
-
-
-
 <?php
 $this->render('admin/task/modal');
 $this->render('common/task_detail_modal');
 
 ?>
+
+
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/css/project/detail.js"></script>
+
+
+
+
 

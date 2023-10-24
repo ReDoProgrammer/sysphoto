@@ -1,4 +1,4 @@
-var page, limit;
+var page, limit, pId = 0;
 
 
 $(document).ready(function () {
@@ -42,7 +42,38 @@ function SendProject(id) {
         }
     })
 }
-
+function UpdateProject(id) {
+    $.ajax({
+        url: 'project/getdetail',
+        type: 'get',
+        data: { id },
+        success: function (data) {
+            ;
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    pId = id;
+                    $('#modal_project').modal('show');
+                    let p = content.project;
+                    console.log(p);
+                    $('#txtProjectName').val(p.project_name);
+                    $('#txtBeginDate').val(p.start_date);
+                    $('#txtEndDate').val(p.end_date);
+                    qDescription.setText(p.description ? p.description : '');
+                    qInstruction.setText(p.instruction ? p.instruction : '');
+                    selectizeCustomer.setValue(p.customer_id);
+                    selectizeCombo.setValue(p.combo_id);
+                    let templates = p.levels.split(',');
+                    $("#slTemplates").select2("val", templates);
+                    $('#ckbPriority').prop('checked', p.priority == 1);
+                    $('#slStatuses').val(p.status_id);
+                }
+            } catch (error) {
+                console.log(data, error);
+            }
+        }
+    })
+}
 function DestroyProject(id) {
     Swal.fire({
         title: 'Are you sure want to delete this project?',
@@ -80,6 +111,13 @@ function DestroyProject(id) {
         }
     })
 }
+
+
+function AddNewTask(id) {
+    pId = id;
+    $('#task_modal').modal('show');
+}
+
 
 function AddNewInstruction(id) {
     pId = id;
@@ -212,14 +250,18 @@ function fetch() {
                             ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
                         </td>
                         <td class="text-center">                      
-                            <span class="badge ${p.status_color}">${p.status_name?p.status_name:'Initial'}</span>
+                            <span class="badge ${p.status_color ? p.status_color : 'text-info fw-bold'}">${p.status_name ? p.status_name : 'Initial'}</span>
                         </td>                       
                         <td class="text-center">
                             <div class="dropdown action-label">
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
+                                    <a class="dropdown-item" href="../css/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning text-danger"></i>  Add new CC</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment text-info"></i>  Add new Instruction</a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="UpdateProject(${p.id})"><i class="fas fa-pencil-alt text-warning"></i>  Update</a>
+                                    ${p.status == 1 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(' + p.id + ')"><i class="fas fa-trash-alt text-danger"></i>  Destroy</a>' : ''}
                                     ${p.status_id == 4 ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SendProject(${p.id})"><i class="fa-solid fa-paper-plane text-success"></i>  Send</a>` : ``}        
                                     
                                 </div> 
@@ -354,7 +396,94 @@ $('#btnSubmitJob').click(function () {
         })
     }
 })
+$('#btnSubmitNewInstruction').click(function () {
+    let instruction = qNewDescription.getText();
+    if (instruction.trim().length == 0) {
+        $.toast({
+            heading: `Instruction can not be null`,
+            text: `Please enter instruction content`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
 
+    $.ajax({
+        url: 'project/addinstruction',
+        type: 'post',
+        data: {
+            id: pId,
+            instruction
+        },
+        success: function (data) {
+            try {
+                content = $.parseJSON(data);
+                if (content.code == 201) {
+                    $('#modal_instruction').modal('hide');
+                }
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    icon: content.icon,
+                    loader: true,        // Change it to false to disable loader
+                    loaderBg: '#9EC600'  // To change the background
+                })
+            } catch (error) {
+                console.log(data, error);
+            }
+        }
+    })
+})
+$('#btnSubmitCC').click(function () {
+    let start_date = $('#txtCCBeginDate').val() + ":00";
+    let end_date = $('#txtCCEndDate').val() + ":00";
+    let feedback = qCCDescription.getText();
+
+    let sd = strToDateTime($('#txtBeginDate').val());
+    let td = strToDateTime($('#txtEndDate').val());
+    if (td < sd) {
+        $.toast({
+            heading: `End date can not be less than start date!`,
+            text: `Please choose another value`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
+
+
+    if (ccId < 1) {
+        $.ajax({
+            url: 'cc/insert',
+            type: 'post',
+            data: {
+                project_id,
+                feedback,
+                start_date, end_date
+            },
+            success: function (data) {
+                try {
+                    let content = $.parseJSON(data);
+                    if (content.code == 201) {
+                        $('#modal_cc').modal('hide');
+                    }
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+                } catch (error) {
+                    console.log(data, error);
+                }
+            }
+        })
+    }
+
+})
 $(document).on("click", "#pagination li a.page-link", function (e) {
     e.preventDefault();
     $("#pagination li").removeClass("active");
@@ -433,4 +562,45 @@ var qInstruction = new Quill('#divInstruction', {
         ]
     },
     placeholder: "Enter intruction for Editor here...",
+});
+
+
+var ccId = 0;
+var project_id = 0;
+
+var qCCDescription = new Quill('#divCCDescription', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter CC description here...",
+    // Đặt chiều cao cho trình soạn thảo
+    // Ví dụ: Chiều cao 300px
+    height: '300px'
+    // Hoặc chiều cao 5 dòng
+    // height: '10em'
+});
+
+
+var qNewDescription = new Quill('#divNewInstruction', {
+    theme: 'snow', // Chọn giao diện "snow"
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link'], // Thêm nút chèn liên kết
+            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
+        ]
+    },
+    placeholder: "Enter Instruction here...",
+    // Đặt chiều cao cho trình soạn thảo
+    // Ví dụ: Chiều cao 300px
+    height: '300px'
+    // Hoặc chiều cao 5 dòng
+    // height: '10em'
 });

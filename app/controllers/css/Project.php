@@ -2,11 +2,12 @@
 class Project extends CSSController
 {
     private $__project_model;
-
+    private $__project_instruction_model;
     function __construct()
     {
         parent::__construct();
         $this->__project_model = $this->model("ProjectModel");
+        $this->__project_instruction_model = $this->model("ProjectInstructionModel");
     }
     public function index()
     {
@@ -60,12 +61,10 @@ class Project extends CSSController
     }
     public function detail()
     {
-        $id = $_GET['id'];
-
         $this->data['title'] = 'Projects detail';
-        $this->data['content'] = 'admin/project/detail';
+        $this->data['content'] = 'css/project/detail';
         $this->data['sub_content'] = [];
-        $this->render('__layouts/admin_layout', $this->data);
+        $this->render('__layouts/css_layout', $this->data);
     }
 
     public function create()
@@ -83,11 +82,11 @@ class Project extends CSSController
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        $result = $this->project_model->CreateProject($customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
+        $result = $this->__project_model->CreateProject($customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
         if ($result['last_id'] > 0) {
             if (!empty(trim($instruction))) {
                 //thêm instruction vào csdl
-                $this->project_instruction_model->InsertInstruction($result['last_id'], $instruction);
+                $this->__project_instruction_model->InsertInstruction($result['last_id'], $instruction);
             }
             $data = array(
                 'code' => 201,
@@ -121,10 +120,10 @@ class Project extends CSSController
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        $result = $this->project_model->UpdateProject($id, $customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
+        $result = $this->__project_model->UpdateProject($id, $customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
 
         if ($result) {
-            $this->project_instruction_model->UpdateInstruction($id, $instruction);
+            $this->__project_instruction_model->UpdateInstruction($id, $instruction);
             $data = array(
                 'code' => 200,
                 'msg' => 'The project has been updated.',
@@ -146,7 +145,7 @@ class Project extends CSSController
     public function delete()
     {
         $id = $_POST['id'];
-        if ($this->project_model->deleteProject($id)) {
+        if ($this->__project_model->deleteProject($id)) {
             $data = array(
                 'code' => 200,
                 'msg' => 'Project has been deleted.',
@@ -168,7 +167,7 @@ class Project extends CSSController
     {
         $id = $_POST['id'];
         $instruction = $_POST['instruction'];
-        $result = $this->project_model->AddInstruction($id, $instruction);
+        $result = $this->__project_model->AddInstruction($id, $instruction);
         if ($result['last_id'] > 0) {
             $data = array(
                 'code' => 201,
@@ -191,7 +190,7 @@ class Project extends CSSController
     public function getdetail()
     {
         $id = $_GET['id'];
-        $project = $this->project_model->ProjectDetail($id);
+        $project = $this->__project_model->ProjectDetail($id);
         if ($project) {
             $data = array(
                 'code' => 200,

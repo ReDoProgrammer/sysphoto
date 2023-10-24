@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 24, 2023 lúc 09:05 AM
+-- Thời gian đã tạo: Th10 24, 2023 lúc 04:52 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -609,33 +609,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskRejecting` (IN `p_id` BIGINT, I
         END;
     ELSE
         SELECT 0 as updated_rows;
-    END IF;
-END$$
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `TasksAppliedFromTemplate` (IN `p_project` BIGINT)   BEGIN
-	DECLARE v_levels VARCHAR(100);
-    DECLARE v_created_by INT;
-    
-    SELECT levels INTO v_levels FROM projects WHERE id = p_project;
-    SELECT created_by INTO v_created_by FROM projects WHERE id = p_project;
-
-    SET @start = 1;
-    SET @end = LOCATE(',', v_levels);
-    
-    -- Kiểm tra xem @end có rỗng hay không
-    IF @end IS NOT NULL THEN
-        WHILE @end > 0 DO
-            INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
-            VALUES (NEW.id, SUBSTRING(v_levels, @start, @end - @start),1, v_created_by);
-            SET @start = @end + 1;
-            SET @end = LOCATE(',', v_levels, @start);
-        END WHILE;
-    END IF;
-
-    -- Xử lý giá trị cuối cùng
-    IF SUBSTRING(v_levels, @start) > 0 THEN
-        INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
-        VALUES (NEW.id, SUBSTRING(v_levels, @start),1, v_created_by);
     END IF;
 END$$
 
@@ -1688,12 +1661,40 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 (7, 12, 'Test ', 'Project description	\n', 0, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:12:17', 1, NULL, 0, NULL, ''),
 (10, 12, 'Test  new project with template', 'TEST DESCRIPTION\n', 2, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:22:51', 1, NULL, 0, NULL, ''),
 (11, 13, 'test', '\n', 0, '2023-10-24 08:48:00', '2023-10-24 11:48:00', '6', '', NULL, NULL, 1, 0, '2023-10-24 08:48:45', 6, NULL, 0, NULL, ''),
-(12, 12, 'fdsafasdf', 'fadfdas\n', 0, '2023-10-24 09:34:00', '2023-10-24 12:34:00', '2,3', '', NULL, NULL, 2, 0, '2023-10-24 09:36:03', 6, NULL, 0, NULL, ''),
-(13, 13, 'test without auto creating task from template', 'Non auto creating task from template description\n', 0, '2023-10-24 14:03:00', '2023-10-24 17:03:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-10-24 14:04:37', 6, NULL, 0, NULL, '');
+(12, 12, 'fdsafasdf', 'fadfdas\n', 0, '2023-10-24 09:34:00', '2023-10-24 12:34:00', '2,3', '', NULL, NULL, 2, 0, '2023-10-24 09:36:03', 6, NULL, 0, NULL, '');
 
 --
 -- Bẫy `projects`
 --
+DELIMITER $$
+CREATE TRIGGER `AutoInsertTask` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
+    DECLARE v_levels VARCHAR(100);
+    DECLARE v_created_by INT;
+    
+    SELECT levels INTO v_levels FROM projects WHERE id = NEW.id;
+    SELECT created_by INTO v_created_by FROM projects WHERE id = NEW.id;
+
+    SET @start = 1;
+    SET @end = LOCATE(',', v_levels);
+    
+    -- Kiểm tra xem @end có rỗng hay không
+    IF @end IS NOT NULL THEN
+        WHILE @end > 0 DO
+            INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
+            VALUES (NEW.id, SUBSTRING(v_levels, @start, @end - @start),1, v_created_by);
+            SET @start = @end + 1;
+            SET @end = LOCATE(',', v_levels, @start);
+        END WHILE;
+    END IF;
+
+    -- Xử lý giá trị cuối cùng
+    IF SUBSTRING(v_levels, @start) > 0 THEN
+        INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
+        VALUES (NEW.id, SUBSTRING(v_levels, @start),1, v_created_by);
+    END IF;
+END
+$$
+DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_project_inserted` AFTER INSERT ON `projects` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100);
@@ -1876,8 +1877,7 @@ INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`,
 (3, 6, 'No task instruction\n', '2023-10-22 17:01:43', 1, NULL, 0, NULL, NULL),
 (4, 7, 'Project instruction\n', '2023-10-23 14:12:17', 1, NULL, 0, NULL, NULL),
 (5, 10, 'TEST INSTRUCTION\n', '2023-10-23 14:22:51', 1, NULL, 0, NULL, NULL),
-(6, 12, 'fdasfas\n', '2023-10-24 09:36:03', 6, NULL, 0, NULL, NULL),
-(7, 13, 'Non auto creating tasks from template instruction\n', '2023-10-24 14:04:37', 6, NULL, 0, NULL, NULL);
+(6, 12, 'fdasfas\n', '2023-10-24 09:36:03', 6, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -2001,8 +2001,7 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (64, 11, 0, 0, '2023-10-24 08:48:45', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
 (65, 12, 24, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
 (66, 12, 25, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(67, 12, 0, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
-(68, 13, 0, 0, '2023-10-24 14:04:37', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', '');
+(67, 12, 0, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2836,19 +2835,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`

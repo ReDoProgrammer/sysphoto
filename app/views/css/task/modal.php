@@ -10,7 +10,7 @@
                 <div>
                     <div class="input-block mb-3">
                         <label class="col-form-label">Description</label>
-                        <div id="divTaskDescription" style="min-height: 100px;"></div>
+                        <div id="divDescription" style="min-height: 100px;"></div>
                     </div>
                     <div class="row">
                         <div class="col-sm-10">
@@ -53,7 +53,4 @@
 </div>
 <!-- /Add or update Task Modal -->
 
-
-
-
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/task.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/css/task/task.js"></script>
