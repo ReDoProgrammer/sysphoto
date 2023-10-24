@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 24, 2023 lúc 09:05 AM
+-- Thời gian đã tạo: Th10 24, 2023 lúc 11:27 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -225,19 +225,17 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `EmployeePages` (IN `p_group` INT, I
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `EmployeeSearch` (IN `p_search` VARCHAR(255), IN `p_group` INT, IN `p_limit` INT, IN `p_page` INT)   BEGIN
-    SET @sql = CONCAT(
-        "SELECT u.id, u.fullname, u.acronym, u.email, ",
-        "CASE WHEN u.status = 1 THEN 'Active' ELSE 'Inactive' END as status, ",
-        "ut.name as role, ug.name as egroup, ",
-        "e.name as editor, q.name as qa, ",
-        "DATE_FORMAT(u.created_at, '%d/%m/%Y %H:%i') as joined_date ",
-        "FROM users u ",
-        "LEFT JOIN user_types ut ON u.type_id = ut.id ",
-        "LEFT JOIN employee_groups e ON u.editor_group_id = e.id ",
-        "LEFT JOIN employee_groups q ON u.qa_group_id = q.id ",
-        "LEFT JOIN user_groups ug ON u.group_id = ug.id ",
-        "WHERE (u.fullname LIKE ? OR u.acronym LIKE ? OR u.email LIKE ?)"
-    );
+    SET @sql = "SELECT u.id, u.fullname, u.acronym, u.email,
+                    CASE WHEN u.status = 1 THEN 'Active' ELSE 'Inactive' END as status,
+                    ut.name as role, ug.name as egroup,
+                    e.name as editor, q.name as qa,
+                    DATE_FORMAT(u.created_at, '%d/%m/%Y %H:%i') as joined_date                    
+                FROM users u
+                LEFT JOIN user_types ut ON u.type_id = ut.id
+                LEFT JOIN employee_groups e ON u.editor_group_id = e.id
+                LEFT JOIN employee_groups q ON u.qa_group_id = q.id
+                LEFT JOIN user_groups ug ON u.group_id = ug.id;
+                ";
 
     IF p_group > 0 THEN
         SET @sql = CONCAT(@sql, " AND u.group_id = ?");
@@ -1242,6 +1240,14 @@ CREATE TABLE `ccs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
+-- Đang đổ dữ liệu cho bảng `ccs`
+--
+
+INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(4, 11, 'fdsafdas\n', '2023-10-24 14:55:00', '2023-10-24 14:55:00', '2023-10-24 14:55:39', 6, '2023-10-24 07:55:39', 0, '', NULL),
+(5, 11, 'Test CC\n', '2023-10-24 14:55:00', '2023-10-25 14:55:00', '2023-10-24 14:55:58', 6, '2023-10-24 07:55:58', 0, '', NULL);
+
+--
 -- Bẫy `ccs`
 --
 DELIMITER $$
@@ -1687,7 +1693,7 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 (6, 12, 'No task 2', 'NO task 2 description\n', 2, '2023-10-22 16:58:00', '2023-10-22 21:58:00', '', '', NULL, NULL, 3, 0, '2023-10-22 17:01:43', 1, '2023-10-22 17:21:55', 1, NULL, ''),
 (7, 12, 'Test ', 'Project description	\n', 0, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:12:17', 1, NULL, 0, NULL, ''),
 (10, 12, 'Test  new project with template', 'TEST DESCRIPTION\n', 2, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:22:51', 1, NULL, 0, NULL, ''),
-(11, 13, 'test', '\n', 0, '2023-10-24 08:48:00', '2023-10-24 11:48:00', '6', '', NULL, NULL, 1, 0, '2023-10-24 08:48:45', 6, NULL, 0, NULL, ''),
+(11, 13, 'test 123', 'description here\n', 0, '2023-10-24 08:48:00', '2023-10-24 14:48:00', '5,6', '', NULL, NULL, 1, 0, '2023-10-24 08:48:45', 6, '2023-10-24 14:49:29', 6, NULL, ''),
 (12, 12, 'fdsafasdf', 'fadfdas\n', 0, '2023-10-24 09:34:00', '2023-10-24 12:34:00', '2,3', '', NULL, NULL, 2, 0, '2023-10-24 09:36:03', 6, NULL, 0, NULL, ''),
 (13, 13, 'test without auto creating task from template', 'Non auto creating task from template description\n', 0, '2023-10-24 14:03:00', '2023-10-24 17:03:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-10-24 14:04:37', 6, NULL, 0, NULL, '');
 
@@ -1877,7 +1883,9 @@ INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`,
 (4, 7, 'Project instruction\n', '2023-10-23 14:12:17', 1, NULL, 0, NULL, NULL),
 (5, 10, 'TEST INSTRUCTION\n', '2023-10-23 14:22:51', 1, NULL, 0, NULL, NULL),
 (6, 12, 'fdasfas\n', '2023-10-24 09:36:03', 6, NULL, 0, NULL, NULL),
-(7, 13, 'Non auto creating tasks from template instruction\n', '2023-10-24 14:04:37', 6, NULL, 0, NULL, NULL);
+(7, 13, 'Non auto creating tasks from template instruction\n', '2023-10-24 14:04:37', 6, NULL, 0, NULL, NULL),
+(8, 11, 'instrution here\n', '2023-10-24 14:44:42', 6, '2023-10-24 07:49:29', 6, NULL, NULL),
+(9, 11, 'the 3rd instruction\n', '2023-10-24 14:45:00', 6, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -2002,7 +2010,13 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (65, 12, 24, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
 (66, 12, 25, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
 (67, 12, 0, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
-(68, 13, 0, 0, '2023-10-24 14:04:37', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', '');
+(68, 13, 0, 0, '2023-10-24 14:04:37', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
+(69, 11, 0, 0, '2023-10-24 14:41:10', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">test</span>] TO [<span class=\"text-info\">test 123</span>]', ''),
+(70, 11, 0, 0, '2023-10-24 14:45:00', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'the 3rd instruction\n\')\">View detail</a>', ''),
+(71, 11, 0, 0, '2023-10-24 14:49:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(11)\">View detail</a>, <span class=\"text-warning\">CHANGE END DATE</span> FROM [<span class=\"text-seco', '<span class=\"text-secondary\">FROM:</span><br/><hr>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/>description here\n'),
+(72, 11, 0, 0, '2023-10-24 14:49:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(8)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr>fasdfasd\n<span class=\"mt-3 text-secondary\">TO:</span><hr/>instrution here\n'),
+(73, 11, 0, 4, '2023-10-24 14:55:39', 'CSS [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">24/10/2023 14:55</span>] TO [<span class=\"text-warning\">24/10/2023 14:55</span>]', ''),
+(74, 11, 0, 5, '2023-10-24 14:55:58', 'CSS [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">24/10/2023 14:55</span>] TO [<span class=\"text-warning\">25/10/2023 14:55</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2746,7 +2760,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2842,13 +2856,13 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`

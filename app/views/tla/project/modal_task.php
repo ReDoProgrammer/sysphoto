@@ -56,4 +56,4 @@
 
 
 
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/project/task.js"></script>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/tla/project/task.js"></script>

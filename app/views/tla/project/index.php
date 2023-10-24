@@ -32,10 +32,10 @@
         <thead>
             <tr>
                 <th>#</th>
-                <th>Customer</th>
                 <th>Job</th>
                 <th>Start</th>
                 <th>Deadline</th>
+                <th>Templates</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>

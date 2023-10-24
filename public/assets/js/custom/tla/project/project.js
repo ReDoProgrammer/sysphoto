@@ -3,9 +3,6 @@ var pId = 0;
 
 
 $(document).ready(function () {
-    // LoadComboes();
-    // LoadTemplates();
-    //LoadCustomers();
     LoadProjectStatuses();
     page = 1;
     limit = $('#slPageSize option:selected').val();
@@ -81,19 +78,27 @@ function fetch() {
                         }
                     }
 
-
+                    console.log(content.projects);
                     let idx = (page - 1) * limit;
                     content.projects.forEach(p => {
                         $('#tblProjects').append(`
                     <tr id="${p.id}">
-                        <td>${++idx}</td>
-                        <td class="fw-bold">${p.acronym}</td>
-                        <td>${p.name}</td>
-                        <td>${p.start_date}</td>
-                        <td>${p.end_date}</td>
+                        <td>${++idx}</td>                        
+                        <td>
+                            <span class="text-info fw-bold">${p.name}</span><br/>
+                            <span>[${p.acronym}]</span>
+                        </td>
+                        <td>
+                            <span>${p.start_date.split(' ')[1]}</span><br/>
+                            ${p.start_date.split(' ')[0]}
+                        </td>
+                        <td>
+                            <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
+                            ${p.end_date.split(' ')[0]}
+                        </td>
+                        <td></td>
                         <td class="text-center">
-                      
-                                    <span class="badge ${p.status_color?p.status_color:'text-info'}">${p.status_name?p.status_name:'Initial'}</span>
+                            <span class="badge ${p.status_color?p.status_color:'text-info'}">${p.status_name?p.status_name:'Initial'}</span>
                         </td>                       
                         <td class="text-center">
                             <div class="dropdown action-label">
@@ -109,8 +114,6 @@ function fetch() {
                                 `: ``}
                                 `
                             }
-                                    
-                                    
                                 </div> 
                             </div>
                         </td>
@@ -178,12 +181,6 @@ $(document).on("click", "#pagination li a.page-link", function (e) {
     page = $(this).text();
     fetch();
 });
-
-
-
-
-
-
 
 
 $('#btnSearch').click(function (e) {

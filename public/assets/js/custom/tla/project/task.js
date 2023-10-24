@@ -64,8 +64,8 @@ $('#btnSubmitTask').click(function () {
         data: {
             prjId: pId,
             description,
-            level, 
-            cc:ccId,
+            level,
+            cc: ccId,
             editor: editor ? editor : 0,
             qa: qa ? qa : 0,
             quantity: parseInt(quantity)
@@ -171,6 +171,7 @@ function getTaskLevels() {
         url: 'level/getList',
         type: 'get',
         success: function (data) {
+
             try {
                 let content = $.parseJSON(data);
 
@@ -178,10 +179,10 @@ function getTaskLevels() {
                     content.levels.forEach(lv => {
                         $('#slLevels').append(`<option value="${lv.id}">${lv.name}</option>`)
                     })
-                    $('#slLevels').selectedIndex(-1);
+                    // $('#slLevels').selectedIndex(-1);
                 }
             } catch (error) {
-
+                console.log(data, error);
             }
         }
     })
@@ -210,14 +211,14 @@ var qDescription = new Quill('#divTaskDescription', {
 var selectizeEditors = $('#slEditors');
 selectizeEditors.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản,
-    placeholder: 'Vui lòng chọn editor'
+    placeholder: 'Please choose an Editor'
 });
 var selectizeEditor = selectizeEditors[0].selectize;
 
 var selectizeQAs = $('#slQAs');
 selectizeQAs.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản,
-    placeholder: 'Vui lòng chọn Q.A'
+    placeholder: 'Please choose a Q.A'
 });
 var selectizeQA = selectizeQAs[0].selectize;
 
