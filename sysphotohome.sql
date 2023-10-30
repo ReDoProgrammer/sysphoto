@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 24, 2023 lúc 11:27 AM
+-- Thời gian đã tạo: Th10 30, 2023 lúc 04:36 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -370,6 +370,32 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGIN
     ORDER BY p.id DESC;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectFilter` (IN `p_from_date` TIMESTAMP, IN `p_to_date` TIMESTAMP, IN `p_status` VARCHAR(100), IN `p_search` VARCHAR(200), IN `p_page` INT, IN `p_limit` INT)   BEGIN
+    DECLARE v_offset INT;
+    SET v_offset = (p_page - 1) * p_limit;
+
+    SELECT p.name,
+           c.acronym,
+           DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') AS start_date,
+           DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') AS end_date,
+           (SELECT CONCAT(GROUP_CONCAT(name SEPARATOR ', '), ' ')
+            FROM levels
+            WHERE FIND_IN_SET(levels.id, p.levels)
+           ) AS templates,
+           p.status_id,
+           ps.name AS status_name,
+           ps.color AS status_color
+    FROM projects p
+    JOIN customers c ON p.customer_id = c.id
+    LEFT JOIN project_statuses ps ON p.status_id = ps.id
+    WHERE p.end_date >= p_from_date AND p.end_date <= p_to_date
+    AND (p.name LIKE CONCAT('%', p_search, '%') OR c.acronym LIKE CONCAT('%', p_search, '%'))
+    AND (
+        p_status = '' OR FIND_IN_SET(p.status_id, p_status)
+    )
+    LIMIT v_offset, p_limit;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
 	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,created_by)
     VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),p_created_by);
@@ -404,6 +430,49 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectLogs` (IN `p_id` BIGINT)   B
     FROM 	project_logs 
     WHERE project_id = p_id 
     ORDER BY id DESC;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectPages` (IN `p_from_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_status` VARCHAR(20), IN `p_search` VARCHAR(100), IN `p_limit` INT)   BEGIN
+    DECLARE v_sql VARCHAR(5000);
+    DECLARE v_total_records INT;
+    DECLARE v_pages INT;
+
+    -- Initialize v_total_records
+    SET v_total_records = 0;
+
+    -- Set up dynamic SQL
+    SET v_sql = "SELECT COUNT(*) FROM projects p
+                JOIN customers c ON p.customer_id = c.id
+                LEFT JOIN project_statuses ps ON p.status_id = ps.id
+                WHERE 1 = 1 ";
+
+    IF p_status IS NOT NULL THEN
+        SET v_sql = CONCAT(v_sql, " AND FIND_IN_SET(levels.id,");
+    END IF;
+
+    IF p_search IS NOT NULL AND p_search <> '' THEN
+        SET v_sql = CONCAT(v_sql, " AND (p.name LIKE ? OR c.acronym LIKE ?) ");
+    END IF;
+
+    -- Prepare and execute the query to get the total number of records
+    PREPARE stmt_count FROM v_sql;
+    
+    IF p_search IS NOT NULL AND p_search <> '' THEN
+        EXECUTE stmt_count USING @p_search, @p_search;
+    ELSE
+        EXECUTE stmt_count;
+    END IF;
+
+    -- Store the result into v_total_records
+    SELECT FOUND_ROWS() INTO v_total_records;
+
+    -- Deallocate the prepared statement
+    DEALLOCATE PREPARE stmt_count;
+
+    -- Calculate the total number of pages
+    SET v_pages = CEIL(v_total_records / p_limit);
+
+    -- Now you can use the v_pages variable as needed
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusAll` ()   BEGIN
@@ -1240,14 +1309,6 @@ CREATE TABLE `ccs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `ccs`
---
-
-INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(4, 11, 'fdsafdas\n', '2023-10-24 14:55:00', '2023-10-24 14:55:00', '2023-10-24 14:55:39', 6, '2023-10-24 07:55:39', 0, '', NULL),
-(5, 11, 'Test CC\n', '2023-10-24 14:55:00', '2023-10-25 14:55:00', '2023-10-24 14:55:58', 6, '2023-10-24 07:55:58', 0, '', NULL);
-
---
 -- Bẫy `ccs`
 --
 DELIMITER $$
@@ -1695,7 +1756,8 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 (10, 12, 'Test  new project with template', 'TEST DESCRIPTION\n', 2, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:22:51', 1, NULL, 0, NULL, ''),
 (11, 13, 'test 123', 'description here\n', 0, '2023-10-24 08:48:00', '2023-10-24 14:48:00', '5,6', '', NULL, NULL, 1, 0, '2023-10-24 08:48:45', 6, '2023-10-24 14:49:29', 6, NULL, ''),
 (12, 12, 'fdsafasdf', 'fadfdas\n', 0, '2023-10-24 09:34:00', '2023-10-24 12:34:00', '2,3', '', NULL, NULL, 2, 0, '2023-10-24 09:36:03', 6, NULL, 0, NULL, ''),
-(13, 13, 'test without auto creating task from template', 'Non auto creating task from template description\n', 0, '2023-10-24 14:03:00', '2023-10-24 17:03:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-10-24 14:04:37', 6, NULL, 0, NULL, '');
+(13, 13, 'test without auto creating task from template', 'Non auto creating task from template description\n', 0, '2023-10-24 14:03:00', '2023-10-24 17:03:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-10-24 14:04:37', 6, NULL, 0, NULL, ''),
+(14, 10, 'test 3010', '3030 description\n', 0, '2023-10-30 08:15:00', '2023-10-30 13:15:00', '1,3', '', NULL, NULL, 0, 1, '2023-10-30 08:15:57', 6, NULL, 0, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -1877,15 +1939,7 @@ CREATE TABLE `project_instructions` (
 --
 
 INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(1, 4, 'tesst 221023 instruction\n', '2023-10-22 14:47:22', 1, NULL, 0, NULL, NULL),
-(2, 5, 'No task instruction\n', '2023-10-22 16:58:13', 1, NULL, 0, NULL, NULL),
-(3, 6, 'No task instruction\n', '2023-10-22 17:01:43', 1, NULL, 0, NULL, NULL),
-(4, 7, 'Project instruction\n', '2023-10-23 14:12:17', 1, NULL, 0, NULL, NULL),
-(5, 10, 'TEST INSTRUCTION\n', '2023-10-23 14:22:51', 1, NULL, 0, NULL, NULL),
-(6, 12, 'fdasfas\n', '2023-10-24 09:36:03', 6, NULL, 0, NULL, NULL),
-(7, 13, 'Non auto creating tasks from template instruction\n', '2023-10-24 14:04:37', 6, NULL, 0, NULL, NULL),
-(8, 11, 'instrution here\n', '2023-10-24 14:44:42', 6, '2023-10-24 07:49:29', 6, NULL, NULL),
-(9, 11, 'the 3rd instruction\n', '2023-10-24 14:45:00', 6, NULL, 0, NULL, NULL);
+(1, 14, '3010 1st instruction\n', '2023-10-30 08:15:57', 6, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -1950,73 +2004,7 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
-(4, 4, 4, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(5, 4, 5, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(6, 4, 6, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(7, 4, 7, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [1]', ''),
-(8, 4, 8, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Basic</span>] with quantity: [1]', ''),
-(9, 4, 9, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [1]', ''),
-(10, 4, 0, 0, '2023-10-22 14:47:22', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-SM</span>]', ''),
-(11, 4, 4, 0, '2023-10-22 14:51:21', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
-(12, 4, 4, 0, '2023-10-22 14:51:27', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(13, 4, 5, 0, '2023-10-22 14:51:28', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', ''),
-(14, 4, 5, 0, '2023-10-22 14:51:34', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
-(15, 4, 6, 0, '2023-10-22 14:51:35', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
-(16, 4, 6, 0, '2023-10-22 14:51:40', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(17, 4, 7, 0, '2023-10-22 14:51:41', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
-(18, 4, 7, 0, '2023-10-22 14:51:46', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
-(19, 4, 8, 0, '2023-10-22 14:51:48', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
-(20, 4, 8, 0, '2023-10-22 14:51:52', 'EDITOR: [<span class=\"fw-bold text-info\">thien.pd</span>] <span class=\"text-warning\">Editor OK TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
-(21, 4, 9, 0, '2023-10-22 14:52:09', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-ADV]', ''),
-(22, 4, 4, 0, '2023-10-22 14:52:43', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-STAND]', ''),
-(23, 4, 4, 0, '2023-10-22 14:52:49', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(24, 4, 5, 0, '2023-10-22 14:52:51', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-BASIC]', ''),
-(25, 4, 5, 0, '2023-10-22 14:52:56', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
-(26, 4, 6, 0, '2023-10-22 14:52:58', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [PE-Drone-Basic]', ''),
-(27, 4, 6, 0, '2023-10-22 14:53:02', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(28, 4, 7, 0, '2023-10-22 14:53:05', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Stand]', ''),
-(29, 4, 7, 0, '2023-10-22 14:53:09', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
-(30, 4, 8, 0, '2023-10-22 14:53:11', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-success\">GET TASK</span> [Re-Basic]', ''),
-(31, 4, 8, 0, '2023-10-22 14:53:15', 'QA: [<span class=\"fw-bold text-info\">binh.pn</span>] <span class=\"text-warning\">QA OK TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
-(32, 4, 6, 0, '2023-10-22 14:53:57', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(33, 4, 5, 0, '2023-10-22 14:54:01', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
-(34, 4, 8, 0, '2023-10-22 14:54:06', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
-(35, 4, 4, 0, '2023-10-22 14:54:10', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(36, 4, 7, 0, '2023-10-22 14:54:14', 'DC: [<span class=\"fw-bold text-info\">Mai.dn</span>] <span class=\"text-warning\">DC OK TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
-(37, 4, 6, 0, '2023-10-22 14:54:33', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>]', ''),
-(38, 4, 5, 0, '2023-10-22 14:54:38', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>]', ''),
-(39, 4, 8, 0, '2023-10-22 14:54:44', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">Re-Basic</span>]', ''),
-(40, 4, 4, 0, '2023-10-22 14:54:47', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">PE-STAND</span>]', ''),
-(41, 4, 0, 0, '2023-10-22 14:57:10', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Processing</span>] TO [<span class=\"text-info\">Ready</span>]', ''),
-(42, 4, 7, 0, '2023-10-22 14:57:10', 'TLA: [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">Upload TASK</span> [<span class=\"fw-bold\">Re-Stand</span>]', ''),
-(43, 4, 0, 0, '2023-10-22 15:46:54', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Ready</span>] TO [<span class=\"text-info\">Upload Link</span>]', ''),
-(44, 4, 0, 0, '2023-10-22 16:19:51', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Upload Link</span>] TO [<span class=\"text-info\">Sent</span>]', ''),
-(45, 5, 0, 0, '2023-10-22 16:58:13', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
-(46, 6, 0, 0, '2023-10-22 17:01:43', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
-(47, 6, 10, 0, '2023-10-22 17:07:35', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(48, 6, 11, 0, '2023-10-22 17:16:28', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
-(49, 6, 12, 0, '2023-10-22 17:17:21', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
-(50, 6, 13, 0, '2023-10-22 17:18:44', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
-(51, 6, 14, 0, '2023-10-22 17:21:55', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [3]', ''),
-(52, 6, 0, 0, '2023-10-22 17:21:55', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', ''),
-(53, 7, 15, 0, '2023-10-23 14:12:17', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(54, 7, 16, 0, '2023-10-23 14:12:17', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(55, 7, 0, 0, '2023-10-23 14:12:17', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
-(60, 10, 21, 0, '2023-10-23 14:22:51', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(61, 10, 22, 0, '2023-10-23 14:22:51', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(62, 10, 0, 0, '2023-10-23 14:22:51', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
-(63, 11, 23, 0, '2023-10-24 08:48:45', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-ADV</span>] with quantity: [1]', ''),
-(64, 11, 0, 0, '2023-10-24 08:48:45', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
-(65, 12, 24, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(66, 12, 25, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(67, 12, 0, 0, '2023-10-24 09:36:03', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C451601-TNA</span>]', ''),
-(68, 13, 0, 0, '2023-10-24 14:04:37', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
-(69, 11, 0, 0, '2023-10-24 14:41:10', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE NAME</span> FROM [<span class=\"text-secondary\">test</span>] TO [<span class=\"text-info\">test 123</span>]', ''),
-(70, 11, 0, 0, '2023-10-24 14:45:00', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'the 3rd instruction\n\')\">View detail</a>', ''),
-(71, 11, 0, 0, '2023-10-24 14:49:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(11)\">View detail</a>, <span class=\"text-warning\">CHANGE END DATE</span> FROM [<span class=\"text-seco', '<span class=\"text-secondary\">FROM:</span><br/><hr>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/>description here\n'),
-(72, 11, 0, 0, '2023-10-24 14:49:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(8)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr>fasdfasd\n<span class=\"mt-3 text-secondary\">TO:</span><hr/>instrution here\n'),
-(73, 11, 0, 4, '2023-10-24 14:55:39', 'CSS [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">24/10/2023 14:55</span>] TO [<span class=\"text-warning\">24/10/2023 14:55</span>]', ''),
-(74, 11, 0, 5, '2023-10-24 14:55:58', 'CSS [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">24/10/2023 14:55</span>] TO [<span class=\"text-warning\">25/10/2023 14:55</span>]', '');
+(1, 14, 0, 0, '2023-10-30 08:15:57', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-SM</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2098,29 +2086,6 @@ CREATE TABLE `tasks` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   `deleted_by` varchar(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `tasks`
---
-
-INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(4, 4, NULL, 7, 4, '2023-10-22 07:51:21', 0, 0, 0, 0, '', 9, '2023-10-22 07:52:43', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 1, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:47', 3, NULL, NULL),
-(5, 4, NULL, 7, 4, '2023-10-22 07:51:28', 0, 0, 0, 0, '', 9, '2023-10-22 07:52:51', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 2, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:38', 3, NULL, NULL),
-(6, 4, NULL, 7, 4, '2023-10-22 07:51:35', 0, 0, 0, 0, '', 9, '2023-10-22 07:52:58', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 3, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:33', 3, NULL, NULL),
-(7, 4, NULL, 7, 4, '2023-10-22 07:51:41', 0, 0, 0, 0, '', 9, '2023-10-22 07:53:05', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 4, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:57:10', 3, NULL, NULL),
-(8, 4, NULL, 7, 4, '2023-10-22 07:51:48', 0, 0, 0, 0, '', 9, '2023-10-22 07:53:11', 0, 0, 0, 0, 5, NULL, 0, 0, 0, 5, 3, NULL, 0, 1, 0, '\n', 1, 0, 1, 1, '', '2023-10-22 14:47:22', 1, '2023-10-22 07:54:44', 3, NULL, NULL),
-(10, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-10-22 17:07:35', 1, '2023-10-22 10:07:35', 0, NULL, NULL),
-(11, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:16:28', 1, '2023-10-22 10:16:28', 0, NULL, NULL),
-(12, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:17:21', 1, '2023-10-22 10:17:21', 0, NULL, NULL),
-(13, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:18:44', 1, '2023-10-22 10:18:44', 0, NULL, NULL),
-(14, 6, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-10-22 17:21:55', 1, '2023-10-22 10:21:55', 0, NULL, NULL),
-(15, 7, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:12:17', 1, '2023-10-23 07:12:17', 0, NULL, NULL),
-(16, 7, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:12:17', 1, '2023-10-23 07:12:17', 0, NULL, NULL),
-(21, 10, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:22:51', 1, '2023-10-23 07:22:51', 0, NULL, NULL),
-(22, 10, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-23 14:22:51', 1, '2023-10-23 07:22:51', 0, NULL, NULL),
-(23, 11, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-24 08:48:45', 6, '2023-10-24 01:48:45', 0, NULL, NULL),
-(24, 12, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-24 09:36:03', 6, '2023-10-24 02:36:03', 0, NULL, NULL),
-(25, 12, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-24 09:36:03', 6, '2023-10-24 02:36:03', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2760,7 +2725,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2850,19 +2815,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2874,7 +2839,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`

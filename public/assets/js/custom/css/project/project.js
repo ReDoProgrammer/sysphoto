@@ -261,7 +261,7 @@ function fetch() {
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning text-danger"></i>  Add new CC</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment text-info"></i>  Add new Instruction</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="UpdateProject(${p.id})"><i class="fas fa-pencil-alt text-warning"></i>  Update</a>
-                                    ${p.status == 1 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(' + p.id + ')"><i class="fas fa-trash-alt text-danger"></i>  Destroy</a>' : ''}
+                                    ${p.status_id <= 1 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(' + p.id + ')"><i class="fas fa-trash-alt text-danger"></i>  Destroy</a>' : ''}
                                     ${p.status_id == 4 ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SendProject(${p.id})"><i class="fa-solid fa-paper-plane text-success"></i>  Send</a>` : ``}        
                                     
                                 </div> 
@@ -274,8 +274,6 @@ function fetch() {
             } catch (error) {
                 console.log(data, error);
             }
-
-
         },
         error: function (jqXHR, textStatus, errorThrown) {
             console.error("Lỗi AJAX:", textStatus, errorThrown);

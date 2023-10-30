@@ -45,32 +45,27 @@
         }
 
         public function GetList($from_date,$to_date,$stt,$search,$page = 1,$limit = 10){
-            $columns = "p.id,c.acronym,p.name,p.status_id,p.product_url,
-            DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') start_date, DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') end_date, 
-            s.name as status_name,s.color status_color";
-            $join = " JOIN customers c ON p.customer_id = c.id ";
-            $join .= "LEFT JOIN project_statuses s ON p.status_id = s.id ";
-            $where =" (date(p.end_date) BETWEEN STR_TO_DATE('$from_date', '%d/%m/%Y') AND STR_TO_DATE('$to_date', '%d/%m/%Y')) " ;
-            $where .=" AND p.name LIKE '%".$search."%' ";
-            $params = [];
-           
-            if(!empty($stt)){
-                $where.= "AND p.status_id IN (";               
-                foreach($stt as $s){
-                    $where .= $s==end($stt)?"$s":"$s,";
-                }                
-                $where .=")";
-            }
-            $count = count($this->__db->select($this->__table." p ","p.id",$join,$where));
-            $projects = $this->__db->select($this->__table. " p ",$columns,$join,$where,$params,$page,$limit);
+            $params = [
+                0=>$from_date,
+                1=>$to_date,
+                2=>$stt,
+                3=>$search,
+                4=>$page,
+                5=>$limit
+            ];
+            print_r($stt);
+            return $this->__db->callStoredProcedure("ProjectFilter",$params);
+        }
 
-            $data = array(
-                'code'=>200,
-                'msg'=>'fetch projects list successfully!',
-                'pages'=>$count%$limit==0?$count/$limit:intval($count/$limit)+1,
-                'projects'=>$projects
-            );
-            return json_encode($data);
+        public function GetPages($from_date,$to_date,$stt,$search='',$limit=10){
+            $params = [
+                'p_from_date'=>$from_date,
+                'p_end_date'=>$to_date,
+                'p_status'=>$stt,
+                'p_search'=>$search,
+                'p_limit'=>$limit
+            ];
+            return $this->__db->executeStoredProcedure("ProjectPages",$params);
         }
 
         public function AddInstruction($id,$instruction){
