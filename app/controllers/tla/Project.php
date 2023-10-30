@@ -67,19 +67,26 @@ class Project extends TLAController
 
     public function getList()
     {
-        $from_date = $_GET['from_date'];
-        $to_date = $_GET['to_date'];
+        $from_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'].":00"))->format('Y-m-d H:i:s');
+        $to_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'].":00"))->format('Y-m-d H:i:s');
         if (isset($_GET['stt'])) {
-            $stt = $_GET['stt'];
+            $stt =implode(',', $_GET['stt']) ;
         } else {
-            $stt = [];
+            $stt = '';
         }
         $search = $_GET['search'];
         $page = $_GET['page'];
         $limit = $_GET['limit'];
+        
 
-        $data = $this->__project_model->getList($from_date, $to_date, $stt, $search, $page, $limit);
-        echo $data;
+       echo json_encode([
+            'code'=>200,
+            'msg'=>'Filter projects successfully',
+            'icon'=>'success',
+            'heading'=>'SUCCESSFULLY',
+            'projects'=>$this->__project_model->GetList($from_date,$to_date,$stt,$search,$page,$limit)
+            // 'pages'=>$this->GetPages($from_date,$to_date,$stt,$search,$limit)
+       ]);
     }
 
     public function getdetail()

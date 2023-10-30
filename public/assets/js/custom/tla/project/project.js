@@ -22,7 +22,9 @@ function AddNewTask(id) {
     $('#task_modal').modal('show');
 }
 
-
+function ApplyTemplates(id){
+    console.log(id);
+}
 
 
 function LoadProjectStatuses() {
@@ -96,16 +98,20 @@ function fetch() {
                             <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
                             ${p.end_date.split(' ')[0]}
                         </td>
-                        <td></td>
+                        <td class="fw-bold text-info">${p.templates}</td>
                         <td class="text-center">
                             <span class="badge ${p.status_color?p.status_color:'text-info'}">${p.status_name?p.status_name:'Initial'}</span>
                         </td>                       
                         <td class="text-center">
                             <div class="dropdown action-label">
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-cog"></i>								</a>	
+                                <i class="fas fa-cog"></i></a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
+                                    ${p.status_id == 0 && p.templates.trim().length >0 ?`
+                                    <a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`
+                                    :``}
+                                   
                                     ${p.status_id < 3 ?
                                 `<a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle text-primary"></i>  Add new task</a>`:
                                 `

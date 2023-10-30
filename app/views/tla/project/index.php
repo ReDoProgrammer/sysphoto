@@ -36,8 +36,8 @@
                 <th>Start</th>
                 <th>Deadline</th>
                 <th>Templates</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th class="text-center">Status</th>
+                <th></th>
             </tr>
         </thead>
         <tbody id="tblProjects"></tbody>
