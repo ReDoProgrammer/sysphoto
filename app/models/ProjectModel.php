@@ -2,6 +2,10 @@
     class ProjectModel extends Model{
         protected $__table = 'projects';
 
+        public function ApplyTemplates($id){
+            $params = ['p_id'=>$id];
+            return $this->__db->executeStoredProcedure("ProjectApplyingTemplates",$params);
+        }
         public function CreateProject($customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description){
             $user = unserialize($_SESSION['user']);
             $params = array(

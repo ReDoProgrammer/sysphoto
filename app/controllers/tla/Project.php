@@ -111,4 +111,24 @@ class Project extends TLAController
         echo json_encode($data);
     }
 
+    public function ApplyTemplates(){
+        $id = $_POST['id'];
+        $rs = $this->__project_model->ApplyTemplates($id);
+        if($rs['rows_inserted'] > 0){
+            $data = [
+                'code'=> 200,
+                'msg'=> 'The templates has been applied',
+                'icon'=> 'success',
+                'heading'=>'SUCCESSFULLY'
+            ];
+        }else{
+            $data = [
+                'code'=> 404,
+                'msg'=> 'Can not apply the template',
+                'icon'=> 'error'
+            ];
+        }
+        echo json_encode($data);
+    }
+
 }

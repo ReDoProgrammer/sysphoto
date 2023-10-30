@@ -23,7 +23,27 @@ function AddNewTask(id) {
 }
 
 function ApplyTemplates(id){
-    console.log(id);
+    $.ajax({
+        url:'project/ApplyTemplates',
+        type:'post',
+        data:{id},
+        success:function(data){
+           try {
+             if(data.code == 200){
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    icon: content.icon,
+                    loader: true,        // Change it to false to disable loader
+                    loaderBg: '#9EC600'  // To change the background
+                })
+                fetch();
+             }
+           } catch (error) {
+                console.log(data,error);
+           }
+        }
+    })
 }
 
 
@@ -80,9 +100,8 @@ function fetch() {
                         }
                     }
 
-                    console.log(content.projects);
                     let idx = (page - 1) * limit;
-                    content.projects.forEach(p => {
+                    content.projects.forEach(p => {                       
                         $('#tblProjects').append(`
                     <tr id="${p.id}">
                         <td>${++idx}</td>                        
@@ -108,9 +127,8 @@ function fetch() {
                                 <i class="fas fa-cog"></i></a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
-                                    ${p.status_id == 0 && p.templates.trim().length >0 ?`
-                                    <a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`
-                                    :``}
+                                    ${p.gen_number > 0 ?``
+                                    :`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
                                    
                                     ${p.status_id < 3 ?
                                 `<a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle text-primary"></i>  Add new task</a>`:
