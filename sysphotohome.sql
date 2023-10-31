@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 30, 2023 lúc 04:36 AM
--- Phiên bản máy phục vụ: 10.4.27-MariaDB
--- Phiên bản PHP: 8.2.0
+-- Thời gian đã tạo: Th10 31, 2023 lúc 05:22 AM
+-- Phiên bản máy phục vụ: 10.4.28-MariaDB
+-- Phiên bản PHP: 8.0.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -293,6 +293,39 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `PrjectGetCCsWithTasks` (IN `p_proje
     GROUP BY c.id, c.project_id;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectApplyingTemplates` (IN `p_id` BIGINT)   BEGIN
+	DECLARE v_levels VARCHAR(100);
+    DECLARE v_created_by INT;
+    DECLARE insertCount INT DEFAULT 0;
+    
+    SELECT levels INTO v_levels FROM projects WHERE id = p_id;
+    SELECT created_by INTO v_created_by FROM projects WHERE id = p_id;
+
+    SET @start = 1;
+    SET @end = LOCATE(',', v_levels);
+    
+    -- Kiểm tra xem @end có rỗng hay không
+    IF @end IS NOT NULL THEN
+        WHILE @end > 0 DO
+            INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
+            VALUES (p_id, SUBSTRING(v_levels, @start, @end - @start),1, v_created_by);
+            SET @start = @end + 1;
+            SET @end = LOCATE(',', v_levels, @start);
+            SET insertCount = insertCount + 1;
+        END WHILE;
+    END IF;
+
+    -- Xử lý giá trị cuối cùng
+    IF SUBSTRING(v_levels, @start) > 0 THEN
+        INSERT INTO tasks (project_id, level_id,auto_gen, created_by)
+        VALUES (p_id, SUBSTRING(v_levels, @start),1, v_created_by);
+        
+        SET insertCount = insertCount + 1;
+    END IF;
+    
+    SELECT insertCount AS rows_inserted;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGINT)   BEGIN
     SELECT 
     p.id,
@@ -374,7 +407,8 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectFilter` (IN `p_from_date` TI
     DECLARE v_offset INT;
     SET v_offset = (p_page - 1) * p_limit;
 
-    SELECT p.name,
+    SELECT 
+    		p.id, p.name,
            c.acronym,
            DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') AS start_date,
            DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') AS end_date,
@@ -382,12 +416,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectFilter` (IN `p_from_date` TI
             FROM levels
             WHERE FIND_IN_SET(levels.id, p.levels)
            ) AS templates,
+           COUNT(t.id) as gen_number,
            p.status_id,
            ps.name AS status_name,
            ps.color AS status_color
     FROM projects p
     JOIN customers c ON p.customer_id = c.id
     LEFT JOIN project_statuses ps ON p.status_id = ps.id
+    LEFT JOIN tasks t ON t.project_id = p.id AND t.auto_gen = 1
     WHERE p.end_date >= p_from_date AND p.end_date <= p_to_date
     AND (p.name LIKE CONCAT('%', p_search, '%') OR c.acronym LIKE CONCAT('%', p_search, '%'))
     AND (
@@ -1309,6 +1345,13 @@ CREATE TABLE `ccs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
+-- Đang đổ dữ liệu cho bảng `ccs`
+--
+
+INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(1, 14, 'CC1\n', '2023-10-30 19:31:00', '2023-10-30 19:31:00', '2023-10-30 19:31:52', 6, '2023-10-30 12:31:52', 0, '', NULL);
+
+--
 -- Bẫy `ccs`
 --
 DELIMITER $$
@@ -2004,7 +2047,10 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
-(1, 14, 0, 0, '2023-10-30 08:15:57', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-SM</span>]', '');
+(1, 14, 0, 0, '2023-10-30 08:15:57', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-SM</span>]', ''),
+(2, 14, 1, 0, '2023-10-30 19:17:55', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
+(3, 14, 2, 0, '2023-10-30 19:17:55', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
+(4, 14, 0, 1, '2023-10-30 19:31:52', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">30/10/2023 19:31</span>] TO [<span class=\"text-warning\">30/10/2023 19:31</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2086,6 +2132,14 @@ CREATE TABLE `tasks` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   `deleted_by` varchar(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `tasks`
+--
+
+INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+(1, 14, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-30 19:17:55', 6, '2023-10-30 12:17:55', 0, NULL, NULL),
+(2, 14, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-10-30 19:17:55', 6, '2023-10-30 12:17:55', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2725,7 +2779,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2827,7 +2881,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2839,7 +2893,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`
