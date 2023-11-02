@@ -209,10 +209,19 @@ function fetch() {
                         $('#tblProjects').append(`
                     <tr id="${p.id}">
                         <td>${++idx}</td>
-                        <td class="fw-bold">${p.acronym}</td>
-                        <td>${p.name}</td>
-                        <td>${p.start_date}</td>
-                        <td>${p.end_date}</td>
+                        <td>
+                            <span class="text-info fw-bold">${p.name}</span><br/>
+                            <span>[${p.acronym}]</span>
+                        </td>
+                        <td>
+                            <span>${p.start_date.split(' ')[1]}</span><br/>
+                            ${p.start_date.split(' ')[0]}
+                        </td>
+                        <td>
+                            <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
+                            ${p.end_date.split(' ')[0]}
+                        </td>
+                        <td class="fw-bold text-info">${p.templates}</td>
                         <td>
                             ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
                         </td>
