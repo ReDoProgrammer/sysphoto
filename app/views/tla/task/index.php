@@ -19,14 +19,6 @@
             Load Tasks
         </a>
     </div>
-    <!-- <div class="col-xxl-2 col-lg-2 col-md-2 col-sm-12 col-xs-12">
-        <div class="add-emp-section">
-            <button class="btn btn-success btn-add-emp" id="btnGetTask">
-                <i class="fas fa-plus"></i>
-                Get more task
-            </button>
-        </div>
-    </div> -->
 </div>
 <!-- /Search Filter -->
 <div class="card">

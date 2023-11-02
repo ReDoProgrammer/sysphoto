@@ -1,7 +1,9 @@
 var taskId = 0;
 var ccId = 0;
+var idValue = 0;
 
 $(document).ready(function () {
+    idValue = getParameterByName("id", window.location.href);
     GetProjectDetail();
     GetLogs();
     GetCCs();
@@ -11,44 +13,7 @@ function AddCCTask(id){
     ccId = id;
     $("#task_modal").modal('show');   
 }
-function DeleteCC(id){
-    Swal.fire({
-        title: 'Are you sure want to delete this task?',
-        text: "When this CC is deleted, its associated tasks will also be deleted. \n You won't be able to revert this!",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                url: '../cc/delete',
-                type: 'post',
-                data: { id },
-                success: function (data) {
-                    try {
-                        let content = $.parseJSON(data);
-                        if (content.code == 200) {
-                            $.toast({
-                                heading: content.heading,
-                                text: content.msg,
-                                icon: content.icon,
-                                loader: true,        // Change it to false to disable loader
-                                loaderBg: '#9EC600'  // To change the background
-                            })
-                            GetProjectDetail();
-                            GetLogs();
-                            GetCCs();
-                        }
-                    } catch (error) {
-                        console.log(data, error);
-                    }
-                }
-            })
-        }
-    })
-}
+
 function GetLogs() {
     $('#ulProjectLogs').empty();
     if (idValue !== null) {
