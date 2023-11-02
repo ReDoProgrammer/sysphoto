@@ -114,6 +114,7 @@ class Project extends TLAController
     public function ApplyTemplates(){
         $id = $_POST['id'];
         $rs = $this->__project_model->ApplyTemplates($id);
+       
         if($rs['rows_inserted'] > 0){
             $data = [
                 'code'=> 200,

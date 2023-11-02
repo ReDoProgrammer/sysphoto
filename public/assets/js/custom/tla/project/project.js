@@ -28,8 +28,10 @@ function ApplyTemplates(id){
         type:'post',
         data:{id},
         success:function(data){
+            
            try {
-             if(data.code == 200){
+            let content = $.parseJSON(data);
+             if(content.code == 200){
                 $.toast({
                     heading: content.heading,
                     text: content.msg,
