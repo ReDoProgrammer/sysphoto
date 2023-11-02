@@ -58,6 +58,7 @@ $('#btnSubmitTask').click(function () {
 
     //end validation
 
+
     $.ajax({
         url: 'task/create',
         type: 'post',
@@ -121,9 +122,7 @@ function LoadEditorsByLevel(level, selected = null) {
             try {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
-
                     content.editors.forEach(e => {
-                        console.log(e);
                         selectizeEditor.addOption({ value: `${e.id}`, text: `${e.acronym}` });
                     })
 
