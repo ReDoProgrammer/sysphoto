@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 02, 2023 lúc 04:42 AM
+-- Thời gian đã tạo: Th10 03, 2023 lúc 04:42 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -1350,7 +1350,8 @@ CREATE TABLE `ccs` (
 
 INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
 (1, 14, 'CC1\n', '2023-10-30 19:31:00', '2023-10-30 19:31:00', '2023-10-30 19:31:52', 6, '2023-10-30 12:31:52', 0, '', NULL),
-(2, 15, 'CC1\n', '2023-11-02 10:27:00', '2023-11-02 10:27:00', '2023-11-02 10:28:25', 1, '2023-11-02 03:28:25', 0, '', NULL);
+(2, 15, 'CC1\n', '2023-11-02 10:27:00', '2023-11-02 10:27:00', '2023-11-02 10:28:25', 1, '2023-11-02 03:28:25', 0, '', NULL),
+(3, 15, '031123 1st CC\n', '2023-11-03 08:09:00', '2023-11-03 08:09:00', '2023-11-03 10:41:23', 1, '2023-11-03 03:41:23', 0, '', NULL);
 
 --
 -- Bẫy `ccs`
@@ -1802,7 +1803,8 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 (12, 12, 'fdsafasdf', 'fadfdas\n', 0, '2023-10-24 09:34:00', '2023-10-24 12:34:00', '2,3', '', NULL, NULL, 2, 0, '2023-10-24 09:36:03', 6, NULL, 0, NULL, ''),
 (13, 13, 'test without auto creating task from template', 'Non auto creating task from template description\n', 0, '2023-10-24 14:03:00', '2023-10-24 17:03:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-10-24 14:04:37', 6, NULL, 0, NULL, ''),
 (14, 10, 'test 3010', '3030 description\n', 0, '2023-10-30 08:15:00', '2023-10-30 13:15:00', '1,3', '', NULL, NULL, 0, 1, '2023-10-30 08:15:57', 6, NULL, 0, NULL, ''),
-(15, 13, 'Test 021123', 'Project description\n', 2, '2023-11-02 08:25:00', '2023-11-02 13:25:00', '1,2,3,5', '', NULL, NULL, 2, 0, '2023-11-02 08:25:44', 6, '2023-11-02 10:28:46', 1, NULL, '');
+(15, 13, 'Test 021123', 'Project description\n', 2, '2023-11-02 08:25:00', '2023-11-02 13:25:00', '1,2,3,5', '', NULL, NULL, 3, 0, '2023-11-02 08:25:44', 6, '2023-11-03 10:41:43', 1, NULL, ''),
+(16, 13, '031123 project', 'project description 031123\n', 0, '2023-11-03 08:09:00', '2023-11-03 15:09:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-11-03 10:40:47', 1, NULL, 0, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -1985,8 +1987,10 @@ CREATE TABLE `project_instructions` (
 
 INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
 (1, 14, '3010 1st instruction\n', '2023-10-30 08:15:57', 6, NULL, 0, NULL, NULL),
-(2, 15, 'New instruction\n', '2023-11-02 08:25:44', 6, '2023-11-02 03:28:46', 1, NULL, NULL),
-(3, 15, 'New instruction\n', '2023-11-02 10:28:37', 1, NULL, 0, NULL, NULL);
+(2, 15, 'New instruction\n', '2023-11-02 08:25:44', 6, '2023-11-03 03:41:43', 1, NULL, NULL),
+(3, 15, 'New instruction\n', '2023-11-02 10:28:37', 1, NULL, 0, NULL, NULL),
+(4, 16, '031123 project 1st instruction\n', '2023-11-03 10:40:47', 1, NULL, 0, NULL, NULL),
+(5, 15, 'the 2nd instruction\n', '2023-11-03 10:41:34', 1, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -2051,55 +2055,20 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
-(1, 14, 0, 0, '2023-10-30 08:15:57', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-SM</span>]', ''),
-(2, 14, 1, 0, '2023-10-30 19:17:55', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(3, 14, 2, 0, '2023-10-30 19:17:55', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(4, 14, 0, 1, '2023-10-30 19:31:52', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">30/10/2023 19:31</span>] TO [<span class=\"text-warning\">30/10/2023 19:31</span>]', ''),
-(5, 15, 0, 0, '2023-11-02 08:25:44', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
-(6, 15, 3, 0, '2023-11-02 08:26:10', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(7, 15, 4, 0, '2023-11-02 08:26:10', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(8, 15, 5, 0, '2023-11-02 08:26:10', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(9, 15, 6, 0, '2023-11-02 08:26:24', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(10, 15, 7, 0, '2023-11-02 08:26:24', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(11, 15, 8, 0, '2023-11-02 08:26:24', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(12, 15, 9, 0, '2023-11-02 08:27:25', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(13, 15, 10, 0, '2023-11-02 08:27:25', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(14, 15, 11, 0, '2023-11-02 08:27:25', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(15, 15, 1, 0, '2023-11-02 08:30:18', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(16, 15, 2, 0, '2023-11-02 08:30:18', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(17, 15, 3, 0, '2023-11-02 08:30:18', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(18, 15, 1, 0, '2023-11-02 08:35:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(19, 15, 2, 0, '2023-11-02 08:35:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(20, 15, 3, 0, '2023-11-02 08:35:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(21, 15, 1, 0, '2023-11-02 08:37:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(22, 15, 2, 0, '2023-11-02 08:37:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(23, 15, 3, 0, '2023-11-02 08:37:29', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(24, 15, 1, 0, '2023-11-02 08:38:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(25, 15, 2, 0, '2023-11-02 08:38:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(26, 15, 3, 0, '2023-11-02 08:38:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(27, 15, 1, 0, '2023-11-02 08:38:26', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(28, 15, 2, 0, '2023-11-02 08:38:26', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(29, 15, 3, 0, '2023-11-02 08:38:26', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(30, 15, 1, 0, '2023-11-02 08:39:01', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(31, 15, 2, 0, '2023-11-02 08:39:01', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(32, 15, 3, 0, '2023-11-02 08:39:01', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(33, 15, 1, 0, '2023-11-02 08:40:07', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-STAND</span>] with quantity: [1]', ''),
-(34, 15, 2, 0, '2023-11-02 08:40:07', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-BASIC</span>] with quantity: [1]', ''),
-(35, 15, 3, 0, '2023-11-02 08:40:07', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(36, 15, 4, 0, '2023-11-02 08:48:43', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT TASK</span> [<span class=\"fw-bold\">Re-Stand</span>] with quantity: [1]', ''),
-(37, 15, 0, 0, '2023-11-02 08:48:43', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', ''),
-(38, 15, 2, 0, '2023-11-02 08:59:44', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
-(39, 15, 3, 0, '2023-11-02 08:59:44', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] FROM TEMPLATE with quantity: [1]', ''),
-(40, 15, 4, 0, '2023-11-02 08:59:45', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(41, 15, 5, 0, '2023-11-02 09:00:34', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
-(42, 15, 0, 2, '2023-11-02 10:28:25', 'CEO [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">02/11/2023 10:27</span>] TO [<span class=\"text-warning\">02/11/2023 10:27</span>]', ''),
-(43, 15, 0, 0, '2023-11-02 10:28:37', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'New instruction\n\')\">View detail</a>', ''),
-(44, 15, 0, 0, '2023-11-02 10:28:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TEMPLATES</span> FROM [<span class=\"text-secondary\">PE-STAND, PE-BASIC, PE-Drone-Basic</span>] TO [<span class=\"text-info\">PE-STAND, PE-BASIC, PE-Drone-Basic, Re-Basic</s', ''),
-(45, 15, 0, 0, '2023-11-02 10:28:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(2)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr>Project instruction\n<span class=\"mt-3 text-secondary\">TO:</span><hr/>New instruction\n'),
-(46, 15, 6, 0, '2023-11-02 10:30:38', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW CC TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(47, 15, 6, 0, '2023-11-02 10:31:08', 'CEO: [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(6)\">View detail</a>', '<span class=\"text-secondary\">FROM:</span><br/><hr>NEW CC task\n<span class=\"mt-3 text-secondary\">TO:</span><hr/>NEW CC task 1\n'),
-(48, 15, 2, 0, '2023-11-02 10:32:02', 'CEO: [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK QUANTITY</span> FROM [<span class=\"text-secondary\">1</span>] TO [<span class=\"text-primary\">3</span>]', ''),
-(49, 15, 6, 0, '2023-11-02 10:42:06', 'TASK: <span class=\"bg-warning text-white\" >PE-Drone-Basic</span> <span class=\"text-warning fw-bold\">WAS UPDATED</span> BY: CEO: [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE TASK DESCRIPTION</span> <a href=\"javascri', '<span class=\"text-secondary\">FROM:</span><br/><hr>NEW CC task 1\n<span class=\"mt-3 text-secondary\">TO:</span><hr/>NEW CC task 12\n');
+(1, 15, 5, 0, '2023-11-03 10:25:26', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">4</span>]', ''),
+(2, 15, 4, 0, '2023-11-03 10:29:51', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">1</span>] TO [<span class=\"text-primary\">3</span>]', ''),
+(3, 15, 4, 0, '2023-11-03 10:30:32', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED LEVEL</span> TO [<span class=\"fw-bold text-info\">PE-Drone-Basic</span>]', ''),
+(4, 15, 5, 0, '2023-11-03 10:30:46', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED EDITOR</span> FROM [<span class=\"text-secondary\">anh.cv</span>] TO [<span class=\"text-info\">binh.pn</span>]', ''),
+(5, 15, 6, 0, '2023-11-03 10:31:50', '[<span class=\"fw-bol<span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">8</span>] TO [<span class=\"text-primary\">3</span>]', ''),
+(6, 15, 6, 0, '2023-11-03 10:33:38', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">2</span>]', ''),
+(7, 15, 6, 0, '2023-11-03 10:37:18', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">2</span>] TO [<span class=\"text-primary\">3</span>]', ''),
+(8, 15, 6, 0, '2023-11-03 10:38:50', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">8</span>]', ''),
+(9, 15, 5, 0, '2023-11-03 10:39:33', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]', ''),
+(10, 16, 0, 0, '2023-11-03 10:40:47', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
+(11, 15, 7, 0, '2023-11-03 10:41:08', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-info text-white\">PE-DTE</span>] with quantity: [3]', ''),
+(12, 15, 0, 3, '2023-11-03 10:41:23', 'CEO [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">03/11/2023 08:09</span>] TO [<span class=\"text-warning\">03/11/2023 08:09</span>]', ''),
+(13, 15, 0, 0, '2023-11-03 10:41:34', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'the 2nd instruction\n\')\">View detail</a>', ''),
+(14, 15, 0, 0, '2023-11-03 10:41:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 2</span>] TO [<span class=\"text-info\">combo 3</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2187,11 +2156,11 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(2, 15, 'Task description\n', 0, 0, '2023-11-02 03:32:02', 0, 0, 0, 0, '', 0, '2023-11-02 03:32:02', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 3, 1, '', '2023-11-02 08:59:44', 6, '2023-11-02 03:32:02', 1, NULL, NULL),
+(2, 15, 'Task description\n', 0, 0, '2023-11-02 03:32:02', 0, 0, 0, 0, '', 0, '2023-11-02 03:32:02', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 3, 1, '', '2023-11-02 08:59:44', 6, '2023-11-03 03:34:42', 0, NULL, NULL),
 (3, 15, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-02 08:59:44', 6, '2023-11-02 01:59:44', 0, NULL, NULL),
-(4, 15, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-02 08:59:45', 6, '2023-11-02 01:59:45', 0, NULL, NULL),
-(5, 15, 'Normal task\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-02 09:00:34', 3, '2023-11-02 02:00:34', 0, NULL, NULL),
-(6, 15, 'NEW CC task 12\n', 0, 0, '2023-11-02 03:42:06', 0, 0, 0, 0, '', 0, '2023-11-02 03:42:06', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 2, 1, 1, '', '2023-11-02 10:30:38', 1, '2023-11-02 03:42:06', 1, NULL, NULL);
+(4, 15, '\n', 0, 0, '2023-11-03 03:30:32', 0, 0, 0, 0, '', 0, '2023-11-03 03:30:32', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 3, 1, '', '2023-11-02 08:59:45', 6, '2023-11-03 03:34:42', 0, NULL, NULL),
+(6, 15, 'NEW CC task 12\n', 0, 0, '2023-11-03 03:38:50', 0, 0, 0, 0, '', 0, '2023-11-03 03:38:50', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 2, 8, 1, '', '2023-11-02 10:30:38', 1, '2023-11-03 03:38:50', 1, NULL, NULL),
+(7, 15, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-03 10:41:08', 1, '2023-11-03 03:41:08', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2239,100 +2208,95 @@ $$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN 
-    DECLARE v_actions VARCHAR(250) DEFAULT '';
-    DECLARE v_action VARCHAR(250) DEFAULT '';
     
     DECLARE v_old_level VARCHAR(100) DEFAULT '';
     DECLARE v_new_level VARCHAR(100) DEFAULT '';
-    DECLARE v_old_level_color VARCHAR(100) DEFAULT '';
-    DECLARE v_new_level_color VARCHAR(100) DEFAULT '';
     
     DECLARE v_old_status VARCHAR(100) DEFAULT '';
     DECLARE v_new_status VARCHAR(100) DEFAULT '';
     
     DECLARE v_old_emp VARCHAR(100) DEFAULT '';
     DECLARE v_new_emp VARCHAR(100) DEFAULT '';
-    
-    DECLARE v_changes BOOLEAN DEFAULT FALSE;
 
     DECLARE v_role varchar(100) DEFAULT '';
+    DECLARE v_action varchar(250) DEFAULT '';
+    DECLARE v_actioner varchar(20) DEFAULT '';
 
     DECLARE v_content text DEFAULT '';
 
-    SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
   
-  	SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id); -- lay level cu
-    SET v_old_level_color = (SELECT color FROM levels WHERE id = OLD.level_id);
-  	SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai
-     SET v_new_level_color = (SELECT color FROM levels WHERE id = NEW.level_id);
+  	SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id); -- lay level cu 	
+    IF v_old_level IS NULL THEN -- nếu không thay đổi về level => old level chinh la new level
+    	SET v_old_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level cu 	
+    END IF;
 
-    SET v_actions = CONCAT('TASK: <span class="',v_old_level_color,'" >',v_old_level,'</span> <span class="text-warning fw-bold">WAS UPDATED</span> BY: ',v_role,': [<span class="fw-bold text-info">',(SELECT acronym FROM users WHERE id = NEW.updated_by), '</span>]');
+    SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.updated_by));
+    
+   SET v_actioner = CONCAT('UPDATED TASK [<span class="fw-bold">89778</span>]');
    
     
     -- description
-    IF(OLD.description <> NEW.description) THEN
-    	SET v_changes = TRUE;
-    	SET v_action = CONCAT('<span class="text-warning">CHANGE TASK DESCRIPTION</span> <a href="javascript:void(0)" onClick="ViewContent(',NEW.id,')">View detail</a>,');
-        SET v_content = CONCAT('<span class="text-secondary">FROM:</span><br/><hr>',OLD.description,'<span class="mt-3 text-secondary">TO:</span><hr/>',NEW.description); 
-        SET v_actions = CONCAT(v_actions,' ',v_action);
-    END IF;
+    -- IF(OLD.description <> NEW.description) THEN    	
+    	
+    -- END IF;
     -- //end description
     
     -- task level
-    IF(OLD.level_id <> NEW.level_id) THEN
-    	SET v_changes = TRUE;
-        SET v_old_level = (SELECT name FROM levels WHERE id = OLD.level_id);
-       
-        SET v_action = CONCAT('<span class="text-warning">CHANGE LEVEL</span> TO [<span class="',v_new_level_color,'">', v_new_level, '</span>],');
-        SET v_actions = CONCAT(v_actions,' ',v_action);        
+    IF(OLD.level_id <> NEW.level_id) THEN 
+        SET v_new_level = (SELECT name FROM levels WHERE id = NEW.level_id); -- lay level hien tai    
+        SET v_action = CONCAT('<span class="text-warning">CHANGED LEVEL</span> TO [<span class="fw-bold text-info">', v_new_level, '</span>]');    
+        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, CONCAT(v_actioner,v_action),v_content);
     END IF;
     -- //end task level
     
     -- status
     IF(OLD.status_id <> NEW.status_id) THEN
-    	SET v_changes = TRUE;
-        SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);
+        SET v_new_status = (SELECT name FROM task_statuses WHERE id = NEW.status_id);        
+        SET v_old_status = (SELECT name FROM task_statuses WHERE id = OLD.status_id);
+        
         IF v_new_status IS NOT NULL THEN
-            SET v_action = CONCAT('<span class="text-warning">',v_new_status,' TASK</span> [<span class="fw-bold">',v_new_level,'</span>]'); 
-        ELSE
-            SET v_action = CONCAT('<span class="text-warning"> SET STARTED STATUS TASK</span> [<span class="fw-bold">',v_new_level,'</span>]'); 
+            IF v_old_status IS NOT NULL THEN
+                SET v_action = CONCAT('<span class="text-warning">CHANGED STATUS FROM</span> [<span class="fw-bold text-secondary">',v_old_status,'</span>] TO [<span class="fw-bold text-info">', v_new_status, '</span>]');               
+            ELSE
+                SET v_action = CONCAT('<span class="text-warning">CHANGED STATUS FROM</span> [<span class="fw-bold text-secondary">STARTED</span>] TO [<span class="fw-bold text-info">', v_new_status, '</span>]');               
+            END IF;
+        ELSE -- neu null => status_id = 0
+            SET v_action = CONCAT('<span class="text-warning">CHANGED STATUS FROM</span> [<span class="fw-bold text-secondary">',v_old_status,'</span>] TO [<span class="fw-bold text-info">STARTED</span>]');               
         END IF;
         
         
            -- editor url
            IF OLD.editor_url <> NEW.editor_url AND  IsURL(NEW.editor_url) THEN
-                SET v_action = (SELECT TRIM(TRAILING ',' FROM v_action));                 
-                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>, ');       
+                SET v_action = CONCAT(v_action,' with <a href="',NEW.editor_url,'" target="_blank">Link</a>');       
            END IF;
-        -- //editor url
+            -- //editor url
     
-        SET v_actions = CONCAT(v_actions,' ',v_action); 
+        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, CONCAT(v_actioner,v_action),v_content);
     END IF;
     -- //end status
     
     -- EDITOR
     IF(OLD.editor_id <> NEW.editor_id) THEN
-    	SET v_changes = TRUE;
     	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.editor_id);        
       	IF OLD.editor_id = 0 THEN -- neu truoc do chua co editor     		
             IF NEW.editor_assigned = 1 THEN -- neu la gan editor
-            	SET v_action = CONCAT('<span class="text-warning">ASSIGN EDITOR</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_actions = CONCAT(v_actions,' ',v_action); 
+            	SET v_action = CONCAT('<span class="text-warning">ASSIGNED EDITOR</span> [<span class="text-info">', v_new_emp, '</span>]');        
             ELSE -- neu la editor get task
-            	SET v_action = CONCAT('EDITOR: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_actions = v_action;
+            	SET v_action = CONCAT('GOT TASK AS AN EDITOR');
             END IF;            
      	ELSE -- neu truoc do co editor
+            SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);   
         	IF NEW.editor_id = 0 THEN -- neu la huy editor
-                SET v_new_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);   
-            	SET v_action = CONCAT('<span class="text-danger">UNASSIGN EDITOR</span>[<span class="fw-bold">',v_new_emp,'</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_actions = CONCAT(v_actions,' ',v_action); 
+            	SET v_action = CONCAT('<span class="text-danger">UNASSIGNED EDITOR </span>[<span class="fw-bold">',v_old_emp,'</span>]');        
             ELSE -- thay sang editor khac
-            	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.editor_id);
-                SET v_action = CONCAT('<span class="text-warning">CHANGE EDITOR</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_actions = CONCAT(v_actions,' ',v_action); 
+                SET v_action = CONCAT('<span class="text-warning">CHANGED EDITOR</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]');        
             END IF;      
       	END IF;       
+        
+        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, CONCAT(v_actioner,v_action),v_content);
     END IF; 
     -- //EDITOR
     
@@ -2341,81 +2305,69 @@ CREATE TRIGGER `after_task_updated` AFTER UPDATE ON `tasks` FOR EACH ROW BEGIN
     
     -- QA
      IF(OLD.qa_id <> NEW.qa_id) THEN
-     	SET v_changes = TRUE;
     	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.qa_id);        
       	IF OLD.qa_id = 0 THEN -- neu truoc do chua co QA     		
             IF NEW.qa_assigned = 1 THEN -- neu la gan QA
-            	SET v_action = CONCAT('<span class="text-warning">ASSIGN QA</span> [<span class="text-warning">', v_new_emp, '</span>] ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_actions = CONCAT(v_actions,' ',v_action); 
+            	SET v_action = CONCAT('<span class="text-warning">ASSIGNED QA</span> [<span class="text-warning">', v_new_emp, '</span>]');        
             ELSE -- neu la QA get task
-            	SET v_action = CONCAT('QA: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_actions = v_action;
+            	SET v_action = CONCAT('GOT TASK AS A QA');
             END IF;            
      	ELSE -- neu truoc do co QA
+            SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.qa_id);
         	IF NEW.qa_id = 0 THEN -- neu la huy QA
-            	SET v_action = CONCAT('<span class="text-danger">UNASSIGN QA</span> ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_actions = CONCAT(v_actions,' ',v_action); 
-            ELSE -- thay doi QA
-            	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.qa_id);
-                SET v_action = CONCAT('<span class="text-warning">CHANGE QA</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],');        
-                SET v_actions = CONCAT(v_actions,' ',v_action); 
+            	SET v_action = CONCAT('<span class="text-danger">UNASSIGNED QA</span> [<span class="fw-bold text-secondary">',v_old_emp,'</span>]');        
+            ELSE -- thay doi QA            	
+                SET v_action = CONCAT('<span class="text-warning">CHANGED QA</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]');        
             END IF;      
-      	END IF;       
+      	END IF;     
+        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, CONCAT(v_actioner,v_action),v_content);
     END IF; 
     
     -- // QA
     	
     -- DC
     	IF NEW.dc_timestamp <> OLD.dc_timestamp THEN -- neu co tac dong cua DC
-        	SET v_changes = TRUE;
         	SET v_new_emp = (SELECT acronym FROM users WHERE id = NEW.dc_id);     
         	IF OLD.dc_id = 0 THEN -- DC nhan task            	
-            	SET v_action = CONCAT('DC: [<span class="fw-bold text-info">',v_new_emp, '</span>] <span class="text-success">GET TASK</span> [',v_new_level,']');
-                SET v_actions = v_action;
+            	SET v_action = CONCAT('GOT TASK AS A DC');
             ELSE -- DC submit task hoac thay doi DC
             	IF OLD.dc_id <> NEW.dc_id THEN -- thay doi DC
                 	SET v_old_emp = (SELECT acronym FROM users WHERE id = OLD.dc_id);    
-                    SET v_action = CONCAT('<span class="text-warning">CHANGE DC</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]  ON TASK [<span class="text-primary">', v_new_level, '</span>],'); 
-                   	SET v_actions = CONCAT(v_actions,' ',v_action);
+                    SET v_action = CONCAT('<span class="text-warning">CHANGED DC</span> FROM [<span class="text-secondary">', v_old_emp, '</span>] TO [<span class="text-info">', v_new_emp, '</span>]'); 
                 END IF;
             END IF;
+            INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+            VALUES(OLD.project_id,NEW.id, NEW.updated_at, CONCAT(v_actioner,v_action),v_content);
         END IF;  
     -- //DC
     
     -- quantity
     IF(OLD.quantity <> NEW.quantity) THEN
-    	SET v_changes = TRUE;
-        SET v_action = CONCAT('<span class="text-warning">CHANGE TASK QUANTITY</span> FROM [<span class="text-secondary">', OLD.quantity, '</span>] TO [<span class="text-primary">', NEW.quantity, '</span>],');
-        SET v_actions = CONCAT(v_actions,' ',v_action); 
+        SET v_action = CONCAT('<span class="text-warning">CHANGED QUANTITY</span> FROM [<span class="text-secondary">', OLD.quantity, '</span>] TO [<span class="text-primary">', NEW.quantity, '</span>]');
+        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+        VALUES(OLD.project_id,NEW.id, NEW.updated_at, CONCAT(v_actioner,v_action),v_content);
     END IF;
     -- //end quantity
     
     -- paid
     	IF OLD.pay <> NEW.pay THEN
-        	SET v_changes = TRUE;
         	IF NEW.pay = 1 THEN            	
-        		SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-secondary">FALSE</span>] TO [<span class="text-primary">TRUE</span>],');
+        		SET v_action = CONCAT('<span class="text-warning">CHANGED PAID STATUS</span> FROM [<span class="text-secondary">FALSE</span>] TO [<span class="text-primary">TRUE</span>],');
             ELSE
-            	SET v_action = CONCAT('<span class="text-warning">CHANGE PAID STATUS</span> FROM [<span class="text-primary">TRUE</span>] TO [<span class="text-secondary">FALSE</span>],');
+            	SET v_action = CONCAT('<span class="text-warning">CHANGED PAID STATUS</span> FROM [<span class="text-primary">TRUE</span>] TO [<span class="text-secondary">FALSE</span>],');
             END IF;
-            SET v_actions = CONCAT(v_actions,' ',v_action); 
+            INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
+            VALUES(OLD.project_id,NEW.id, NEW.updated_at, CONCAT(v_actioner,v_action),v_content);
         END IF;
     -- //paid
     
+
 	IF (SELECT COUNT(*) FROM tasks WHERE status_id <> 7) = 0 THEN
     	UPDATE projects 
         SET status_id = 3,updated_at = NOW(),updated_by = NEW.updated_by
         WHERE id = NEW.project_id; -- chuyển project sang trạng thái ready để TLA biết đường upload link
     END IF;
-    
-    -- insert logs
-    IF v_changes = TRUE THEN
-    	SET v_actions = (SELECT TRIM(TRAILING ',' FROM v_actions));
-        
-        INSERT INTO project_logs(project_id,task_id, timestamp, action,content)
-        VALUES(OLD.project_id,NEW.id, NEW.updated_at, v_actions,v_content);
-    END IF;
-
 END
 $$
 DELIMITER ;
@@ -2841,7 +2793,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2931,19 +2883,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -2955,7 +2907,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`
