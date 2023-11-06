@@ -12,7 +12,31 @@ $(document).ready(function () {
     $('#btnSearch').click();
     setInterval(fetch, 100000);// gọi hàm load lại dữ liệu sau mỗi 1p
 })
-
+function ApplyTemplates(id){
+    $.ajax({
+        url:'project/ApplyTemplates',
+        type:'post',
+        data:{id},
+        success:function(data){
+            
+           try {
+            let content = $.parseJSON(data);
+             if(content.code == 200){
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    icon: content.icon,
+                    loader: true,        // Change it to false to disable loader
+                    loaderBg: '#9EC600'  // To change the background
+                })
+                fetch();
+             }
+           } catch (error) {
+                console.log(data,error);
+           }
+        }
+    })
+}
 function UpdateProject(id) {
     $.ajax({
         url: 'project/getdetail',
@@ -232,8 +256,11 @@ function fetch() {
                             <div class="dropdown action-label">
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i>								</a>	
-                                <div class="dropdown-menu dropdown-menu-right">
+                                <div class="dropdown-menu dropdown-menu-right">                                
                                     <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>
+                                    <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
+                                    ${p.gen_number > 0 ?``
+                                    :`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment"></i>  Add new Instruction</a>
