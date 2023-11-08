@@ -7,11 +7,13 @@ $(document).ready(function () {
     GetCCs();
 })
 
-function AddCCTask(id){
+
+
+function AddCCTask(id) {
     ccId = id;
-    $("#task_modal").modal('show');   
+    $("#task_modal").modal('show');
 }
-function DeleteCC(id){
+function DeleteCC(id) {
     Swal.fire({
         title: 'Are you sure want to delete this task?',
         text: "When this CC is deleted, its associated tasks will also be deleted. \n You won't be able to revert this!",
@@ -96,25 +98,27 @@ function GetProjectDetail() {
                         let idx = 1;
                         let p = content.project;
                         $('#project_name').text(p.project_name);
-                        let tAs = $.parseJSON(p.status_info);
-                        let tContent = '';
-                        tAs.forEach((t,i)=>{
-                            tContent +=i!==tAs.length?`${t.quantity} ${t.status} Tasks, `:`${t.quantity} ${t.status} Tasks`;
-                        })
+
+                        
+                        const result = $.map(content.stats, function (item) {
+                            return `${item.count} ${item.status} ${item.count>1?`tasks`:`task`}`
+                        }).join(', ');
+                        console.log(content.stats);
+
                         $('#ProjectTasksAndStatus').empty();
-                        $('#ProjectTasksAndStatus').text(tContent);
+                        $('#ProjectTasksAndStatus').append(result);
 
                         $('#DescriptionAndInstructions').empty();
                         $('#DescriptionAndInstructions').append(`<p>${p.description}</p>`);
                         let instructions = $.parseJSON(p.instructions_list);
-                            instructions.forEach(i=>{
+                        instructions.forEach(i => {
                             $('#DescriptionAndInstructions').append(`<hr/><p id="${i.id}">${i.content}</p>`);
                         })
 
                         $('#tdStartDate').text(p.start_date);
                         $('#tdEndDate').text(p.end_date);
-                        $('#tdPriority').html(`${p.priority==1?'<i class="fa fa-dot-circle-o text-danger">URGEN</i>':'<i class="fa fa-dot-circle-o">NORMAL</i>'}`);
-                        $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo?p.combo:''}</i>`);
+                        $('#tdPriority').html(`${p.priority == 1 ? '<i class="fa fa-dot-circle-o text-danger">URGEN</i>' : '<i class="fa fa-dot-circle-o">NORMAL</i>'}`);
+                        $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo ? p.combo : ''}</i>`);
                         $('#tdStatus').html(`<i class="fa fa-dot-circle-o ${p.status_color}">${p.status}</i>`);
                         let tasks = $.parseJSON(p.tasks_list);
                         tasks.forEach(t => {
@@ -144,7 +148,7 @@ function GetProjectDetail() {
                         })
                     }
                 } catch (error) {
-                    console.log(data);
+                    console.log(data,error);
                 }
             }
         })
@@ -204,7 +208,7 @@ function GetCCs() {
                                             </tr>
                                         </thead>
                                         <tbody id="tblCCTasksList">`;
-         
+
                         let idx = 1;
                         tasks_list.forEach(t => {
                             item += `<tr id="${t.task_id}">

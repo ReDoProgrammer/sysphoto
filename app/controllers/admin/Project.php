@@ -150,11 +150,13 @@ class Project extends AdminController
     {
         $id = $_GET['id'];
         $project = $this->project_model->ProjectDetail($id);
+        $stats = $this->project_model->StatTasksByStatus($id);
         if ($project) {
             $data = array(
                 'code' => 200,
                 'msg' => 'Get project detail successfully!',
-                'project' => $project
+                'project' => $project,
+                'stats'=>$stats
             );
         } else {
             $data = array(
@@ -190,7 +192,7 @@ class Project extends AdminController
             // 'pages'=>$this->GetPages($from_date,$to_date,$stt,$search,$limit)
        ]);
     }
-    public function ApplyTemplates(){
+       public function ApplyTemplates(){
         $id = $_POST['id'];
         $rs = $this->project_model->ApplyTemplates($id);
        

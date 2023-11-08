@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 03, 2023 lúc 04:42 AM
+-- Thời gian đã tạo: Th10 08, 2023 lúc 02:59 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -509,6 +509,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectPages` (IN `p_from_date` TIM
     SET v_pages = CEIL(v_total_records / p_limit);
 
     -- Now you can use the v_pages variable as needed
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatTaskByStatus` (IN `p_id` BIGINT)   BEGIN
+    SELECT IFNULL(ts.name, 'init') AS status, COUNT(t.id) AS count
+    FROM task_statuses ts
+    RIGHT JOIN tasks t ON ts.id = t.status_id
+    WHERE t.project_id = 15
+    GROUP BY IFNULL(ts.name, 'init');
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusAll` ()   BEGIN

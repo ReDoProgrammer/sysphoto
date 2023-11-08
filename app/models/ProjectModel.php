@@ -61,6 +61,11 @@
             return $this->__db->callStoredProcedure("ProjectFilter",$params);
         }
 
+        public function StatTasksByStatus($id){
+            $params = [0=>$id];
+            return $this->__db->callStoredProcedure("ProjectStatTaskByStatus",$params);
+        }
+
         public function GetPages($from_date,$to_date,$stt,$search='',$limit=10){
             $params = [
                 'p_from_date'=>$from_date,
