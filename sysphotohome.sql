@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2023 lúc 02:59 AM
+-- Thời gian đã tạo: Th10 08, 2023 lúc 04:51 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -47,6 +47,17 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerBasicalAll` ()   BEGIN
         CONCAT(name,' - [',acronym,']') as fullname
     FROM customers
     ORDER BY name;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerCheckEmail` (IN `p_id` INT, IN `p_email` VARCHAR(250))   BEGIN
+    DECLARE checkemail INT;
+
+    SELECT COUNT(id) INTO checkemail
+    FROM customers
+    WHERE email = p_email
+    AND (p_id <> 1 OR p_id IS NULL);
+
+    SELECT checkemail;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerDetailJoin` (IN `p_id` BIGINT)   BEGIN
@@ -137,12 +148,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerFilter` (IN `p_page` INT, I
     DEALLOCATE PREPARE stmt;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerInsert` (IN `p_group_id` INT, IN `p_name` VARCHAR(100), IN `p_email` VARCHAR(255), IN `p_password` VARCHAR(255), IN `p_customer_url` VARCHAR(255), IN `p_color_mode` INT, IN `p_output` INT, IN `p_size` VARCHAR(255), IN `p_is_straighten` BOOLEAN, IN `p_straighten_remark` VARCHAR(255), IN `p_tv` VARCHAR(255), IN `p_fire` VARCHAR(255), IN `p_sky` VARCHAR(255), IN `p_grass` VARCHAR(255), IN `p_national_style` INT, IN `p_cloud` INT, IN `p_style_remark` TEXT, IN `p_created_by` INT)   BEGIN
-    DECLARE v_acronym VARCHAR(100) DEFAULT '';
-    SET v_acronym = CONCAT('C',DATE_FORMAT(NOW(), '%i%H%s'),'-',GetInitials(p_name),UPPER(LEFT(p_email,3)));
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerInsert` (IN `p_group_id` INT, IN `p_name` VARCHAR(100), IN `p_acronym` VARCHAR(50), IN `p_email` VARCHAR(255), IN `p_password` VARCHAR(255), IN `p_customer_url` VARCHAR(255), IN `p_color_mode` INT, IN `p_output` INT, IN `p_size` VARCHAR(255), IN `p_is_straighten` BOOLEAN, IN `p_straighten_remark` VARCHAR(255), IN `p_tv` VARCHAR(255), IN `p_fire` VARCHAR(255), IN `p_sky` VARCHAR(255), IN `p_grass` VARCHAR(255), IN `p_national_style` INT, IN `p_cloud` INT, IN `p_style_remark` TEXT, IN `p_created_by` INT)   BEGIN
     SET p_name = NormalizeString(p_name);
 	INSERT INTO customers(group_id,name,acronym,email,pwd,customer_url,color_mode_id,output_id,size,is_straighten,straighten_remark,tv,fire,sky,grass,national_style_id,cloud_id,style_remark,created_by)
-    		VALUES(p_group_id,p_name,v_acronym,p_email,md5(p_password),p_customer_url,p_color_mode,p_output,p_size,p_is_straighten,p_straighten_remark,p_tv,p_fire,p_sky,p_grass,p_national_style,p_cloud,p_style_remark,p_created_by);
+    		VALUES(p_group_id,p_name,p_acronym,p_email,md5(p_password),p_customer_url,p_color_mode,p_output,p_size,p_is_straighten,p_straighten_remark,p_tv,p_fire,p_sky,p_grass,p_national_style,p_cloud,p_style_remark,p_created_by);
             SELECT LAST_INSERT_ID() AS last_id;
 END$$
 
@@ -1560,7 +1569,14 @@ INSERT INTO `customers` (`id`, `company_id`, `name`, `acronym`, `email`, `custom
 (12, 0, 'Test  New Acronym', 'C451601-TNA', 'testnewacronym@gmail.com', 'sdf', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '1234fazfdxdsrqw', 1, 'dfsấ', 'fsadfsa', 'fdsấ', 'fdsấ', 'fdsàdsa', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:14:11', 1, '2023-10-10 02:45:01', 1),
 (13, 0, 'Test  New Acronym ', 'C431651-TNA', 'testnewacronym1@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, '', '', '', '', '', 0, 0, 'dsàdsà2134\n', '2023-10-06 21:15:11', 1, '2023-10-10 02:43:51', 0),
 (15, 0, 'This Is New Customer1', 'C481631-TINCEMA', 'emailtes1t11@gmail.com', 'dsfấ', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-10-06 21:19:23', 1, '2023-10-10 02:48:31', 1),
-(16, 0, 'Test Straighten1', 'C481615-TSTES', 'teststraighten@gmail.com', 'straighten url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, 'straighten note', 'tvnote', 'fire note', 'sky note', 'grass note', 1, 1, 'straighten style remark\n\nremark \n\ndfafasd fdasf                     fsdjfsalkfj \n\n\n\n\nfdsafsadjf\nfsadfjsdal\n\n1234124\n\nfdsafsa\n', '2023-10-06 22:02:34', 1, '2023-10-10 02:48:15', 1);
+(16, 0, 'Test Straighten1', 'C481615-TSTES', 'teststraighten@gmail.com', 'straighten url', '202cb962ac59075b964b07152d234b70', '', 1, 1, 2, '', 1, 'straighten note', 'tvnote', 'fire note', 'sky note', 'grass note', 1, 1, 'straighten style remark\n\nremark \n\ndfafasd fdasf                     fsdjfsalkfj \n\n\n\n\nfdsafsadjf\nfsadfjsdal\n\n1234124\n\nfdsafsa\n', '2023-10-06 22:02:34', 1, '2023-10-10 02:48:15', 1),
+(17, 0, 'Fdasfasfsa', 'fasdfasdfasđfdá', 'fasdfasfasf@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 1, 1, '1234fazfdxdsrqw', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:27:57', 1, '2023-11-08 02:27:57', 0),
+(18, 0, 'Fsdafasdfas', 'fdsafasdfasfds', 'f123421rdfsafas@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 1, 1, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:28:34', 1, '2023-11-08 02:28:34', 0),
+(19, 0, 'Fsdafasdf', '12asdfkasfhaskfh', '124h312jkfhasdfsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:29:26', 1, '2023-11-08 02:29:26', 0),
+(20, 0, 'Fdasfsdafsaj', 'fdasfjkasfklasfa', 'kfjlsl@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:31:07', 1, '2023-11-08 02:31:07', 0),
+(21, 0, 'Fsdafsafa', 'fasfsd124hsfj', 'dfsafjksf2@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:32:25', 1, '2023-11-08 02:32:25', 0),
+(24, 0, 'Fsdafasdf', 'fasdfasdfasdfsda', 'emailtes1t21@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:42:37', 1, '2023-11-08 02:42:37', 0),
+(25, 0, 'Fdsafasdf', 'fdasfasdfasd', 'fasdfasr123r4fasdf@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:44:31', 1, '2023-11-08 02:44:31', 0);
 
 -- --------------------------------------------------------
 
@@ -2837,7 +2853,7 @@ ALTER TABLE `configs`
 -- AUTO_INCREMENT cho bảng `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT cho bảng `customer_groups`
