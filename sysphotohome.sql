@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2023 lúc 07:51 AM
+-- Thời gian đã tạo: Th10 08, 2023 lúc 07:56 AM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -166,12 +166,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerInsert` (IN `p_group_id` IN
             SELECT LAST_INSERT_ID() AS last_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerUpdate` (IN `p_id` BIGINT, IN `p_group_id` INT, IN `p_name` VARCHAR(100), IN `p_email` VARCHAR(255), IN `p_password` VARCHAR(255), IN `p_customer_url` VARCHAR(255), IN `p_color_mode` INT, IN `p_output` INT, IN `p_size` VARCHAR(255), IN `p_is_straighten` BOOLEAN, IN `p_straighten_remark` VARCHAR(255), IN `p_tv` VARCHAR(255), IN `p_fire` VARCHAR(255), IN `p_sky` VARCHAR(255), IN `p_grass` VARCHAR(255), IN `p_national_style` INT, IN `p_cloud` INT, IN `p_style_remark` TEXT, IN `p_updated_by` INT)   BEGIN
-    DECLARE v_acronym VARCHAR(100) DEFAULT '';
-    SET v_acronym = CONCAT('C',DATE_FORMAT(NOW(), '%i%H%s'),'-',GetInitials(p_name),UPPER(LEFT(p_email,3)));
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerUpdate` (IN `p_id` BIGINT, IN `p_group_id` INT, IN `p_name` VARCHAR(100), IN `p_acronym` VARCHAR(100), IN `p_email` VARCHAR(255), IN `p_password` VARCHAR(255), IN `p_customer_url` VARCHAR(255), IN `p_color_mode` INT, IN `p_output` INT, IN `p_size` VARCHAR(255), IN `p_is_straighten` BOOLEAN, IN `p_straighten_remark` VARCHAR(255), IN `p_tv` VARCHAR(255), IN `p_fire` VARCHAR(255), IN `p_sky` VARCHAR(255), IN `p_grass` VARCHAR(255), IN `p_national_style` INT, IN `p_cloud` INT, IN `p_style_remark` TEXT, IN `p_updated_by` INT)   BEGIN
     SET p_name = NormalizeString(p_name);
 	UPDATE customers
-    SET group_id = p_group_id, name = p_name, acronym = v_acronym, email = p_email, pwd = MD5(p_password), customer_url = p_customer_url, color_mode_id = p_color_mode, output_id = p_output, size = p_size, is_straighten = p_is_straighten, straighten_remark = p_straighten_remark, tv = p_tv,fire=p_fire,sky = p_sky, grass = p_grass, national_style_id = p_national_style, cloud_id = p_cloud, style_remark = p_style_remark, updated_at = CURRENT_TIMESTAMP(), updated_by = p_updated_by
+    SET group_id = p_group_id, name = p_name, acronym = p_acronym, email = p_email, pwd = MD5(p_password), customer_url = p_customer_url, color_mode_id = p_color_mode, output_id = p_output, size = p_size, is_straighten = p_is_straighten, straighten_remark = p_straighten_remark, tv = p_tv,fire=p_fire,sky = p_sky, grass = p_grass, national_style_id = p_national_style, cloud_id = p_cloud, style_remark = p_style_remark, updated_at = CURRENT_TIMESTAMP(), updated_by = p_updated_by
     WHERE id = p_id;
             SELECT ROW_COUNT() AS rows_changed;
 END$$
@@ -1602,7 +1600,7 @@ INSERT INTO `customers` (`id`, `company_id`, `name`, `acronym`, `email`, `custom
 (37, 0, 'Fasfasdf123123', '1234fasdfsaf', '123akdfjsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:01:59', 1, '2023-11-08 05:01:59', 0),
 (38, 0, 'Fasfasdf123123', 'adsfcz1', '1a@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:03:14', 1, '2023-11-08 05:03:14', 0),
 (39, 0, 'Fasfasdf123123', 'adsfc2z1', '1a2@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:13', 1, '2023-11-08 05:04:13', 0),
-(40, 0, 'Fsđấ      ', 'C511339-F12D', '12dfa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:55', 1, '2023-11-08 06:51:39', 1);
+(40, 0, 'Updated', '1234updated', '12dfa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:55', 1, '2023-11-08 06:56:02', 1);
 
 -- --------------------------------------------------------
 

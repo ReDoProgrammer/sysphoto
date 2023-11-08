@@ -62,7 +62,7 @@ class CustomerModel extends Model
         }
     }
 
-    public function UpdateCustomer($id,$group_id, $name, $email, $password, $customer_url,
+    public function UpdateCustomer($id,$group_id, $name,$acronym, $email, $password, $customer_url,
     $color_mode,$output,$size,$is_straighten,$straighten_remark,$tv,$fire,$sky,$grass,
     $nationtal_style,$cloud ,$style_remark)
     {
@@ -72,6 +72,7 @@ class CustomerModel extends Model
                 'p_id'=>$id,
                 'p_group_id' => $group_id,
                 'p_name' => $name,
+                'p_acronym'=>$acronym,
                 'p_email' => $email,
                 'p_password' => $password,
                 'p_customer_url' => $customer_url,

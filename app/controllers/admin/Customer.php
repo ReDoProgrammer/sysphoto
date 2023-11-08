@@ -130,6 +130,7 @@ class Customer extends AdminController
         $id = $_POST['id'];
         $group_id = $_POST['group_id'];
         $name = $_POST['name'];
+        $acronym = $_POST['acronym'];
         $email = $_POST['email'];
         $password = $_POST['password'];
         $customer_url = $_POST['customer_url'];
@@ -151,6 +152,7 @@ class Customer extends AdminController
             $id,
             $group_id,
             $name,
+            $acronym,
             $email,
             $password,
             $customer_url,
