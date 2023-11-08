@@ -18,19 +18,21 @@ class Customer extends AdminController
         $this->data['sub_content'] = [];
         $this->render('__layouts/admin_layout', $this->data);
     }
-    public function detail(){
-         //renderview
-         $id = $_GET['id'];
-         $this->data['title'] = 'Customer detail';
-         $this->data['content'] = 'admin/customer/detail';
-         $this->data['sub_content']['customer'] = $this->customer_model->JoinDetail($id);        
-         $this->render('__layouts/admin_layout', $this->data);
+    public function detail()
+    {
+        //renderview
+        $id = $_GET['id'];
+        $this->data['title'] = 'Customer detail';
+        $this->data['content'] = 'admin/customer/detail';
+        $this->data['sub_content']['customer'] = $this->customer_model->JoinDetail($id);
+        $this->render('__layouts/admin_layout', $this->data);
     }
 
-    public function CheckAcronymAvailable(){
+    public function CheckAcronymAvailable()
+    {
         $acronym = $_GET['acronym'];
         $id = $_GET['id'];
-        if ($this->customer_model->CheckAcronymExists($acronym, $id)){
+        if ($this->customer_model->CheckAcronymExists($acronym, $id)) {
             $data = [
                 'code' => 100,
                 'msg' => 'This acronym is available',
@@ -51,8 +53,8 @@ class Customer extends AdminController
     {
         $email = $_GET['email'];
         $id = $_GET['id'];
-       print_r($this->customer_model->CheckMailExists($email, $id));
-       return;
+        print_r($this->customer_model->CheckMailExists($email, $id));
+        return;
         if ($this->customer_model->CheckMailExists($email, $id)) {
             $data = [
                 'code' => 100,
@@ -113,7 +115,7 @@ class Customer extends AdminController
             $cloud,
             $style_remark
         );
-    
+
         $data = array(
             'code' => 201,
             'msg' => 'Customer has been inserted',
@@ -121,7 +123,7 @@ class Customer extends AdminController
             'icon' => 'success',
             'lastedid' => $result
         );
-       
+
         echo json_encode($data);
     }
 
@@ -169,7 +171,7 @@ class Customer extends AdminController
             $cloud,
             $style_remark
         );
-        if ($result['rows_changed']>0) {
+        if ($result['rows_changed'] > 0) {
             $data = array(
                 'code' => 200,
                 'msg' => 'Customer has been updated',
@@ -179,7 +181,7 @@ class Customer extends AdminController
             );
         } else {
             $data = array(
-                'code' => 304 ,
+                'code' => 304,
                 'msg' => 'Update customer failed or no detail changed!',
                 'heading' => 'FAILED!',
                 'icon' => 'danger'
@@ -188,6 +190,29 @@ class Customer extends AdminController
         echo json_encode($data);
     }
 
+    public function DeleteCustomer()
+    {
+        $id = $_POST['id'];
+        if ($this->customer_model->DeleteCustomer($id)) {
+
+        }
+        if ($this->customer_model->DeleteCustomer($id)) {
+            $data = array(
+                'code' => 200,
+                'msg' => 'Customer has been deleted',
+                'heading' => 'SUCCESSFULLY!',
+                'icon' => 'success'
+            );
+        } else {
+            $data = array(
+                'code' => 304,
+                'msg' => 'Delete customer failed or no detail changed!',
+                'heading' => 'FAILED!',
+                'icon' => 'danger'
+            );
+        }
+        echo json_encode($data);
+    }
 
     public function GetDetail()
     {

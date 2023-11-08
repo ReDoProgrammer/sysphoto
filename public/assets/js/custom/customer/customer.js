@@ -296,6 +296,38 @@ function UpdateCustomer(id) {
     })
 }
 
+function DestroyCustomer(id){
+    Swal.fire({
+        title: "Are you sure you want to delete this customer?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+      }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url:'customer/DeleteCustomer',
+                type:'post',
+                data:{id},
+                success:function(data){
+                    let content = $.parseJSON(data);
+                    if(content.code == 200){
+                        fetch();
+                        $.toast({
+                            heading: content.heading,
+                            text: content.msg,
+                            icon: content.icon,
+                            loader: true,
+                            loaderBg: '#9EC600'
+                        });
+                    }
+                }
+            })
+        }
+      });
+}
 
 function LoadClouds() {
     $.ajax({

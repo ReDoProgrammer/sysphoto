@@ -87,6 +87,11 @@ class CustomerModel extends Model
         }
     }
 
+    public function DeleteCustomer($id){
+        $params = ['p_id'=>$id];
+        return $this->__db->executeStoredProcedure("CusomerDestroy",$params)['v_rows_deleted']==0;
+
+    }
     public function AllCustomer(){
         return $this->__db->callStoredProcedure("CustomerBasicalAll");
     }

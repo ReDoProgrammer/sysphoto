@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2023 lúc 07:56 AM
+-- Thời gian đã tạo: Th10 08, 2023 lúc 08:08 AM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -39,6 +39,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CCInsert` (IN `p_project` BIGINT, I
 	INSERT INTO ccs(project_id,feedback,start_date,end_date,created_by)
     VALUES(p_project,NormalizeContent(p_feedback),p_start_date,p_end_date,p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CusomerDestroy` (IN `p_id` INT)   BEGIN
+	DECLARE v_rows_deleted INT;
+    
+	DELETE FROM customers WHERE id = p_id;
+    SELECT COUNT(id) INTO v_rows_deleted FROM customers WHERE id = p_id;
+    SELECT v_rows_deleted;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerBasicalAll` ()   BEGIN
@@ -1599,8 +1607,7 @@ INSERT INTO `customers` (`id`, `company_id`, `name`, `acronym`, `email`, `custom
 (36, 0, 'Fasfasdf123123', 'fd4321safasfsd12a@gmail.com', '124323dsafkfjsakdfjsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:01:00', 1, '2023-11-08 05:01:00', 0),
 (37, 0, 'Fasfasdf123123', '1234fasdfsaf', '123akdfjsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:01:59', 1, '2023-11-08 05:01:59', 0),
 (38, 0, 'Fasfasdf123123', 'adsfcz1', '1a@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:03:14', 1, '2023-11-08 05:03:14', 0),
-(39, 0, 'Fasfasdf123123', 'adsfc2z1', '1a2@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:13', 1, '2023-11-08 05:04:13', 0),
-(40, 0, 'Updated', '1234updated', '12dfa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:55', 1, '2023-11-08 06:56:02', 1);
+(39, 0, 'Fasfasdf123123', 'adsfc2z1', '1a2@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:13', 1, '2023-11-08 05:04:13', 0);
 
 -- --------------------------------------------------------
 
