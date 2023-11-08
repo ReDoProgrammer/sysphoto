@@ -31,9 +31,9 @@
         <li>
             <a href="#" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Projects</a>
             <div class="dropdown-menu">
-                <a class="dropdown-item" href="projects.html">Projects</a>
-                <a class="dropdown-item" href="tasks.html">Tasks</a>
-                <a class="dropdown-item" href="task-board.html">Task Board</a>
+                <a class="dropdown-item" href="<?php echo _WEB_ROOT?>/admin/project">Projects</a>
+                <a class="dropdown-item" href="<?php echo _WEB_ROOT?>/admin/task">Tasks</a>
+                <a class="dropdown-item" href="<?php echo _WEB_ROOT?>/admin/projectstatus">Project status</a>
             </div>
         </li>
         <li>
