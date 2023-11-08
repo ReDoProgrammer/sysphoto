@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2023 lúc 04:51 AM
--- Phiên bản máy phục vụ: 10.4.27-MariaDB
--- Phiên bản PHP: 8.2.0
+-- Thời gian đã tạo: Th10 08, 2023 lúc 07:51 AM
+-- Phiên bản máy phục vụ: 10.4.28-MariaDB
+-- Phiên bản PHP: 8.0.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -49,13 +49,24 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerBasicalAll` ()   BEGIN
     ORDER BY name;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerCheckAcronym` (IN `p_id` INT, IN `p_acronym` VARCHAR(250))   BEGIN
+    DECLARE checkacronym INT;
+
+    SELECT COUNT(id) INTO checkacronym
+    FROM customers
+    WHERE acronym = p_acronym
+    AND ((id <> p_id and p_id <> 0) OR p_id =0);
+
+    SELECT checkacronym;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `CustomerCheckEmail` (IN `p_id` INT, IN `p_email` VARCHAR(250))   BEGIN
     DECLARE checkemail INT;
 
     SELECT COUNT(id) INTO checkemail
     FROM customers
     WHERE email = p_email
-    AND (p_id <> 1 OR p_id IS NULL);
+    AND (( id <> p_id and p_id<>0) OR p_id IS NULL);
 
     SELECT checkemail;
 END$$
@@ -1576,7 +1587,22 @@ INSERT INTO `customers` (`id`, `company_id`, `name`, `acronym`, `email`, `custom
 (20, 0, 'Fdasfsdafsaj', 'fdasfjkasfklasfa', 'kfjlsl@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:31:07', 1, '2023-11-08 02:31:07', 0),
 (21, 0, 'Fsdafsafa', 'fasfsd124hsfj', 'dfsafjksf2@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:32:25', 1, '2023-11-08 02:32:25', 0),
 (24, 0, 'Fsdafasdf', 'fasdfasdfasdfsda', 'emailtes1t21@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:42:37', 1, '2023-11-08 02:42:37', 0),
-(25, 0, 'Fdsafasdf', 'fdasfasdfasd', 'fasdfasr123r4fasdf@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:44:31', 1, '2023-11-08 02:44:31', 0);
+(25, 0, 'Fdsafasdf', 'fdasfasdfasd', 'fasdfasr123r4fasdf@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 09:44:31', 1, '2023-11-08 02:44:31', 0),
+(26, 0, 'Dsafasdf', 'fdasfsdaf', 'emailtes11t1@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:32:58', 1, '2023-11-08 04:32:58', 0),
+(27, 0, 'Dsafasdf', 'fdasfsdaf2', 'emai2ltes11t1@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:34:21', 1, '2023-11-08 04:34:21', 0),
+(28, 0, 'Deasfdsafsaf', '41234124', '1rsdafasfd@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:35:55', 1, '2023-11-08 04:35:55', 0),
+(29, 0, 'Dfasfasfasdf', 'fdasfsdafsaf', 'gfdafdsafr1423@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:36:41', 1, '2023-11-08 04:36:41', 0),
+(30, 0, 'Fasdfasdr12423', 'fdasfasfsd1rfdsaf', 'fdas1dagfsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:37:24', 1, '2023-11-08 04:37:24', 0),
+(31, 0, 'Gsfgdsgsdfg', '42141234', '4321fdsafa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:52:05', 1, '2023-11-08 04:52:05', 0),
+(32, 0, 'Gsfgdsgsdfg', '42141234rewqrwq', '4321fdsafrewrwa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:55:08', 1, '2023-11-08 04:55:08', 0),
+(33, 0, 'Fasfasdf', 'fdsafasfsda@gmail.com', 'dsafkfjsakdfjsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:56:53', 1, '2023-11-08 04:56:53', 0),
+(34, 0, 'Fasfasdf123', 'fdsafasfsd12a@gmail.com', '123dsafkfjsakdfjsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 11:58:28', 1, '2023-11-08 04:58:28', 0),
+(35, 0, 'Fdafasfdasfd1', 'asdf123dsfaf', '1234fdfas@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 0, '', '', '', '', '', 0, 0, '', '2023-11-08 11:59:54', 1, '2023-11-08 04:59:54', 0),
+(36, 0, 'Fasfasdf123123', 'fd4321safasfsd12a@gmail.com', '124323dsafkfjsakdfjsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:01:00', 1, '2023-11-08 05:01:00', 0),
+(37, 0, 'Fasfasdf123123', '1234fasdfsaf', '123akdfjsa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:01:59', 1, '2023-11-08 05:01:59', 0),
+(38, 0, 'Fasfasdf123123', 'adsfcz1', '1a@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:03:14', 1, '2023-11-08 05:03:14', 0),
+(39, 0, 'Fasfasdf123123', 'adsfc2z1', '1a2@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:13', 1, '2023-11-08 05:04:13', 0),
+(40, 0, 'Fsđấ      ', 'C511339-F12D', '12dfa@gmail.com', '', '202cb962ac59075b964b07152d234b70', '', 1, 0, 0, '', 1, '', '', '', '', '', 0, 0, '\n', '2023-11-08 12:04:55', 1, '2023-11-08 06:51:39', 1);
 
 -- --------------------------------------------------------
 
@@ -2105,6 +2131,7 @@ CREATE TABLE `project_statuses` (
   `name` varchar(30) NOT NULL,
   `description` varchar(100) NOT NULL,
   `color` varchar(50) NOT NULL,
+  `visible` bit(1) NOT NULL DEFAULT b'0' COMMENT 'Trạng thái chỉ có CSS nhìn thấy',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `created_by` int(10) NOT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -2115,16 +2142,16 @@ CREATE TABLE `project_statuses` (
 -- Đang đổ dữ liệu cho bảng `project_statuses`
 --
 
-INSERT INTO `project_statuses` (`id`, `name`, `description`, `color`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(2, 'Processing', 'Đang trong quá trình xử lý task', 'badge badge-warning', '0000-00-00 00:00:00', 0, NULL, 0),
-(3, 'Ready', 'Các task của project đã đc upload', 'badge badge-success', '2023-10-19 16:28:45', 1, NULL, 0),
-(4, 'Upload Link', 'TLA tiến hành upload link thành phẩm của project ', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
-(5, 'Sent', 'CSS gửi link thành phẩm cho khách hàng', 'badge badge-success', '0000-00-00 00:00:00', 0, NULL, 0),
-(6, 'Paid', 'Được thanh toán', 'badge badge-info', '0000-00-00 00:00:00', 0, NULL, 0),
-(7, 'Unpaid', 'Không được thanh toán', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0),
-(8, 'Ask again', 'Yêu cầu làm lại', 'badge badge-dark', '0000-00-00 00:00:00', 0, NULL, 0),
-(9, 'Responded', 'Quy trách nhiệm cho nhân viên', 'badge badge-danger', '0000-00-00 00:00:00', 0, NULL, 0);
+INSERT INTO `project_statuses` (`id`, `name`, `description`, `color`, `visible`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(2, 'Processing', 'Đang trong quá trình xử lý task', 'badge badge-warning', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(3, 'Ready', 'Các task của project đã đc upload', 'badge badge-success', b'0', '2023-10-19 16:28:45', 1, NULL, 0),
+(4, 'Upload Link', 'TLA tiến hành upload link thành phẩm của project ', 'badge badge-success', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(5, 'Sent', 'CSS gửi link thành phẩm cho khách hàng', 'badge badge-success', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(6, 'Paid', 'Được thanh toán', 'badge badge-info', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(7, 'Unpaid', 'Không được thanh toán', 'badge badge-danger', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(8, 'Ask again', 'Yêu cầu làm lại', 'badge badge-dark', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(9, 'Responded', 'Quy trách nhiệm cho nhân viên', 'badge badge-danger', b'0', '0000-00-00 00:00:00', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -2853,7 +2880,7 @@ ALTER TABLE `configs`
 -- AUTO_INCREMENT cho bảng `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT cho bảng `customer_groups`

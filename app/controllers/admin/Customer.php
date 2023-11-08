@@ -30,7 +30,7 @@ class Customer extends AdminController
     public function CheckAcronymAvailable(){
         $acronym = $_GET['acronym'];
         $id = $_GET['id'];
-        if ($this->customer_model->CheckAcronymExists($acronym, $id)) {
+        if ($this->customer_model->CheckAcronymExists($acronym, $id)){
             $data = [
                 'code' => 100,
                 'msg' => 'This acronym is available',

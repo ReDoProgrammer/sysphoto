@@ -459,7 +459,7 @@ function CheckAcronym(id, acronym) {
             url: 'customer/CheckAcronymAvailable',
             type: 'get',
             data: { acronym, id },
-            success: function (data) {
+            success: function (data) {             
                 let content = $.parseJSON(data);
                 if (content.code == 409) {
                     return reject(content);

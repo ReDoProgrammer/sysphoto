@@ -10,8 +10,8 @@ class CustomerModel extends Model
     }
 
     public function CheckAcronymExists($acronym,$id = 0){
-        $where = $id>0?"acronym != '$acronym' AND id = $id ":" acronym = '$acronym'";
-        return count($this->__db->select($this->__table,"id","",$where))==0;
+        $params = ['p_id'=>$id,'p_acronym'=>$acronym];
+        return $this->__db->executeStoredProcedure("CustomerCheckAcronym",$params)['checkacronym']==0;
     }
 
     public function JoinDetail($id){
