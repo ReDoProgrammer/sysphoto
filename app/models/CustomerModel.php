@@ -5,7 +5,12 @@ class CustomerModel extends Model
 
 
     public function CheckMailExists($email,$id=0){
-        $where = $id>0?"email != '$email' AND id = $id ":" email = '$email'";
+        $params = ['p_id'=>$id,'p_email'=>$email];
+        return $this->__db->executeStoredProcedure("CustomerCheckEmail",$params)['checkemail']==0;
+    }
+
+    public function CheckAcronymExists($acronym,$id = 0){
+        $where = $id>0?"acronym != '$acronym' AND id = $id ":" acronym = '$acronym'";
         return count($this->__db->select($this->__table,"id","",$where))==0;
     }
 
@@ -18,7 +23,7 @@ class CustomerModel extends Model
         return $this->__db->select($this->__table,"*","","id = $id");
     }
 
-    public function InsertCustomer($group_id, $name, $email, $password, $customer_url,
+    public function InsertCustomer($group_id, $name,$acronym, $email, $password, $customer_url,
     $color_mode,$output,$size,$is_straighten,$straighten_remark,$tv,$fire,$sky,$grass,
     $nationtal_style,$cloud ,$style_remark)
     {
@@ -27,6 +32,7 @@ class CustomerModel extends Model
             $params = [
                 'p_group_id' => $group_id,
                 'p_name' => $name,
+                'p_acronym'=>$acronym,
                 'p_email' => $email,
                 'p_password' => $password,
                 'p_customer_url' => $customer_url,

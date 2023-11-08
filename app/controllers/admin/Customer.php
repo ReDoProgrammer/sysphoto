@@ -27,10 +27,31 @@ class Customer extends AdminController
          $this->render('__layouts/admin_layout', $this->data);
     }
 
+    public function CheckAcronymAvailable(){
+        $acronym = $_GET['acronym'];
+        $id = $_GET['id'];
+        if ($this->customer_model->CheckAcronymExists($acronym, $id)) {
+            $data = [
+                'code' => 100,
+                'msg' => 'This acronym is available',
+                'icon' => 'info',
+                'heading' => 'Available acronym'
+            ];
+        } else {
+            $data = [
+                'code' => 409,
+                'msg' => 'This acronym already exists!',
+                'icon' => 'warning',
+                'heading' => 'Conflig acronym. Please choose another acronym'
+            ];
+        }
+        echo json_encode($data);
+    }
     public function CheckMailAvailable()
     {
         $email = $_GET['email'];
         $id = $_GET['id'];
+       
         if ($this->customer_model->CheckMailExists($email, $id)) {
             $data = [
                 'code' => 100,
@@ -52,6 +73,7 @@ class Customer extends AdminController
     {
         $group_id = $_POST['group_id'];
         $name = $_POST['name'];
+        $acronym = $_POST['acronym'];
         $email = $_POST['email'];
         $password = $_POST['password'];
         $customer_url = $_POST['customer_url'];
@@ -72,6 +94,7 @@ class Customer extends AdminController
         $result = $this->customer_model->InsertCustomer(
             $group_id,
             $name,
+            $acronym,
             $email,
             $password,
             $customer_url,

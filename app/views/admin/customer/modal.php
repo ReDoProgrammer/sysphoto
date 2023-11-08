@@ -8,20 +8,27 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-sm-4 col-xs-12">
+                    <div class="col-sm-3 col-xs-6">
                         <div class="input-block mb-3">
                             <label class="col-form-label">Customer group</label>
                             <select id="slMDCustomerGroups" class="form-control"></select>
                         </div>
                     </div>
-                    <div class="col-sm-4 col-xs-12">
+                    <div class="col-sm-3 col-xs-6">
                         <div class="input-block mb-3">
                             <label class="col-form-label">Customer name (<span
                                     class="text-danger fw-bold">*</span>)</label>
                             <input class="form-control" type="text" id="txtCustomerName">
                         </div>
                     </div>
-                    <div class="col-sm-4 col-xs-12">
+                    <div class="col-sm-3 col-xs-6">
+                        <div class="input-block mb-3">
+                            <label class="col-form-label">Acronym (<span
+                                    class="text-danger fw-bold">*</span>)</label>
+                            <input class="form-control" type="text" id="txtAcronym">
+                        </div>
+                    </div>
+                    <div class="col-sm-3 col-xs-6">
                         <div class="input-block mb-3">
                             <label class="col-form-label">Email (<span class="text-danger fw-bold">*</span>)</label>
                             <input class="form-control" type="text" id="txtCustomerEmail">

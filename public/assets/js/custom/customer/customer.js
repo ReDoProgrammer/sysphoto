@@ -58,11 +58,78 @@ $("#modal_customer").on("hidden.bs.modal", function () {
     $('#btnSubmitCustomer').text('Submit');
 });
 
+async function createOrUpdateCustomer() {
+    try {
+        await Promise.all([CheckAcronym(cId, acronym), CheckEmail(cId, email)]);
+
+        const url = cId < 1 ? 'customer/create' : 'customer/update';
+        const data = {
+            id: cId,
+            group_id,
+            name,
+            acronym,
+            email,
+            password,
+            customer_url,
+            color_mode,
+            output,
+            size,
+            is_straighten,
+            straighten_remark,
+            tv,
+            fire,
+            sky,
+            grass,
+            nationtal_style,
+            cloud,
+            style_remark
+        };
+
+        const response = await $.ajax({
+            url: url,
+            type: 'post',
+            data: data
+        });
+
+        const content = $.parseJSON(response);
+        if (content.code === (cId < 1 ? 201 : 200)) {
+            $('#modal_customer').modal('hide');
+            $('#btnSearch').click();
+        }
+
+        $.toast({
+            heading: content.heading,
+            text: content.msg,
+            icon: content.icon,
+            loader: true,
+            loaderBg: '#9EC600'
+        });
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+function handleResponse(response) {
+    const content = $.parseJSON(response);
+    if (content.code === (cId < 1 ? 201 : 200)) {
+        $('#modal_customer').modal('hide');
+        $('#btnSearch').click();
+    }
+
+    $.toast({
+        heading: content.heading,
+        text: content.msg,
+        icon: content.icon,
+        loader: true,
+        loaderBg: '#9EC600'
+    });
+}
 
 
 $('#btnSubmitCustomer').click(function () {
     let group_id = $('#slMDCustomerGroups option:selected').val();
     let name = $('#txtCustomerName').val();
+    let acronym = $('#txtAcronym').val();
     let email = $('#txtCustomerEmail').val();
     let password = $('#txtCustomerPassword').val();
     let confirm_password = $('#txtConfirmCustomerPassword').val();
@@ -93,6 +160,16 @@ $('#btnSubmitCustomer').click(function () {
         })
         return;
     }
+    if ($.trim(acronym) === "") {
+        $.toast({
+            heading: `Customer acronym can not be null`,
+            text: `Please enter customer acronym`,
+            icon: 'warning',
+            loader: true,        // Change it to false to disable loader
+            loaderBg: '#9EC600'  // To change the background
+        })
+        return;
+    }
 
     if (!isEmail(email)) {
         $.toast({
@@ -115,86 +192,79 @@ $('#btnSubmitCustomer').click(function () {
         })
         return;
     }
-    //check mail is available
-    $.ajax({
-        url: 'customer/CheckMailAvailable',
-        type: 'get',
-        data: { email, id: cId },
-        success: function (data) {
-            console.log(data);
-            let content = $.parseJSON(data);
-            if (content.code == 409) {
-                $.toast({
-                    heading: content.heading,
-                    text: content.msg,
-                    icon: content.icon,
-                    loader: true,        // Change it to false to disable loader
-                    loaderBg: '#9EC600'  // To change the background
+
+    Promise.all[CheckAcronym(cId, acronym), CheckEmail(cId, email)]
+        .then(_ => {
+            if (cId < 1) {
+                $.ajax({
+                    url: 'customer/create',
+                    type: 'post',
+                    data: {
+                        group_id, name, acronym, email, password, customer_url,
+                        color_mode, output, size, is_straighten, straighten_remark, tv,
+                        fire, sky, grass, nationtal_style, cloud, style_remark
+                    },
+                    success: function (data) {
+                        try {
+                            let content = $.parseJSON(data);
+                            if (content.code == 201) {
+                                $('#modal_customer').modal('hide');
+                                $('#btnSearch').click();
+                            }
+                            $.toast({
+                                heading: content.heading,
+                                text: content.msg,
+                                icon: content.icon,
+                                loader: true,        // Change it to false to disable loader
+                                loaderBg: '#9EC600'  // To change the background
+                            })
+                        } catch (error) {
+                            console.log(data, error);
+                        }
+
+                    }
                 })
-                return;
-            }
-        }
-    })
-    if (cId < 1) {
-        $.ajax({
-            url: 'customer/create',
-            type: 'post',
-            data: {
-                group_id, name, email, password, customer_url,
-                color_mode, output, size, is_straighten, straighten_remark, tv,
-                fire, sky, grass, nationtal_style, cloud, style_remark
-            },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data);
-                    if (content.code == 201) {
-                        $('#modal_customer').modal('hide');
-                        $('#btnSearch').click();
-                    }
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-                } catch (error) {
-                    console.log(data, error);
-                }
 
+            } else {
+                $.ajax({
+                    url: 'customer/update',
+                    type: 'post',
+                    data: {
+                        id: cId, group_id, name, acronym, email, password, customer_url,
+                        color_mode, output, size, is_straighten, straighten_remark, tv,
+                        fire, sky, grass, nationtal_style, cloud, style_remark
+                    },
+                    success: function (data) {
+                        try {
+                            let content = $.parseJSON(data);
+                            if (content.code == 200) {
+                                $('#modal_customer').modal('hide');
+                                $('#btnSearch').click();
+                            }
+                            $.toast({
+                                heading: content.heading,
+                                text: content.msg,
+                                icon: content.icon,
+                                loader: true,        // Change it to false to disable loader
+                                loaderBg: '#9EC600'  // To change the background
+                            })
+                        } catch (error) {
+                            console.log(data, error);
+                        }
+
+                    }
+                })
             }
         })
-
-    } else {
-        $.ajax({
-            url: 'customer/update',
-            type: 'post',
-            data: {
-                id:cId,group_id, name, email, password, customer_url,
-                color_mode, output, size, is_straighten, straighten_remark, tv,
-                fire, sky, grass, nationtal_style, cloud, style_remark
-            },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data);
-                    if (content.code == 200) {
-                        $('#modal_customer').modal('hide');
-                        $('#btnSearch').click();
-                    }
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-                } catch (error) {
-                    console.log(data, error);
-                }
-
-            }
+        .catch(err => {
+            console.log(err);
         })
-    }
+
+
+
+
+
+
 })
 
 
@@ -430,7 +500,49 @@ function GetCustomerGroups() {
     })
 }
 
+function CheckAcronym(id, acronym) {
+    return new Promise((resolve, reject) => {
+        //check acronym is available
+        $.ajax({
+            url: 'customer/CheckAcronymAvailable',
+            type: 'get',
+            data: { acronym, id },
+            success: function (data) {
+                let content = $.parseJSON(data);
+                if (content.code == 409) {
+                    return reject(content);
+                }
+                return resolve();
+            }
+        })
 
+    })
+}
+
+function CheckEmail(id, email) {
+    return new Promise((resolve, reject) => {
+        //check mail is available
+        $.ajax({
+            url: 'customer/CheckMailAvailable',
+            type: 'get',
+            data: { email, id },
+            success: function (data) {
+                let content = $.parseJSON(data);
+                if (content.code == 409) {
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+                    return reject(content);
+                }
+                return resolve();
+            }
+        })
+    })
+}
 
 var $selectizeCustomerGroups = $('#slCustomerGroups');
 $selectizeCustomerGroups.selectize({
