@@ -40,9 +40,9 @@ class Customer extends AdminController
         } else {
             $data = [
                 'code' => 409,
-                'msg' => 'This acronym already exists!',
+                'msg' => 'Conflig acronym. Please choose another acronym',
                 'icon' => 'warning',
-                'heading' => 'Conflig acronym. Please choose another acronym'
+                'heading' => 'This acronym already exists!'
             ];
         }
         echo json_encode($data);
@@ -51,7 +51,8 @@ class Customer extends AdminController
     {
         $email = $_GET['email'];
         $id = $_GET['id'];
-       
+       print_r($this->customer_model->CheckMailExists($email, $id));
+       return;
         if ($this->customer_model->CheckMailExists($email, $id)) {
             $data = [
                 'code' => 100,
@@ -91,6 +92,7 @@ class Customer extends AdminController
         $cloud = $_POST['cloud'];
         $style_remark = $_POST['style_remark'];
 
+
         $result = $this->customer_model->InsertCustomer(
             $group_id,
             $name,
@@ -111,22 +113,15 @@ class Customer extends AdminController
             $cloud,
             $style_remark
         );
-        if (is_int($result['last_id'])) {
-            $data = array(
-                'code' => 201,
-                'msg' => 'Customer has been inserted',
-                'heading' => 'SUCCESSFULLY!',
-                'icon' => 'success',
-                'lastedid' => $result['last_id']
-            );
-        } else {
-            $data = array(
-                'code' => 204,
-                'msg' => 'Inserted new customer failed with error: ' . $result,
-                'heading' => 'FAILED!',
-                'icon' => 'danger'
-            );
-        }
+    
+        $data = array(
+            'code' => 201,
+            'msg' => 'Customer has been inserted',
+            'heading' => 'SUCCESSFULLY!',
+            'icon' => 'success',
+            'lastedid' => $result
+        );
+       
         echo json_encode($data);
     }
 

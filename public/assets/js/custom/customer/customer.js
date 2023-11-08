@@ -58,52 +58,73 @@ $("#modal_customer").on("hidden.bs.modal", function () {
     $('#btnSubmitCustomer').text('Submit');
 });
 
-async function createOrUpdateCustomer() {
+async function createOrUpdateCustomer(id,
+    group_id,
+    name,
+    acronym,
+    email,
+    password,
+    customer_url,
+    color_mode,
+    output,
+    size,
+    is_straighten,
+    straighten_remark,
+    tv,
+    fire,
+    sky,
+    grass,
+    nationtal_style,
+    cloud,
+    style_remark) {
     try {
-        await Promise.all([CheckAcronym(cId, acronym), CheckEmail(cId, email)]);
+        await Promise.all([CheckAcronym(cId, acronym), CheckEmail(cId, email)])
+            .then( async _ => {
+                const url = cId < 1 ? 'customer/create' : 'customer/update';
+                const data = {
+                    id,
+                    group_id,
+                    name,
+                    acronym,
+                    email,
+                    password,
+                    customer_url,
+                    color_mode,
+                    output,
+                    size,
+                    is_straighten,
+                    straighten_remark,
+                    tv,
+                    fire,
+                    sky,
+                    grass,
+                    nationtal_style,
+                    cloud,
+                    style_remark
+                };
 
-        const url = cId < 1 ? 'customer/create' : 'customer/update';
-        const data = {
-            id: cId,
-            group_id,
-            name,
-            acronym,
-            email,
-            password,
-            customer_url,
-            color_mode,
-            output,
-            size,
-            is_straighten,
-            straighten_remark,
-            tv,
-            fire,
-            sky,
-            grass,
-            nationtal_style,
-            cloud,
-            style_remark
-        };
+                const response = await $.ajax({
+                    url: url,
+                    type: 'post',
+                    data: data
+                });
 
-        const response = await $.ajax({
-            url: url,
-            type: 'post',
-            data: data
-        });
+                const content = $.parseJSON(response);
+                if (content.code === (cId < 1 ? 201 : 200)) {
+                    handleResponse(response);
+                }
+            })
+            .catch(err => {
+                $.toast({
+                    heading: err.heading,
+                    text: err.msg,
+                    icon: err.icon,
+                    loader: true,
+                    loaderBg: '#9EC600'
+                });
+            })
 
-        const content = $.parseJSON(response);
-        if (content.code === (cId < 1 ? 201 : 200)) {
-            $('#modal_customer').modal('hide');
-            $('#btnSearch').click();
-        }
 
-        $.toast({
-            heading: content.heading,
-            text: content.msg,
-            icon: content.icon,
-            loader: true,
-            loaderBg: '#9EC600'
-        });
     } catch (error) {
         console.log(error);
     }
@@ -193,77 +214,8 @@ $('#btnSubmitCustomer').click(function () {
         return;
     }
 
-    Promise.all[CheckAcronym(cId, acronym), CheckEmail(cId, email)]
-        .then(_ => {
-            if (cId < 1) {
-                $.ajax({
-                    url: 'customer/create',
-                    type: 'post',
-                    data: {
-                        group_id, name, acronym, email, password, customer_url,
-                        color_mode, output, size, is_straighten, straighten_remark, tv,
-                        fire, sky, grass, nationtal_style, cloud, style_remark
-                    },
-                    success: function (data) {
-                        try {
-                            let content = $.parseJSON(data);
-                            if (content.code == 201) {
-                                $('#modal_customer').modal('hide');
-                                $('#btnSearch').click();
-                            }
-                            $.toast({
-                                heading: content.heading,
-                                text: content.msg,
-                                icon: content.icon,
-                                loader: true,        // Change it to false to disable loader
-                                loaderBg: '#9EC600'  // To change the background
-                            })
-                        } catch (error) {
-                            console.log(data, error);
-                        }
-
-                    }
-                })
-
-            } else {
-                $.ajax({
-                    url: 'customer/update',
-                    type: 'post',
-                    data: {
-                        id: cId, group_id, name, acronym, email, password, customer_url,
-                        color_mode, output, size, is_straighten, straighten_remark, tv,
-                        fire, sky, grass, nationtal_style, cloud, style_remark
-                    },
-                    success: function (data) {
-                        try {
-                            let content = $.parseJSON(data);
-                            if (content.code == 200) {
-                                $('#modal_customer').modal('hide');
-                                $('#btnSearch').click();
-                            }
-                            $.toast({
-                                heading: content.heading,
-                                text: content.msg,
-                                icon: content.icon,
-                                loader: true,        // Change it to false to disable loader
-                                loaderBg: '#9EC600'  // To change the background
-                            })
-                        } catch (error) {
-                            console.log(data, error);
-                        }
-
-                    }
-                })
-            }
-        })
-        .catch(err => {
-            console.log(err);
-        })
-
-
-
-
-
+    createOrUpdateCustomer(cId,group_id,name,acronym,email,password,customer_url,color_mode,output,
+        size,is_straighten,straighten_remark,tv,fire,sky,grass,nationtal_style,cloud,style_remark);
 
 })
 
@@ -303,6 +255,7 @@ function UpdateCustomer(id) {
                     $('#modal_customer').modal('show');
                     let c = content.customer;
                     $('#txtCustomerName').val(c.name);
+                    $('#txtAcronym').val(c.acronym);
                     $('#txtCustomerEmail').val(c.email);
                     $('#txtCustomerUrl').val(c.customer_url);
                     selectizeColorMode.setValue(c.color_mode_id);
@@ -434,7 +387,6 @@ function fetch() {
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
-                console.log(content);
                 let pages = content.data.pages;
                 let customers = content.data.customers;
                 if (pages > 1) {
@@ -528,14 +480,7 @@ function CheckEmail(id, email) {
             data: { email, id },
             success: function (data) {
                 let content = $.parseJSON(data);
-                if (content.code == 409) {
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
+                if (content.code == 409) {                   
                     return reject(content);
                 }
                 return resolve();

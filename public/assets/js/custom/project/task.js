@@ -167,7 +167,7 @@ function LoadQAsByLevel(level, selected = null) {
 
 
 function getTaskLevels() {
-    $('#slLevels').append(` <option value="" disabled selected>Vui lòng chọn level</option>`);
+    $('#slLevels').append(` <option value="" disabled selected>Please choose a task level</option>`);
     $.ajax({
         url: 'level/getList',
         type: 'get',
@@ -211,14 +211,14 @@ var qDescription = new Quill('#divTaskDescription', {
 var selectizeEditors = $('#slEditors');
 selectizeEditors.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản,
-    placeholder: 'Vui lòng chọn editor'
+    placeholder: 'Choose an editor'
 });
 var selectizeEditor = selectizeEditors[0].selectize;
 
 var selectizeQAs = $('#slQAs');
 selectizeQAs.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản,
-    placeholder: 'Vui lòng chọn Q.A'
+    placeholder: 'Choose a Q.A'
 });
 var selectizeQA = selectizeQAs[0].selectize;
 

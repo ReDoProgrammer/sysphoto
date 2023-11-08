@@ -23,9 +23,24 @@ class CustomerModel extends Model
         return $this->__db->select($this->__table,"*","","id = $id");
     }
 
-    public function InsertCustomer($group_id, $name,$acronym, $email, $password, $customer_url,
-    $color_mode,$output,$size,$is_straighten,$straighten_remark,$tv,$fire,$sky,$grass,
-    $nationtal_style,$cloud ,$style_remark)
+    public function InsertCustomer( $group_id,
+    $name,
+    $acronym,
+    $email,
+    $password,
+    $customer_url,
+    $color_mode,
+    $output,
+    $size,
+    $is_straighten,
+    $straighten_remark,
+    $tv,
+    $fire,
+    $sky,
+    $grass,
+    $nationtal_style,
+    $cloud,
+    $style_remark)
     {
         try {
             $user = unserialize($_SESSION['user']);
@@ -41,7 +56,7 @@ class CustomerModel extends Model
                 'p_national_style'=>$nationtal_style,'p_cloud'=>$cloud,'p_style_remark'=>$style_remark,
                 'p_created_by' => $user->id
             ];
-            return $this->__db->executeStoredProcedure('CustomerInsert',$params);
+            return $this->__db->executeStoredProcedure('CustomerInsert',$params)['last_id'];
         } catch (Exception $e) {
             return $e->getMessage();
         }
