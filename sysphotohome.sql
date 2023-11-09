@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 09, 2023 lúc 06:29 AM
+-- Thời gian đã tạo: Th10 09, 2023 lúc 06:39 AM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -558,14 +558,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusDetail` (IN `p_id` INT
 	SELECT * FROM project_statuses WHERE id = p_id;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusInsert` (IN `p_name` VARCHAR(100), IN `p_color` VARCHAR(100), IN `p_description` VARCHAR(250), IN `p_visible` BIT(1), IN `p_created_by` INT)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusInsert` (IN `p_name` VARCHAR(100), IN `p_color` VARCHAR(100), IN `p_description` VARCHAR(250), IN `p_visible` TINYINT(1), IN `p_created_by` INT)   BEGIN
 	INSERT INTO project_statuses(name,color,description,visible,created_by)
     VALUES(p_name,p_color,p_description,p_visible,p_created_by);
     
     SELECT ROW_COUNT() as rows_inserted;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusUpdate` (IN `p_id` INT, IN `p_name` VARCHAR(100), IN `p_color` VARCHAR(100), IN `p_description` VARCHAR(250), IN `p_visible` BIT(1), IN `p_updated_by` INT)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusUpdate` (IN `p_id` INT, IN `p_name` VARCHAR(100), IN `p_color` VARCHAR(100), IN `p_description` VARCHAR(250), IN `p_visible` TINYINT(1), IN `p_updated_by` INT)   BEGIN
 	UPDATE project_statuses
     SET name = p_name,
     	description = p_description,
@@ -2177,18 +2177,15 @@ CREATE TABLE `project_statuses` (
 --
 
 INSERT INTO `project_statuses` (`id`, `name`, `description`, `color`, `visible`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', b'1', '0000-00-00 00:00:00', 0, '2023-11-09 04:55:55', 1),
-(2, 'Processing', 'Đang trong quá trình xử lý task', 'badge badge-warning', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
+(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', b'0', '0000-00-00 00:00:00', 0, '2023-11-09 05:38:26', 1),
+(2, 'Processing', 'Đang trong quá trình xử lý task', 'badge badge-warning', b'0', '0000-00-00 00:00:00', 0, '2023-11-09 05:38:30', 1),
 (3, 'Ready', 'Các task của project đã đc upload', 'badge badge-success', b'0', '2023-10-19 16:28:45', 1, NULL, 0),
 (4, 'Upload Link', 'TLA tiến hành upload link thành phẩm của project ', 'badge badge-success', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
 (5, 'Sent', 'CSS gửi link thành phẩm cho khách hàng', 'badge badge-success', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
 (6, 'Paid', 'Được thanh toán', 'badge badge-info', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
 (7, 'Unpaid', 'Không được thanh toán', 'badge badge-danger', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
 (8, 'Ask again', 'Yêu cầu làm lại', 'badge badge-dark', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
-(9, 'Responded', 'Quy trách nhiệm cho nhân viên', 'badge badge-danger', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
-(31, '1234', '1234', '1234', b'1', '2023-11-09 05:27:46', 1, NULL, 0),
-(32, '321', '31', '321', b'1', '2023-11-09 05:27:51', 1, NULL, 0),
-(33, '41234', '4213412', '432412', b'1', '2023-11-09 05:27:58', 1, NULL, 0);
+(9, 'Responded', 'Quy trách nhiệm cho nhân viên', 'badge badge-danger', b'0', '0000-00-00 00:00:00', 0, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -2989,7 +2986,7 @@ ALTER TABLE `project_logs`
 -- AUTO_INCREMENT cho bảng `project_statuses`
 --
 ALTER TABLE `project_statuses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT cho bảng `tasks`

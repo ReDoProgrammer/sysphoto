@@ -10,6 +10,8 @@ $('#btnSubmit').click(function () {
     let description = $('#txaDescription').val().trim();
     let visible = $('#switch_visible').is(':checked')?1:0;
 
+
+
     if (name.length == 0) {
         ShowWarningMsg("Please enter status name", "Invalid name");
     }
@@ -122,7 +124,6 @@ function LoadData() {
             if (content.code == 200) {
                 let idx = 1;
                 content.ps.forEach(s => {
-                    console.log(s);
                     $('#tblProjectStatuses').append(`
                         <tr id = "${s.id}">
                             <td>${idx++}</td>
