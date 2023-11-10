@@ -42,6 +42,7 @@
                 <th>Job</th>
                 <th>Start</th>
                 <th>Deadline</th>
+                <th class="text-center">Urgen</th>
                 <th>Templates</th>
                 <th>Product Url</th>
                 <th class="text-center">Status</th>

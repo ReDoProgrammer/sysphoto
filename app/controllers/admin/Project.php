@@ -36,14 +36,14 @@ class Project extends AdminController
                 'code' => 409,
                 'msg' => `This project name is already in use`,
                 'icon' => 'warning',
-                'heading' => 'DUPLICATE!!'              
+                'heading' => 'Conflig name!!'              
             );
         }else{
             $data = array(
                 'code' => 200,
-                'msg' => 'Available name',
+                'msg' => 'This name is available',
                 'icon' => 'info',
-                'heading' => 'AVAILABLE!!!'
+                'heading' => 'Available'
             );
         }
         echo json_encode($data);

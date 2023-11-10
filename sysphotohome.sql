@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 10, 2023 lúc 03:36 AM
+-- Thời gian đã tạo: Th10 10, 2023 lúc 04:08 AM
 -- Phiên bản máy phục vụ: 10.4.27-MariaDB
 -- Phiên bản PHP: 8.2.0
 
@@ -442,28 +442,35 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectFilter` (IN `p_from_date` TI
     SET v_offset = (p_page - 1) * p_limit;
 
     SELECT 
-    		p.id, p.name,
-           c.acronym,
-           DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') AS start_date,
-           DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') AS end_date,
-           (SELECT CONCAT(GROUP_CONCAT(name SEPARATOR ', '), ' ')
-            FROM levels
-            WHERE FIND_IN_SET(levels.id, p.levels)
-           ) AS templates,
-           COUNT(t.id) as gen_number,
-           p.status_id,
-           ps.name AS status_name,
-           ps.color AS status_color
+        p.id, p.name,
+        p.priority,
+        c.acronym,
+        DATE_FORMAT(p.start_date, '%d/%m/%Y %H:%i') AS start_date,
+        DATE_FORMAT(p.end_date, '%d/%m/%Y %H:%i') AS end_date,
+        IF(LENGTH(p.levels) = 0,
+            '-',
+            (SELECT CONCAT(GROUP_CONCAT(name SEPARATOR ', '), ' ')
+             FROM levels
+             WHERE FIND_IN_SET(levels.id, p.levels)
+            )
+        ) AS templates,
+        SUM(CASE WHEN t.auto_gen = 1 THEN 1 ELSE 0 END) as gen_number,
+        IFNULL(p.status_id, '-1') as status_id,
+        IFNULL(ps.name, 'Initial') AS status_name,
+        IFNULL(ps.color, 'bg-secondary') AS status_color
     FROM projects p
     JOIN customers c ON p.customer_id = c.id
     LEFT JOIN project_statuses ps ON p.status_id = ps.id
-    LEFT JOIN tasks t ON t.project_id = p.id AND t.auto_gen = 1
+    LEFT JOIN tasks t ON t.project_id = p.id
     WHERE p.end_date >= p_from_date AND p.end_date <= p_to_date
-    AND (p.name LIKE CONCAT('%', p_search, '%') OR c.acronym LIKE CONCAT('%', p_search, '%'))
-    AND (
-        p_status = '' OR FIND_IN_SET(p.status_id, p_status)
-    )
+        AND (p.name LIKE CONCAT('%', p_search, '%') OR c.acronym LIKE CONCAT('%', p_search, '%'))
+        AND (
+            p_status = '' OR FIND_IN_SET(p.status_id, p_status)
+        )
+    GROUP BY p.id, p.name,p.priority, c.acronym, p.start_date, p.end_date, p.levels, p.status_id, ps.name, ps.color
     LIMIT v_offset, p_limit;
+
+  
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
@@ -1899,7 +1906,11 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 (16, 13, '031123 project', 'project description 031123\n', 0, '2023-11-03 08:09:00', '2023-11-03 15:09:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-11-03 10:40:47', 1, NULL, 0, NULL, ''),
 (17, 28, 'test', '\n', 0, '2023-11-10 09:33:00', '2023-11-10 09:33:00', '1', '', NULL, NULL, 2, 1, '2023-11-10 09:34:50', 1, NULL, 0, NULL, ''),
 (18, 27, 'test', '\n', 0, '2023-11-10 09:35:00', '2023-11-10 09:35:00', '5', '', NULL, NULL, 3, 0, '2023-11-10 09:35:23', 1, NULL, 0, NULL, ''),
-(19, 27, 'test1234321', '\n', 0, '2023-11-10 09:35:00', '2023-11-10 09:35:00', '5', '', NULL, NULL, 3, 0, '2023-11-10 09:35:31', 1, NULL, 0, NULL, '');
+(19, 27, 'test1234321', '\n', 0, '2023-11-10 09:35:00', '2023-11-10 09:35:00', '5', '', NULL, NULL, 3, 0, '2023-11-10 09:35:31', 1, NULL, 0, NULL, ''),
+(20, 27, 'Project 101123', '\n', 0, '2023-11-10 09:42:00', '2023-11-10 12:42:00', '', '', NULL, NULL, 0, 0, '2023-11-10 09:42:57', 1, NULL, 0, NULL, ''),
+(21, 27, 'Project 10112311', '\n', 0, '2023-11-10 09:42:00', '2023-11-10 11:42:00', '', '', NULL, NULL, 0, 0, '2023-11-10 09:43:21', 1, NULL, 0, NULL, ''),
+(22, 30, 'TEST 123 101123', '\n', 0, '2023-11-10 09:43:00', '2023-11-10 09:43:00', '1', '', NULL, NULL, 1, 0, '2023-11-10 09:45:21', 1, NULL, 0, NULL, ''),
+(23, 30, 'TEST 123 101123', '\n', 0, '2023-11-10 09:43:00', '2023-11-10 09:43:00', '1', '', NULL, NULL, 1, 0, '2023-11-10 09:50:13', 1, NULL, 0, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -2166,7 +2177,11 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (14, 15, 0, 0, '2023-11-03 10:41:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 2</span>] TO [<span class=\"text-info\">combo 3</span>]', ''),
 (15, 17, 0, 0, '2023-11-10 09:34:50', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">41234124</span>]', ''),
 (16, 18, 0, 0, '2023-11-10 09:35:23', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(17, 19, 0, 0, '2023-11-10 09:35:31', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', '');
+(17, 19, 0, 0, '2023-11-10 09:35:31', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
+(18, 20, 0, 0, '2023-11-10 09:42:57', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
+(19, 21, 0, 0, '2023-11-10 09:43:21', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
+(20, 22, 0, 0, '2023-11-10 09:45:21', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfasfsd1rfdsaf</span>]', ''),
+(21, 23, 0, 0, '2023-11-10 09:50:13', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfasfsd1rfdsaf</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2982,7 +2997,7 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
@@ -2994,7 +3009,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`

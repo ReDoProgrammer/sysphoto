@@ -245,6 +245,9 @@ function fetch() {
                             <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
                             ${p.end_date.split(' ')[0]}
                         </td>
+                        <td class="text-center">
+                            ${p.priority == 1?`<i class="fa-regular fa-square-check text-danger"></i>`:`<i class="fa-regular fa-square"></i>`}
+                        </td>
                         <td class="fw-bold text-info">${p.templates}</td>
                         <td>
                             ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
@@ -379,7 +382,7 @@ $('#btnSubmitJob').click(function () {
             let content = $.parseJSON(rs);
             if (content.code == 409) {
                 Swal.fire({
-                    title: "Are you sure you want to create project with this name?",
+                    title: `${pId<1?"Are you sure you want to create project with this name?":"Are you sure you want to update project with this name?"}`,
                     text: content.msg,
                     icon: "warning",
                     showCancelButton: true,
