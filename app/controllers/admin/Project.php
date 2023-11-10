@@ -27,6 +27,27 @@ class Project extends AdminController
         $this->render('__layouts/admin_layout', $this->data);
     }
 
+    public function CheckName(){
+        $id = $_GET['id'];
+        $name = $_GET['name'];
+        $result = $this->project_model->CheckName($id,$name);
+        if($result['available_rows']>0){
+            $data = array(
+                'code' => 409,
+                'msg' => `This project name is already in use`,
+                'icon' => 'warning',
+                'heading' => 'DUPLICATE!!'              
+            );
+        }else{
+            $data = array(
+                'code' => 200,
+                'msg' => 'Available name',
+                'icon' => 'info',
+                'heading' => 'AVAILABLE!!!'
+            );
+        }
+        echo json_encode($data);
+    }
     public function create()
     {
 

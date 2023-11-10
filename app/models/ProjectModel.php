@@ -6,6 +6,12 @@
             $params = ['p_id'=>$id];
             return $this->__db->executeStoredProcedure("ProjectApplyingTemplates",$params);
         }
+
+        public function CheckName($id,$name){
+            $params = ['p_id'=>$id,'p_name'=>$name];
+            return $this->__db->executeStoredProcedure("ProjectCheckName",$params);
+        }
+
         public function CreateProject($customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description){
             $user = unserialize($_SESSION['user']);
             $params = array(

@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 09, 2023 lúc 06:39 AM
--- Phiên bản máy phục vụ: 10.4.28-MariaDB
--- Phiên bản PHP: 8.0.28
+-- Thời gian đã tạo: Th10 10, 2023 lúc 03:36 AM
+-- Phiên bản máy phục vụ: 10.4.27-MariaDB
+-- Phiên bản PHP: 8.2.0
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -350,6 +350,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectApplyingTemplates` (IN `p_id
     END IF;
     
     SELECT insertCount AS rows_inserted;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectCheckName` (IN `p_id` INT, IN `p_name` VARCHAR(200))   BEGIN
+	DECLARE v_count INT;
+	SELECT count(id) INTO v_count FROM projects 
+    WHERE LOWER(TRIM(name)) = LOWER(TRIM(p_name)) 
+    AND ((p_id > 0 AND id <> p_id) OR p_id = 0);
+    SELECT v_count AS available_rows;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectDetailJoin` (IN `p_id` BIGINT)   BEGIN
@@ -1888,7 +1896,10 @@ INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`,
 (13, 13, 'test without auto creating task from template', 'Non auto creating task from template description\n', 0, '2023-10-24 14:03:00', '2023-10-24 17:03:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-10-24 14:04:37', 6, NULL, 0, NULL, ''),
 (14, 10, 'test 3010', '3030 description\n', 0, '2023-10-30 08:15:00', '2023-10-30 13:15:00', '1,3', '', NULL, NULL, 0, 1, '2023-10-30 08:15:57', 6, NULL, 0, NULL, ''),
 (15, 13, 'Test 021123', 'Project description\n', 2, '2023-11-02 08:25:00', '2023-11-02 13:25:00', '1,2,3,5', '', NULL, NULL, 3, 0, '2023-11-02 08:25:44', 6, '2023-11-03 10:41:43', 1, NULL, ''),
-(16, 13, '031123 project', 'project description 031123\n', 0, '2023-11-03 08:09:00', '2023-11-03 15:09:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-11-03 10:40:47', 1, NULL, 0, NULL, '');
+(16, 13, '031123 project', 'project description 031123\n', 0, '2023-11-03 08:09:00', '2023-11-03 15:09:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-11-03 10:40:47', 1, NULL, 0, NULL, ''),
+(17, 28, 'test', '\n', 0, '2023-11-10 09:33:00', '2023-11-10 09:33:00', '1', '', NULL, NULL, 2, 1, '2023-11-10 09:34:50', 1, NULL, 0, NULL, ''),
+(18, 27, 'test', '\n', 0, '2023-11-10 09:35:00', '2023-11-10 09:35:00', '5', '', NULL, NULL, 3, 0, '2023-11-10 09:35:23', 1, NULL, 0, NULL, ''),
+(19, 27, 'test1234321', '\n', 0, '2023-11-10 09:35:00', '2023-11-10 09:35:00', '5', '', NULL, NULL, 3, 0, '2023-11-10 09:35:31', 1, NULL, 0, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -2152,7 +2163,10 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (11, 15, 7, 0, '2023-11-03 10:41:08', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-info text-white\">PE-DTE</span>] with quantity: [3]', ''),
 (12, 15, 0, 3, '2023-11-03 10:41:23', 'CEO [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">03/11/2023 08:09</span>] TO [<span class=\"text-warning\">03/11/2023 08:09</span>]', ''),
 (13, 15, 0, 0, '2023-11-03 10:41:34', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'the 2nd instruction\n\')\">View detail</a>', ''),
-(14, 15, 0, 0, '2023-11-03 10:41:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 2</span>] TO [<span class=\"text-info\">combo 3</span>]', '');
+(14, 15, 0, 0, '2023-11-03 10:41:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 2</span>] TO [<span class=\"text-info\">combo 3</span>]', ''),
+(15, 17, 0, 0, '2023-11-10 09:34:50', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">41234124</span>]', ''),
+(16, 18, 0, 0, '2023-11-10 09:35:23', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
+(17, 19, 0, 0, '2023-11-10 09:35:31', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2968,7 +2982,7 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
@@ -2980,7 +2994,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`

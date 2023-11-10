@@ -12,28 +12,28 @@ $(document).ready(function () {
     $('#btnSearch').click();
     setInterval(fetch, 100000);// gọi hàm load lại dữ liệu sau mỗi 1p
 })
-function ApplyTemplates(id){
+function ApplyTemplates(id) {
     $.ajax({
-        url:'project/ApplyTemplates',
-        type:'post',
-        data:{id},
-        success:function(data){
-            
-           try {
-            let content = $.parseJSON(data);
-             if(content.code == 200){
-                $.toast({
-                    heading: content.heading,
-                    text: content.msg,
-                    icon: content.icon,
-                    loader: true,        // Change it to false to disable loader
-                    loaderBg: '#9EC600'  // To change the background
-                })
-                fetch();
-             }
-           } catch (error) {
-                console.log(data,error);
-           }
+        url: 'project/ApplyTemplates',
+        type: 'post',
+        data: { id },
+        success: function (data) {
+
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    $.toast({
+                        heading: content.heading,
+                        text: content.msg,
+                        icon: content.icon,
+                        loader: true,        // Change it to false to disable loader
+                        loaderBg: '#9EC600'  // To change the background
+                    })
+                    fetch();
+                }
+            } catch (error) {
+                console.log(data, error);
+            }
         }
     })
 }
@@ -174,18 +174,18 @@ function LoadTemplates() {
     })
 }
 
-function LoadProjectStatuses(){
+function LoadProjectStatuses() {
     $.ajax({
-        url:'projectstatus/all',
-        type:'get',
-        success:function(data){
+        url: 'projectstatus/all',
+        type: 'get',
+        success: function (data) {
             try {
                 let content = $.parseJSON(data);
-                content.ps.forEach(p=>{
+                content.ps.forEach(p => {
                     $('#slProjectStatuses').append(`<option value="${p.id}">${p.name}</option>`);
                 })
             } catch (error) {
-                console.log(data,error);
+                console.log(data, error);
             }
         }
     })
@@ -250,7 +250,7 @@ function fetch() {
                             ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
                         </td>
                         <td class="text-center">
-                            <span class="badge ${p.status_color?p.status_color:`text-secondary fw-bold`}">${p.status_name?p.status_name:'Initial'}</span>
+                            <span class="badge ${p.status_color ? p.status_color : `text-secondary fw-bold`}">${p.status_name ? p.status_name : 'Initial'}</span>
                         </td>                       
                         <td class="text-center">
                             <div class="dropdown action-label">
@@ -258,8 +258,8 @@ function fetch() {
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">                                
                                     <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
-                                    ${p.gen_number > 0 ?``
-                                    :`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
+                                    ${p.gen_number > 0 ? ``
+                                : `<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment"></i>  Add new Instruction</a>
@@ -374,68 +374,87 @@ $('#btnSubmitJob').click(function () {
     }
     // end validating inputs
 
-
-
-    if (pId < 1) {
-        $.ajax({
-            url: 'project/create',
-            type: 'post',
-            data: {
-                customer, name, start_date, end_date,
-                combo, templates, priority,
-                description, instruction
-            },
-            success: function (data) {
-                try {
-                    content = $.parseJSON(data);
-                    if (content.code == 201) {
-                        $('#modal_project').modal('hide');
-                        $('#btnSearch').click();
+    CheckName(pId, name)
+        .then(rs => {
+            let content = $.parseJSON(rs);
+            if (content.code == 409) {
+                Swal.fire({
+                    title: "Are you sure you want to create project with this name?",
+                    text: content.msg,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, do it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        createOrUpdateProject(pId,customer, name, start_date, end_date,
+                            combo, templates, priority, description, instruction);
                     }
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-                } catch (error) {
-                    console.log(data, error);
-                }
+
+                });
+            }else{
+                createOrUpdateProject(pId,customer, name, start_date, end_date,
+                    combo, templates, priority, description, instruction);
             }
         })
-    } else {
-        $.ajax({
-            url: 'project/update',
-            type: 'post',
-            data: {
-                id: pId,
-                customer, name, start_date, end_date,
-                combo, templates, priority,
-                description, instruction
-            },
-            success: function (data) {
-                try {
-                    content = $.parseJSON(data);
-                    console.log(content);
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-
-                    $('#modal_project').modal('hide');
-                    $('#btnSearch').click();
-
-                } catch (error) {
-                    console.log(data, error);
-                }
-            }
+        .catch(err => {
+            console.log(err);
         })
-    }
 })
+async function createOrUpdateProject(id, customer, name, start_date, end_date,
+    combo, templates, priority, description, instruction) {
+    try {
+
+        const url = id < 1 ? 'project/create' : 'project/update';
+        const data = {id, customer, name, start_date, end_date,
+            combo, templates, priority, description, instruction
+        };
+
+        const response = await $.ajax({
+            url: url,
+            type: 'post',
+            data: data
+        });
+
+        const content = $.parseJSON(response);
+        if (content.code === (pId < 1 ? 201 : 200)) {
+            handleResponse(content);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+function CheckName(id, name) {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: 'project/checkname',
+            type: 'get',
+            data: { id, name },
+            success: function (data) {
+                return resolve(data);
+            },
+            error: function (jqXHR, exception) {
+                return reject(jqXHR);
+            }
+        })
+    })
+}
+
+function handleResponse(content) {
+    if (content.code === (pId < 1 ? 201 : 200)) {
+        $('#modal_project').modal('hide');
+        $('#btnSearch').click();
+    }
+
+    $.toast({
+        heading: content.heading,
+        text: content.msg,
+        icon: content.icon,
+        loader: true,
+        loaderBg: '#9EC600'
+    });
+}
 
 $(document).on("click", "#pagination li a.page-link", function (e) {
     e.preventDefault();
