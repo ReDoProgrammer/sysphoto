@@ -248,7 +248,7 @@ function fetch() {
                         <td class="text-center">
                             ${p.priority == 1?`<i class="fa-regular fa-square-check text-danger"></i>`:`<i class="fa-regular fa-square"></i>`}
                         </td>
-                        <td class="fw-bold text-info">${p.templates}</td>
+                        <td class="fw-bold">${p.templates}</td>
                         <td>
                             ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
                         </td>
