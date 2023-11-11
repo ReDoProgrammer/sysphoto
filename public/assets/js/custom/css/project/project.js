@@ -136,11 +136,13 @@ function AddNewTask(id) {
 
 function AddNewInstruction(id) {
     pId = id;
+    CKEDITOR.instances['txaNewInstruction'].setData('');
     $('#modal_instruction').modal('show');
 }
 
 function AddNewCC(pId) {
     project_id = pId;
+    CKEDITOR.instances['txaCCDescription'].setData('');
     $('#modal_cc').modal('show');
 }
 function LoadCustomers() {

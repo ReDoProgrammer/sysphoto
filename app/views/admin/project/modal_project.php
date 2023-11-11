@@ -92,7 +92,7 @@
                         <div class="col-sm-12">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Project's description</label>
-                                <div id="divDescription" style="min-height: 100px;"></div>
+                                <textarea class="form-control" id="txaDescription"></textarea>
                             </div>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                         <div class="col-sm-12">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Instruction for Editor</label>
-                                <div id="divInstruction" style="min-height: 50px;"></div>
+                                <textarea class="form-control" id="txaInstruction"></textarea>
                             </div>
                         </div>
                     </div>

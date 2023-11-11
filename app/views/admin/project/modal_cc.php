@@ -31,7 +31,7 @@
                     <div class="col-sm-12">
                         <div class="input-block mb-3">
                             <label class="col-form-label">CC description</label>
-                            <div id="divCCDescription" style="min-height: 100px;"></div>
+                            <textarea name="" id="txaCCDescription" class="form-control"></textarea>
                         </div>
                     </div>
                 </div>               

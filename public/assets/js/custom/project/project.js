@@ -12,6 +12,9 @@ $(document).ready(function () {
     $('#btnSearch').click();
     setInterval(fetch, 100000);// gọi hàm load lại dữ liệu sau mỗi 1p
 })
+
+
+
 function ApplyTemplates(id) {
     $.ajax({
         url: 'project/ApplyTemplates',
@@ -50,15 +53,14 @@ function UpdateProject(id) {
                     pId = id;
                     $('#modal_project').modal('show');
                     let p = content.project;
-                    console.log(p);
                     $('#txtProjectName').val(p.project_name);
                     $('#txtBeginDate').val(p.start_date);
                     $('#txtEndDate').val(p.end_date);
-                    qDescription.setText(p.description ? p.description : '');
-                    qInstruction.setText(p.instruction ? p.instruction : '');
+                    CKEDITOR.instances['txaDescription'].setData(p.description);
+                    CKEDITOR.instances['txaInstruction'].setData(p.instruction);
                     selectizeCustomer.setValue(p.customer_id);
                     selectizeCombo.setValue(p.combo_id);
-                    selectizeStatuse.setValue(p.status_id);
+                    selectizeStatus.setValue(p.status_id);
                     let templates = p.levels.split(',');
                     $("#slTemplates").select2("val", templates);
                     $('#ckbPriority').prop('checked', p.priority == 1);
@@ -111,11 +113,13 @@ function DestroyProject(id) {
 
 function AddNewTask(id) {
     pId = id;
+    CKEDITOR.instances['txaTaskDescription'].setData('');
     $('#task_modal').modal('show');
 }
 
 function AddNewInstruction(id) {
     pId = id;
+    CKEDITOR.instances['txaTaskDescription'].setData('');
     $('#modal_instruction').modal('show');
 }
 
@@ -184,7 +188,7 @@ function LoadProjectStatuses() {
                 let content = $.parseJSON(data);
                 if (content.ps.length > 0) {
                     content.ps.forEach(p => {
-                        selectizeStatuse.addOption({ value: p.id, text: `${p.name} - ${p.description}` })
+                        selectizeStatus.addOption({ value: p.id, text: `${p.name} - ${p.description}` })
                     })
                 }
             } catch (error) {
@@ -291,8 +295,63 @@ function fetch() {
         }
     })
 }
+
+async function createOrUpdateProject(id, customer, name, start_date, end_date,status,
+    combo, templates, priority, description, instruction) {
+    try {
+
+        const url = id < 1 ? 'project/create' : 'project/update';
+        const data = {
+            id, customer, name, start_date, end_date,status,
+            combo, templates, priority, description, instruction
+        };
+
+        const response = await $.ajax({
+            url: url,
+            type: 'post',
+            data: data
+        });
+
+        const content = $.parseJSON(response);
+        if (content.code === (pId < 1 ? 201 : 200)) {
+            handleResponse(content);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+function CheckName(id, name) {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: 'project/checkname',
+            type: 'get',
+            data: { id, name },
+            success: function (data) {
+                return resolve(data);
+            },
+            error: function (jqXHR, exception) {
+                return reject(jqXHR);
+            }
+        })
+    })
+}
+
+function handleResponse(content) {
+    if (content.code === (pId < 1 ? 201 : 200)) {
+        $('#modal_project').modal('hide');
+        $('#btnSearch').click();
+    }
+
+    $.toast({
+        heading: content.heading,
+        text: content.msg,
+        icon: content.icon,
+        loader: true,
+        loaderBg: '#9EC600'
+    });
+}
 $('#btnSubmitNewInstruction').click(function () {
-    let instruction = qNewDescription.getText();
+    let instruction = CKEDITOR.instances['txaNewInstruction'].getData();
     if (instruction.trim().length == 0) {
         $.toast({
             heading: `Instruction can not be null`,
@@ -341,13 +400,13 @@ $('#btnSubmitJob').click(function () {
     }) : [];
     let priority = $('#ckbPriority').is(':checked') ? 1 : 0;
     let status = 0;
-    if ($('#slStatuses').val()) {
-        status = $('#slStatuses').val();
+    if (selectizeStatus.items && selectizeStatus.items.length>0) {
+        status = parseInt(selectizeStatus.items[0]);
     }
 
 
-    let description = qDescription.getText();
-    let instruction = qInstruction.getText();
+    let description = CKEDITOR.instances['txaDescription'].getData();
+    let instruction = CKEDITOR.instances['txaInstruction'].getData();
 
 
     // validate inputs
@@ -414,60 +473,6 @@ $('#btnSubmitJob').click(function () {
             console.log(err);
         })
 })
-async function createOrUpdateProject(id, customer, name, start_date, end_date,status,
-    combo, templates, priority, description, instruction) {
-    try {
-
-        const url = id < 1 ? 'project/create' : 'project/update';
-        const data = {
-            id, customer, name, start_date, end_date,status,
-            combo, templates, priority, description, instruction
-        };
-
-        const response = await $.ajax({
-            url: url,
-            type: 'post',
-            data: data
-        });
-
-        const content = $.parseJSON(response);
-        if (content.code === (pId < 1 ? 201 : 200)) {
-            handleResponse(content);
-        }
-    } catch (error) {
-        console.log(error);
-    }
-}
-function CheckName(id, name) {
-    return new Promise((resolve, reject) => {
-        $.ajax({
-            url: 'project/checkname',
-            type: 'get',
-            data: { id, name },
-            success: function (data) {
-                return resolve(data);
-            },
-            error: function (jqXHR, exception) {
-                return reject(jqXHR);
-            }
-        })
-    })
-}
-
-function handleResponse(content) {
-    if (content.code === (pId < 1 ? 201 : 200)) {
-        $('#modal_project').modal('hide');
-        $('#btnSearch').click();
-    }
-
-    $.toast({
-        heading: content.heading,
-        text: content.msg,
-        icon: content.icon,
-        loader: true,
-        loaderBg: '#9EC600'
-    });
-}
 
 $(document).on("click", "#pagination li a.page-link", function (e) {
     e.preventDefault();
@@ -480,7 +485,7 @@ $(document).on("click", "#pagination li a.page-link", function (e) {
 $('#btnSubmitCC').click(function () {
     let start_date = $('#txtCCBeginDate').val() + ":00";
     let end_date = $('#txtCCEndDate').val() + ":00";
-    let feedback = qCCDescription.getText();
+    let feedback = CKEDITOR.instances['txaCCDescription'].getData();
 
     let sd = strToDateTime($('#txtBeginDate').val());
     let td = strToDateTime($('#txtEndDate').val());
@@ -542,8 +547,9 @@ $("#modal_project").on('shown.bs.modal', function (e) {
 
 $("#modal_project").on("hidden.bs.modal", function () {
     pId = 0;
-    qDescription.setText('');
-    qInstruction.setText('');
+    $('#txtProjectName').val('');
+   CKEDITOR.instances['txaDescription'].setData('');
+   CKEDITOR.instances['txaInstruction'].setData('');
 });
 $("#modal_instruction").on("hidden.bs.modal", function () {
     pId = 0;
@@ -578,38 +584,11 @@ $('#slPageSize').on('change', function () {
     fetch();
 });
 
+CKEDITOR.replace('txaCCDescription');
+CKEDITOR.replace('txaNewInstruction');
+CKEDITOR.replace('txaDescription');
+CKEDITOR.replace('txaInstruction');
 
-
-
-var qDescription = new Quill('#divDescription', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter project's description here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
-var qInstruction = new Quill('#divInstruction', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter intruction for Editor here...",
-});
 
 var $selectizeCustomers = $('#slCustomers');
 $selectizeCustomers.selectize({
@@ -627,7 +606,7 @@ var $selectizeStatuses = $('#slStatuses');
 $selectizeStatuses.selectize({
     sortField: 'text' // Sắp xếp mục theo văn bản
 });
-var selectizeStatuse = $selectizeStatuses[0].selectize;
+var selectizeStatus = $selectizeStatuses[0].selectize;
 
 
 
@@ -635,39 +614,5 @@ var selectizeStatuse = $selectizeStatuses[0].selectize;
 var ccId = 0;
 var project_id = 0;
 
-var qCCDescription = new Quill('#divCCDescription', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter CC description here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
 
 
-var qNewDescription = new Quill('#divNewInstruction', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter Instruction here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});

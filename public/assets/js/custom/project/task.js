@@ -17,7 +17,7 @@ $("#task_modal").on("hidden.bs.modal", function () {
 
 
 $('#btnSubmitTask').click(function () {
-    let description = qDescription.getText();
+    let description = CKEDITOR.instances['txaTaskDescription'].getData();
     let level = $('#slLevels option:selected').val();
     let editor = $('#slEditors option:selected').val();
     let qa = $('#slQAs option:selected').val();
@@ -188,24 +188,7 @@ function getTaskLevels() {
     })
 }
 
-
-var qDescription = new Quill('#divTaskDescription', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter task description here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
+CKEDITOR.replace('txaTaskDescription');
 
 
 var selectizeEditors = $('#slEditors');
