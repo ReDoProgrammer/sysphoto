@@ -10,7 +10,7 @@
                 <div>
                     <div class="input-block mb-3">
                         <label class="col-form-label">Description</label>
-                        <div id="divDescription" style="min-height: 100px;"></div>
+                        <textarea name="" id="txaTaskDescription" class="form-control"></textarea>
                     </div>
                     <div class="row">
                         <div class="col-sm-10">
@@ -52,5 +52,6 @@
     </div>
 </div>
 <!-- /Add or update Task Modal -->
+
 
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/task/task.js"></script>

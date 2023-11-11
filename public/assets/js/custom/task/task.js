@@ -101,7 +101,7 @@ function viewTask(id) {
                 $('#status').addClass(t.status_color);
                 $('#status').text(t.status ? t.status : '-');
 
-                
+
 
                 $('#start_date').html(`<span class="text-danger fw-bold">${(t.start_date.split(' ')[1])}</span> <br/>${(t.start_date.split(' ')[0])}`);
                 $('#end_date').html(`<span class="text-danger fw-bold">${(t.end_date.split(' ')[1])}</span> <br/>${(t.end_date.split(' ')[0])}`);
@@ -110,16 +110,16 @@ function viewTask(id) {
                 let s = $.parseJSON(t.styles);
                 $('#divTaskDescription').append(`
                     <div class="row">
-                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color?s.color:''}</span></div>
-                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output?s.output:''}</span></div>
+                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color ? s.color : ''}</span></div>
+                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output ? s.output : ''}</span></div>
                         <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
                     </div>
                 `);
 
                 $('#divTaskDescription').append(`<hr>
                     <div class="row mt-3">
-                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style?s.style:''}</span></div>
-                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud?s.cloud:''}</span></div>
+                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style ? s.style : ''}</span></div>
+                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud ? s.cloud : ''}</span></div>
                         <div class="col-sm-4">TV: <span class="fw-bold">${s.tv}</span></div>                        
                     </div>
                 `);
@@ -134,7 +134,7 @@ function viewTask(id) {
                 `);
                 $('#divTaskDescription').append(`<hr>
                     <div class="row mt-3">
-                        <div class="col-sm-12">Straighten: ${s.is_straighten==1?'<i class="fa-regular fa-square-check"></i>':'<i class="fa-regular fa-square"></i>'}
+                        <div class="col-sm-12">Straighten: ${s.is_straighten == 1 ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>'}
                         <span class="fw-bold">${s.straighten_remark}</span></div>
                     </div>
                 `)
@@ -185,118 +185,99 @@ function viewTask(id) {
 }
 
 $('#btnSubmitTask').click(function () {
-    let description = qDescription.getText();
-    let level = $('#slLevels option:selected').val();
-    let editor = $('#slEditors option:selected').val();
-    let qa = $('#slQAs option:selected').val();
-    let quantity = $('#txtQuantity').val();
+    var currentUrl = window.location.href;
+    // Sử dụng regex để tìm giá trị của tham số "id"
+    var match = currentUrl.match(/[?&]id=([^&]*)/);
 
-    // validation
-    if (!level) {
-        $.toast({
-            heading: `Task level can not be null`,
-            text: `Please chose one level`,
-            icon: 'warning',
-            loader: true,        // Change it to false to disable loader
-            loaderBg: '#9EC600'  // To change the background
-        })
-        return;
+    // Kiểm tra xem tham số có tồn tại không
+    if (match) {
+        var prjId = decodeURIComponent(match[1]);
+        let description = CKEDITOR.instances['txaTaskDescription'].getData();
+        let level = $('#slLevels option:selected').val();
+        let editor = 0;
+        if (selectizeEditor.items && selectizeEditor.items.length > 0) {
+            editor = parseInt(selectizeEditor.items[0]);
+        }
+        let qa = 0;
+        if (selectizeQA.items && selectizeQA.items.length > 0) {
+            qa = parseInt(selectizeQA.items[0]);
+        }
+        let quantity = $('#txtQuantity').val();
+
+        // validation
+        if (!level) {
+            $.toast({
+                heading: `Task level can not be null`,
+                text: `Please chose one level`,
+                icon: 'warning',
+                loader: true,        // Change it to false to disable loader
+                loaderBg: '#9EC600'  // To change the background
+            })
+            return;
+        }
+
+        if (quantity.trim().length == 0) {
+            $.toast({
+                heading: `Quantity is not valid`,
+                text: `Please enter a number`,
+                icon: 'warning',
+                loader: true,        // Change it to false to disable loader
+                loaderBg: '#9EC600'  // To change the background
+            })
+            return;
+        }
+
+        if (parseInt(quantity) < 1) {
+            $.toast({
+                heading: `Quantity is not valid`,
+                text: `Quantity must be larger than 0`,
+                icon: 'warning',
+                loader: true,        // Change it to false to disable loader
+                loaderBg: '#9EC600'  // To change the background
+            })
+            return;
+        }
+
+        //end validation
+
+        createOrUpdateTask(taskId, prjId, description, level, ccId, editor, qa, quantity);
     }
 
-    if (quantity.trim().length == 0) {
-        $.toast({
-            heading: `Quantity is not valid`,
-            text: `Please enter a number`,
-            icon: 'warning',
-            loader: true,        // Change it to false to disable loader
-            loaderBg: '#9EC600'  // To change the background
-        })
-        return;
-    }
-
-    if (parseInt(quantity) < 1) {
-        $.toast({
-            heading: `Quantity is not valid`,
-            text: `Quantity must be larger than 0`,
-            icon: 'warning',
-            loader: true,        // Change it to false to disable loader
-            loaderBg: '#9EC600'  // To change the background
-        })
-        return;
-    }
-
-    //end validation
-
-    if (taskId < 1) {
-        $.ajax({
-            url: '../task/create',
-            type: 'post',
-            data: {
-                prjId: idValue,
-                description,
-                level,
-                cc: ccId,
-                editor: editor ? editor : 0,
-                qa: qa ? qa : 0,
-                quantity: parseInt(quantity)
-            },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data);
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-
-                    if (content.code == 201) {
-                        $('#task_modal').modal('hide');
-                        GetProjectDetail();
-                        GetLogs();
-                    }
-                } catch (error) {
-                    console.log(data, error);
-                }
-            }
-        })
-    } else {
-        $.ajax({
-            url: '../task/update',
-            type: 'post',
-            data: {
-                id: taskId,
-                prjId: idValue,
-                description,
-                level,
-                editor: editor ? editor : 0,
-                qa: qa ? qa : 0,
-                quantity: parseInt(quantity)
-            },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data);
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-
-                    if (content.code == 200) {
-                        $('#task_modal').modal('hide');
-                        GetProjectDetail();
-                        GetLogs();
-                    }
-                } catch (error) {
-                    console.log(data, error);
-                }
-            }
-        })
-    }
 })
+
+async function createOrUpdateTask(id, prjId, description, level, cc, editor, qa, quantity) {
+    try {
+
+        const url = id < 1 ? '../task/create' : '../task/update';
+        const data = {id, prjId, description, level, cc, editor, qa, quantity};
+
+        const response = await $.ajax({
+            url: url,
+            type: 'post',
+            data: data
+        });
+   
+        const content = $.parseJSON(response);
+        if (content.code === (id < 1 ? 201 : 200)) {
+            handleResponse(content);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+function handleResponse(content) {
+    if (content.code === (taskId < 1 ? 201 : 200)) {
+        $('#task_modal').modal('hide');
+    }
+
+    $.toast({
+        heading: content.heading,
+        text: content.msg,
+        icon: content.icon,
+        loader: true,
+        loaderBg: '#9EC600'
+    });
+}
 
 $('#slLevels').on('change', function () {
     LoadEditorsByLevel($(this).val());
@@ -392,39 +373,21 @@ function getTaskLevels() {
 }
 
 
-var qDescription = new Quill('#divDescription', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter task description here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
+
 
 function LoadTaskStatuses() {
     $.ajax({
-        url: 'taskstatus/all',
+        url: '../taskstatus/all',
         type: 'get',
         success: function (data) {
             try {
-                console.log(data);
-                return;
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
-                    content.taskstatuses.forEach(t => {
-                        selectizeTaskStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
-                        if (t.id != 7) {
-                            $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
-                        }
+                    content.statuses.forEach(t => {
+                        // selectizeTaskStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
+                        // if (t.id != 7) {
+                        //     $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
+                        // }
                     })
                 }
             } catch (error) {
@@ -433,6 +396,9 @@ function LoadTaskStatuses() {
         }
     })
 }
+
+
+CKEDITOR.replace('txaTaskDescription');
 
 var selectizeEditors = $('#slEditors');
 selectizeEditors.selectize({

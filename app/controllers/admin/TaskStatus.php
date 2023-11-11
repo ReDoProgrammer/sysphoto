@@ -8,8 +8,8 @@
         }
         
 
-        public function list(){
-            $statuses = $this->taskstatus_model->getList();       
+        public function all(){
+            $statuses = $this->taskstatus_model->AllTaskStatuses();       
             $data = array(
                 'code'=>200,
                 'msg'=>'Get task status list successfully!',
