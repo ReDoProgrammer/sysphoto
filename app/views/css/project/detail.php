@@ -155,9 +155,7 @@
 </div>
 
 <?php
-$this->render('admin/task/modal');
-$this->render('common/task_detail_modal');
-
+    $this->render('common/task_detail_modal');
 ?>
 
 

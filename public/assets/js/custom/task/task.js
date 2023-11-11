@@ -1,5 +1,6 @@
 $(document).ready(function () {
     getTaskLevels();
+    LoadTaskStatuses();
 })
 
 $("#task_modal").on('shown.bs.modal', function (e) {
@@ -409,6 +410,27 @@ var qDescription = new Quill('#divDescription', {
     // height: '10em'
 });
 
+function LoadTaskStatuses() {
+    $.ajax({
+        url: 'taskstatus/all',
+        type: 'get',
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    content.taskstatuses.forEach(t => {
+                        selectizeTaskStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
+                        if (t.id != 7) {
+                            $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
+                        }
+                    })
+                }
+            } catch (error) {
+                console.log(data, error);
+            }
+        }
+    })
+}
 
 var selectizeEditors = $('#slEditors');
 selectizeEditors.selectize({

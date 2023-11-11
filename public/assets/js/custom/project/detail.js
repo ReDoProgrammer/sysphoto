@@ -102,8 +102,7 @@ function GetProjectDetail() {
                         
                         const result = $.map(content.stats, function (item) {
                             return `${item.count} ${item.status} ${item.count>1?`tasks`:`task`}`
-                        }).join(', ');
-                        console.log(content.stats);
+                        }).join(', ');                        
 
                         $('#ProjectTasksAndStatus').empty();
                         $('#ProjectTasksAndStatus').append(result);

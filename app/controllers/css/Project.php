@@ -191,11 +191,13 @@ class Project extends CSSController
     {
         $id = $_GET['id'];
         $project = $this->__project_model->ProjectDetail($id);
+        $stats = $this->__project_model->StatTasksByStatus($id);
         if ($project) {
             $data = array(
                 'code' => 200,
                 'msg' => 'Get project detail successfully!',
-                'project' => $project
+                'project' => $project,
+                'stats'=>$stats
             );
         } else {
             $data = array(
