@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 11, 2023 lúc 05:12 AM
+-- Thời gian đã tạo: Th10 11, 2023 lúc 03:15 PM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -1888,7 +1888,12 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `product_url`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 27, 'Test 111123 with status', '\n', 7, '2023-11-11 11:04:00', '2023-11-11 14:04:00', '1,2,3', '', NULL, NULL, 2, 0, '2023-11-11 11:11:07', 1, '2023-11-11 11:11:50', 1, NULL, '');
+(1, 27, 'Test 111123 with status', '\n', 6, '2023-11-11 11:04:00', '2023-11-11 14:04:00', '1,2,3', '', NULL, NULL, 2, 0, '2023-11-11 11:11:07', 1, '2023-11-11 19:50:18', 6, NULL, ''),
+(2, 29, 'TEST PROJECT 61123', 'fdà\n', 6, '2023-11-11 19:45:00', '2023-11-11 22:45:00', '2', '', NULL, NULL, 1, 1, '2023-11-11 19:47:10', 6, NULL, 0, NULL, ''),
+(3, 29, 'TEST PROJECT 61123', 'fdà\n', 0, '2023-11-11 19:45:00', '2023-11-11 22:45:00', '2', '', NULL, NULL, 1, 1, '2023-11-11 19:47:28', 6, '2023-11-11 19:50:31', 6, NULL, ''),
+(4, 27, 'fsadfasd', '\n', 8, '2023-11-11 19:55:00', '2023-11-11 22:55:00', '1', '', NULL, NULL, 3, 1, '2023-11-11 19:55:46', 6, NULL, 0, NULL, ''),
+(5, 29, 'TEST PROJECT 111123', '<p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n', 0, '2023-11-11 20:04:00', '2023-11-11 23:04:00', '1', '', NULL, NULL, 2, 0, '2023-11-11 20:05:57', 6, '2023-11-11 21:15:03', 6, NULL, ''),
+(6, 27, 'The test project using ckeditor plugin', '<p>The 1st line of description</p>\n\n<p><strong>The 2nd line of description</strong></p>\n\n<p><em>The 3rd line of description</em></p>\n\n<p><u>The 4th line of description</u></p>\n\n<p>&nbsp;</p>\n', 0, '2023-11-11 20:47:00', '2023-11-11 23:47:00', '3', '', NULL, NULL, 2, 0, '2023-11-11 20:49:22', 6, '2023-11-11 21:14:35', 6, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -1965,6 +1970,9 @@ CREATE TRIGGER `after_project_updated` AFTER UPDATE ON `projects` FOR EACH ROW B
         	SET v_changed = TRUE;
         	SET v_old_status = (SELECT name FROM project_statuses WHERE id = OLD.status_id);
         	SET v_new_status = (SELECT name FROM project_statuses WHERE id = NEW.status_id);
+            IF v_new_status IS NULL THEN
+            	SET v_new_status = 'Initital';
+            END IF;
           IF v_old_status IS NULL THEN
             SET v_old_status ='Initital';
           END IF;
@@ -2066,6 +2074,16 @@ CREATE TABLE `project_instructions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Đang đổ dữ liệu cho bảng `project_instructions`
+--
+
+INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(1, 2, 'fá\n', '2023-11-11 19:47:10', 6, NULL, 0, NULL, NULL),
+(2, 3, 'fá\n', '2023-11-11 19:47:28', 6, '2023-11-11 12:50:31', 6, NULL, NULL),
+(3, 5, '<p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n', '2023-11-11 20:05:57', 6, '2023-11-11 14:15:03', 6, NULL, NULL),
+(4, 6, '<p>The 1st line of instruction</p>\n<p><strong>The 2nd line of instruction</strong></p>\n<p><em>The 3rd line of instruction</em></p>\n<p><u>The 4th line of instruction</u></p>\n', '2023-11-11 20:49:22', 6, '2023-11-11 14:14:35', 6, NULL, NULL);
+
+--
 -- Bẫy `project_instructions`
 --
 DELIMITER $$
@@ -2129,7 +2147,21 @@ CREATE TABLE `project_logs` (
 
 INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
 (1, 1, 0, 0, '2023-11-11 11:11:07', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(2, 1, 0, 0, '2023-11-11 11:11:50', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Ask again</span>] TO [<span class=\"text-info\">Unpaid</span>]', '');
+(2, 1, 0, 0, '2023-11-11 11:11:50', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Ask again</span>] TO [<span class=\"text-info\">Unpaid</span>]', ''),
+(3, 2, 0, 0, '2023-11-11 19:47:10', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdafsaf</span>]', ''),
+(4, 3, 0, 0, '2023-11-11 19:47:28', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdafsaf</span>]', ''),
+(5, 1, 0, 0, '2023-11-11 19:48:44', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Unpaid</span>] TO [<span class=\"text-info\">Paid</span>]', ''),
+(6, 4, 0, 0, '2023-11-11 19:55:46', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
+(7, 5, 0, 0, '2023-11-11 20:05:57', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdafsaf</span>]', ''),
+(8, 5, 0, 0, '2023-11-11 20:06:27', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(5)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>This is html description for the 111123 project</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;This is html description for the 111123 project&lt;/p&gt;</p>'),
+(9, 5, 0, 0, '2023-11-11 20:06:27', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>This is html instruction for</p><p>the 111123 project </p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;This is html instruction for&lt;/p&gt;&lt;p&gt;the 111123 project &lt;/p&gt;</p>'),
+(10, 5, 0, 0, '2023-11-11 20:06:51', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(5)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;This is html description for the 111123 project&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>'),
+(11, 5, 0, 0, '2023-11-11 20:06:51', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;This is html instruction for&lt;/p&gt;&lt;p&gt;the 111123 project &lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>'),
+(12, 6, 0, 0, '2023-11-11 20:49:22', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
+(13, 6, 0, 0, '2023-11-11 20:49:37', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(6)\">View detail</a>', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>The 1st line of description</p>\n<p><strong>The 2nd line of description</strong></p>\n<p><em>The 3rd line of description</em></p>\n<p><u>The 4th line of description</u></p>\n<p>&nbsp;</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>The 1st line of description</p>\n\n<p><strong>The 2nd line of description</strong></p>\n\n<p><em>The 3rd line of description</em></p>\n\n<p><u>The 4th line of description</u></p>\n\n<p>&nbsp;</p>\n'),
+(14, 6, 0, 0, '2023-11-11 21:14:35', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Paid</span>] TO [<span class=\"text-info\">Initital</span>]', ''),
+(15, 5, 0, 0, '2023-11-11 21:15:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(5)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n'),
+(16, 5, 0, 0, '2023-11-11 21:15:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n');
 
 -- --------------------------------------------------------
 
@@ -2934,19 +2966,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`

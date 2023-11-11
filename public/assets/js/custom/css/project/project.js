@@ -11,7 +11,21 @@ $(document).ready(function () {
     $('#btnSearch').click();
     setInterval(fetch, 100000);// gọi hàm load lại dữ liệu sau mỗi 1p
 })
-
+function CheckName(id, name) {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: 'project/checkname',
+            type: 'get',
+            data: { id, name },
+            success: function (data) {
+                return resolve(data);
+            },
+            error: function (jqXHR, exception) {
+                return reject(jqXHR);
+            }
+        })
+    })
+}
 function SendProject(id) {
     Swal.fire({
         title: 'Do you want to send this project?',
@@ -59,10 +73,11 @@ function UpdateProject(id) {
                     $('#txtProjectName').val(p.project_name);
                     $('#txtBeginDate').val(p.start_date);
                     $('#txtEndDate').val(p.end_date);
-                    qDescription.setText(p.description ? p.description : '');
-                    qInstruction.setText(p.instruction ? p.instruction : '');
+                    CKEDITOR.instances['txaDescription'].setData(p.description);
+                    CKEDITOR.instances['txaInstruction'].setData(p.instruction);
                     selectizeCustomer.setValue(p.customer_id);
                     selectizeCombo.setValue(p.combo_id);
+                    selectizeStatus.setValue(p.status_id);
                     let templates = p.levels.split(',');
                     $("#slTemplates").select2("val", templates);
                     $('#ckbPriority').prop('checked', p.priority == 1);
@@ -191,7 +206,7 @@ function LoadProjectStatuses() {
             try {
                 let content = $.parseJSON(data);
                 content.ps.forEach(p => {
-                    selectizeStatus.addOption({value:p.id,text:`${p.name} - ${p.description}`})
+                    selectizeStatus.addOption({ value: p.id, text: `${p.name} - ${p.description}` })
                 })
             } catch (error) {
                 console.log(data, error);
@@ -282,6 +297,46 @@ function fetch() {
     })
 }
 
+async function createOrUpdateProject(id, customer, name, start_date, end_date, status,
+    combo, templates, priority, description, instruction) {
+    try {
+
+        const url = id < 1 ? 'project/create' : 'project/update';
+        const data = {
+            id, customer, name, start_date, end_date, status,
+            combo, templates, priority, description, instruction
+        };
+
+        const response = await $.ajax({
+            url: url,
+            type: 'post',
+            data: data
+        });
+      
+        const content = $.parseJSON(response);
+        if (content.code === (pId < 1 ? 201 : 200)) {
+            handleResponse(content);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+function handleResponse(content) {
+    if (content.code === (pId < 1 ? 201 : 200)) {
+        $('#modal_project').modal('hide');
+        $('#btnSearch').click();
+    }
+
+    $.toast({
+        heading: content.heading,
+        text: content.msg,
+        icon: content.icon,
+        loader: true,
+        loaderBg: '#9EC600'
+    });
+}
+
+
 $('#btnSubmitJob').click(function () {
     let customer = $('#slCustomers option:selected').val();
     let name = $('#txtProjectName').val();
@@ -292,8 +347,12 @@ $('#btnSubmitJob').click(function () {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
     let priority = $('#ckbPriority').is(':checked') ? 1 : 0;
-    let description = qDescription.getText();
-    let instruction = qInstruction.getText();
+    let status = 0;
+    if (selectizeStatus.items && selectizeStatus.items.length > 0) {
+        status = parseInt(selectizeStatus.items[0]);
+    }
+    let description = CKEDITOR.instances['txaDescription'].getData();
+    let instruction = CKEDITOR.instances['txaInstruction'].getData();
 
 
     // validate inputs
@@ -332,67 +391,34 @@ $('#btnSubmitJob').click(function () {
     }
     // end validating inputs
 
-
-
-    if (pId < 1) {
-        $.ajax({
-            url: 'project/create',
-            type: 'post',
-            data: {
-                customer, name, start_date, end_date,
-                combo, templates, priority,
-                description, instruction
-            },
-            success: function (data) {
-                try {
-                    content = $.parseJSON(data);
-                    if (content.code == 201) {
-                        $('#modal_project').modal('hide');
-                        $('#btnSearch').click();
+    CheckName(pId, name)
+        .then(rs => {
+            let content = $.parseJSON(rs);
+            if (content.code == 409) {
+                Swal.fire({
+                    title: `${pId < 1 ? "Are you sure you want to create project with this name?" : "Are you sure you want to update project with this name?"}`,
+                    text: content.msg,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, do it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        createOrUpdateProject(pId, customer, name, start_date, end_date, status,
+                            combo, templates, priority, description, instruction);
                     }
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-                } catch (error) {
-                    console.log(data, error);
-                }
+
+                });
+            } else {
+                createOrUpdateProject(pId, customer, name, start_date, end_date, status,
+                    combo, templates, priority, description, instruction);
             }
         })
-    } else {
-        $.ajax({
-            url: 'project/update',
-            type: 'post',
-            data: {
-                id: pId,
-                customer, name, start_date, end_date,
-                combo, templates, priority,
-                description, instruction
-            },
-            success: function (data) {
-                try {
-                    content = $.parseJSON(data);
-                    console.log(content);
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-
-                    $('#modal_project').modal('hide');
-                    $('#btnSearch').click();
-
-                } catch (error) {
-                    console.log(data, error);
-                }
-            }
+        .catch(err => {
+            console.log(err);
         })
-    }
+
 })
 $('#btnSubmitNewInstruction').click(function () {
     let instruction = qNewDescription.getText();
