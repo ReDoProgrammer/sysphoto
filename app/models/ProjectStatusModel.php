@@ -6,6 +6,10 @@
             return $data;
         }
 
+        public function InitStatuses(){
+            return $this->__db->callStoredProcedure("ProjectStatusCSSVisible");
+        }
+
         public function add($name, $color, $description, $visible){
             $user = unserialize($_SESSION['user']);
             $params = [

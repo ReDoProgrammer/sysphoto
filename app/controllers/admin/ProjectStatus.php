@@ -111,4 +111,14 @@
                 'ps'=>$this->prjectstatus_model->AllProjectStatuses()
             ]);    
         }
+
+        function InitStatus(){
+            echo json_encode([
+                'code'=>200,
+                'icon'=>'success',
+                'heading'=>'SUCCESSFULLY',
+                'msg'=>'Load init Project statuses successfully!',
+                'ps'=>$this->prjectstatus_model->InitStatuses()
+            ]);    
+        }
     }

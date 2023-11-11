@@ -70,8 +70,8 @@
                         </div>
                         <div class="col-sm-5">
                             <div class="input-block mb-3">
-                                <label class="col-form-label">Status</label>
-                                <select id="slStatuses" class="form-control"></select>
+                                <label class="col-form-label">Init status</label>
+                                <select id="slStatuses"></select>
                             </div>
                         </div>
 

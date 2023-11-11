@@ -176,14 +176,16 @@ function LoadTemplates() {
 
 function LoadProjectStatuses() {
     $.ajax({
-        url: 'projectstatus/all',
+        url: 'projectstatus/InitStatus',
         type: 'get',
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
-                content.ps.forEach(p => {
-                    $('#slProjectStatuses').append(`<option value="${p.id}">${p.name}</option>`);
-                })
+                if (content.ps.length > 0) {
+                    content.ps.forEach(p => {
+                        selectizeStatuse.addOption({ value: p.id, text: p.name })
+                    })
+                }
             } catch (error) {
                 console.log(data, error);
             }
@@ -246,7 +248,7 @@ function fetch() {
                             ${p.end_date.split(' ')[0]}
                         </td>
                         <td class="text-center">
-                            ${p.priority == 1?`<i class="fa-regular fa-square-check text-danger"></i>`:`<i class="fa-regular fa-square"></i>`}
+                            ${p.priority == 1 ? `<i class="fa-regular fa-square-check text-danger"></i>` : `<i class="fa-regular fa-square"></i>`}
                         </td>
                         <td class="fw-bold">${p.templates}</td>
                         <td>
@@ -337,6 +339,12 @@ $('#btnSubmitJob').click(function () {
         return parseInt(value, 10); // Chuyển đổi thành số nguyên với cơ số 10
     }) : [];
     let priority = $('#ckbPriority').is(':checked') ? 1 : 0;
+    let status = 0;
+    if ($('#slStatuses').val()) {
+        status = $('#slStatuses').val();
+    }
+
+
     let description = qDescription.getText();
     let instruction = qInstruction.getText();
 
@@ -382,7 +390,7 @@ $('#btnSubmitJob').click(function () {
             let content = $.parseJSON(rs);
             if (content.code == 409) {
                 Swal.fire({
-                    title: `${pId<1?"Are you sure you want to create project with this name?":"Are you sure you want to update project with this name?"}`,
+                    title: `${pId < 1 ? "Are you sure you want to create project with this name?" : "Are you sure you want to update project with this name?"}`,
                     text: content.msg,
                     icon: "warning",
                     showCancelButton: true,
@@ -391,13 +399,13 @@ $('#btnSubmitJob').click(function () {
                     confirmButtonText: "Yes, do it!"
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        createOrUpdateProject(pId,customer, name, start_date, end_date,
+                        createOrUpdateProject(pId, customer, name, start_date, end_date,
                             combo, templates, priority, description, instruction);
                     }
 
                 });
-            }else{
-                createOrUpdateProject(pId,customer, name, start_date, end_date,
+            } else {
+                createOrUpdateProject(pId, customer, name, start_date, end_date,
                     combo, templates, priority, description, instruction);
             }
         })
@@ -410,7 +418,8 @@ async function createOrUpdateProject(id, customer, name, start_date, end_date,
     try {
 
         const url = id < 1 ? 'project/create' : 'project/update';
-        const data = {id, customer, name, start_date, end_date,
+        const data = {
+            id, customer, name, start_date, end_date,
             combo, templates, priority, description, instruction
         };
 
@@ -612,6 +621,13 @@ $selectizeComboes.selectize({
     sortField: 'text' // Sắp xếp mục theo văn bản
 });
 var selectizeCombo = $selectizeComboes[0].selectize;
+
+var $selectizeStatuses = $('#slStatuses');
+$selectizeStatuses.selectize({
+    sortField: 'text' // Sắp xếp mục theo văn bản
+});
+var selectizeStatuse = $selectizeStatuses[0].selectize;
+
 
 
 
