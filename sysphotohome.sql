@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 10, 2023 lúc 04:51 AM
--- Phiên bản máy phục vụ: 10.4.27-MariaDB
--- Phiên bản PHP: 8.2.0
+-- Thời gian đã tạo: Th10 11, 2023 lúc 05:12 AM
+-- Phiên bản máy phục vụ: 10.4.28-MariaDB
+-- Phiên bản PHP: 8.0.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -473,9 +473,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectFilter` (IN `p_from_date` TI
   
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
-	INSERT INTO projects(customer_id,name,start_date,end_date,combo_id,levels,priority,description,created_by)
-    VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),p_created_by);
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectInsert` (IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(255), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_status` INT, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_created_by` INT)   BEGIN
+	INSERT INTO projects(customer_id,name,start_date,end_date,status_id,combo_id,levels,priority,description,created_by)
+    VALUES(p_customer_id,p_name,p_start_date,p_end_date,p_status,p_combo_id,p_levels,p_priority,NormalizeContent(p_description),p_created_by);
     SELECT LAST_INSERT_ID() AS last_id;
 END$$
 
@@ -564,6 +564,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusAll` ()   BEGIN
 	SELECT * FROM project_statuses;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusCSSVisible` ()   BEGIN
+	SELECT id,name,description FROM project_statuses WHERE visible = 1;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusDelete` (IN `p_id` INT)   BEGIN
 	DELETE FROM project_statuses WHERE id = p_id;        
     SELECT ROW_COUNT() as rows_deleted;
@@ -605,10 +609,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectSubmit` (IN `p_id` BIGINT, I
         
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectUpdate` (IN `p_id` BIGINT, IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(250), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_updated_by` INT)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectUpdate` (IN `p_id` BIGINT, IN `p_customer_id` BIGINT, IN `p_name` VARCHAR(250), IN `p_start_date` TIMESTAMP, IN `p_end_date` TIMESTAMP, IN `p_status` INT, IN `p_combo_id` INT, IN `p_levels` VARCHAR(100), IN `p_priority` TINYINT, IN `p_description` TEXT, IN `p_updated_by` INT)   BEGIN
 	UPDATE projects    
     SET
-    	customer_id = p_customer_id,name = p_name, start_date = p_start_date, end_date = p_end_date, 
+    	customer_id = p_customer_id,name = p_name, start_date = p_start_date, end_date = p_end_date, status_id = p_status,
         combo_id = p_combo_id,levels = p_levels,priority = p_priority, description = p_description,
         updated_at = NOW(), updated_by = p_updated_by
     WHERE id = p_id;
@@ -1423,15 +1427,6 @@ CREATE TABLE `ccs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `ccs`
---
-
-INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(1, 14, 'CC1\n', '2023-10-30 19:31:00', '2023-10-30 19:31:00', '2023-10-30 19:31:52', 6, '2023-10-30 12:31:52', 0, '', NULL),
-(2, 15, 'CC1\n', '2023-11-02 10:27:00', '2023-11-02 10:27:00', '2023-11-02 10:28:25', 1, '2023-11-02 03:28:25', 0, '', NULL),
-(3, 15, '031123 1st CC\n', '2023-11-03 08:09:00', '2023-11-03 08:09:00', '2023-11-03 10:41:23', 1, '2023-11-03 03:41:23', 0, '', NULL);
-
---
 -- Bẫy `ccs`
 --
 DELIMITER $$
@@ -1893,24 +1888,7 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `product_url`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(4, 10, 'Test 22102023', 'Test 221023 description\n', 5, '2023-10-22 14:10:00', '2023-10-22 19:10:00', '1,2,3,4,5,6', '', 'https://www.youtube.com/watch?v=T7aVAIAiRKY&ab_channel=RomanticGuitar', NULL, 2, 0, '2023-10-22 14:47:22', 1, '2023-10-22 16:19:51', 6, NULL, ''),
-(5, 13, 'Test no task', 'No task description\n', 2, '2023-10-22 14:57:00', '2023-10-22 17:57:00', '', '', NULL, NULL, 1, 0, '2023-10-22 16:58:13', 1, NULL, 0, NULL, ''),
-(6, 12, 'No task 2', 'NO task 2 description\n', 2, '2023-10-22 16:58:00', '2023-10-22 21:58:00', '', '', NULL, NULL, 3, 0, '2023-10-22 17:01:43', 1, '2023-10-22 17:21:55', 1, NULL, ''),
-(7, 12, 'Test ', 'Project description	\n', 0, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:12:17', 1, NULL, 0, NULL, ''),
-(10, 12, 'Test  new project with template', 'TEST DESCRIPTION\n', 2, '2023-10-23 14:11:00', '2023-10-23 17:11:00', '1,3', '', NULL, NULL, 1, 0, '2023-10-23 14:22:51', 1, NULL, 0, NULL, ''),
-(11, 13, 'test 123', 'description here\n', 0, '2023-10-24 08:48:00', '2023-10-24 14:48:00', '5,6', '', NULL, NULL, 1, 0, '2023-10-24 08:48:45', 6, '2023-10-24 14:49:29', 6, NULL, ''),
-(12, 12, 'fdsafasdf', 'fadfdas\n', 0, '2023-10-24 09:34:00', '2023-10-24 12:34:00', '2,3', '', NULL, NULL, 2, 0, '2023-10-24 09:36:03', 6, NULL, 0, NULL, ''),
-(13, 13, 'test without auto creating task from template', 'Non auto creating task from template description\n', 0, '2023-10-24 14:03:00', '2023-10-24 17:03:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-10-24 14:04:37', 6, NULL, 0, NULL, ''),
-(14, 10, 'test 3010', '3030 description\n', 0, '2023-10-30 08:15:00', '2023-10-30 13:15:00', '1,3', '', NULL, NULL, 0, 1, '2023-10-30 08:15:57', 6, NULL, 0, NULL, ''),
-(15, 13, 'Test 021123', 'Project description\n', 2, '2023-11-02 08:25:00', '2023-11-02 13:25:00', '1,2,3,5', '', NULL, NULL, 3, 0, '2023-11-02 08:25:44', 6, '2023-11-03 10:41:43', 1, NULL, ''),
-(16, 13, '031123 project', 'project description 031123\n', 0, '2023-11-03 08:09:00', '2023-11-03 15:09:00', '1,2,3,4,5,6', '', NULL, NULL, 2, 0, '2023-11-03 10:40:47', 1, NULL, 0, NULL, ''),
-(17, 28, 'test', '\n', 0, '2023-11-10 09:33:00', '2023-11-10 09:33:00', '1', '', NULL, NULL, 2, 1, '2023-11-10 09:34:50', 1, NULL, 0, NULL, ''),
-(18, 27, 'test', '\n', 0, '2023-11-10 09:35:00', '2023-11-10 09:35:00', '5', '', NULL, NULL, 3, 0, '2023-11-10 09:35:23', 1, NULL, 0, NULL, ''),
-(19, 27, 'test1234321', '\n', 0, '2023-11-10 09:35:00', '2023-11-10 09:35:00', '5', '', NULL, NULL, 3, 0, '2023-11-10 09:35:31', 1, NULL, 0, NULL, ''),
-(20, 27, 'Project 101123', '\n', 0, '2023-11-10 09:42:00', '2023-11-10 12:42:00', '', '', NULL, NULL, 0, 0, '2023-11-10 09:42:57', 1, NULL, 0, NULL, ''),
-(21, 27, 'Project 10112311', '\n', 0, '2023-11-10 09:42:00', '2023-11-10 11:42:00', '', '', NULL, NULL, 0, 0, '2023-11-10 09:43:21', 1, NULL, 0, NULL, ''),
-(22, 30, 'TEST 123 101123', '\n', 0, '2023-11-10 09:43:00', '2023-11-10 09:43:00', '1', '', NULL, NULL, 1, 0, '2023-11-10 09:45:21', 1, NULL, 0, NULL, ''),
-(23, 30, 'TEST 123 101123', '\n', 0, '2023-11-10 09:43:00', '2023-11-10 09:43:00', '1', '', NULL, NULL, 1, 0, '2023-11-10 09:50:13', 1, NULL, 0, NULL, '');
+(1, 27, 'Test 111123 with status', '\n', 7, '2023-11-11 11:04:00', '2023-11-11 14:04:00', '1,2,3', '', NULL, NULL, 2, 0, '2023-11-11 11:11:07', 1, '2023-11-11 11:11:50', 1, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -2088,17 +2066,6 @@ CREATE TABLE `project_instructions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `project_instructions`
---
-
-INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(1, 14, '3010 1st instruction\n', '2023-10-30 08:15:57', 6, NULL, 0, NULL, NULL),
-(2, 15, 'New instruction\n', '2023-11-02 08:25:44', 6, '2023-11-03 03:41:43', 1, NULL, NULL),
-(3, 15, 'New instruction\n', '2023-11-02 10:28:37', 1, NULL, 0, NULL, NULL),
-(4, 16, '031123 project 1st instruction\n', '2023-11-03 10:40:47', 1, NULL, 0, NULL, NULL),
-(5, 15, 'the 2nd instruction\n', '2023-11-03 10:41:34', 1, NULL, 0, NULL, NULL);
-
---
 -- Bẫy `project_instructions`
 --
 DELIMITER $$
@@ -2161,27 +2128,8 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
-(1, 15, 5, 0, '2023-11-03 10:25:26', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">4</span>]', ''),
-(2, 15, 4, 0, '2023-11-03 10:29:51', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">1</span>] TO [<span class=\"text-primary\">3</span>]', ''),
-(3, 15, 4, 0, '2023-11-03 10:30:32', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED LEVEL</span> TO [<span class=\"fw-bold text-info\">PE-Drone-Basic</span>]', ''),
-(4, 15, 5, 0, '2023-11-03 10:30:46', 'CEO[<span class=\"fw-<span class=\"text-warning\">CHANGED EDITOR</span> FROM [<span class=\"text-secondary\">anh.cv</span>] TO [<span class=\"text-info\">binh.pn</span>]', ''),
-(5, 15, 6, 0, '2023-11-03 10:31:50', '[<span class=\"fw-bol<span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">8</span>] TO [<span class=\"text-primary\">3</span>]', ''),
-(6, 15, 6, 0, '2023-11-03 10:33:38', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">2</span>]', ''),
-(7, 15, 6, 0, '2023-11-03 10:37:18', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">2</span>] TO [<span class=\"text-primary\">3</span>]', ''),
-(8, 15, 6, 0, '2023-11-03 10:38:50', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">8</span>]', ''),
-(9, 15, 5, 0, '2023-11-03 10:39:33', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]', ''),
-(10, 16, 0, 0, '2023-11-03 10:40:47', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
-(11, 15, 7, 0, '2023-11-03 10:41:08', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-info text-white\">PE-DTE</span>] with quantity: [3]', ''),
-(12, 15, 0, 3, '2023-11-03 10:41:23', 'CEO [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">03/11/2023 08:09</span>] TO [<span class=\"text-warning\">03/11/2023 08:09</span>]', ''),
-(13, 15, 0, 0, '2023-11-03 10:41:34', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'the 2nd instruction\n\')\">View detail</a>', ''),
-(14, 15, 0, 0, '2023-11-03 10:41:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE COMBO</span> FROM [<span class=\"text-secondary\">combo 2</span>] TO [<span class=\"text-info\">combo 3</span>]', ''),
-(15, 17, 0, 0, '2023-11-10 09:34:50', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">41234124</span>]', ''),
-(16, 18, 0, 0, '2023-11-10 09:35:23', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(17, 19, 0, 0, '2023-11-10 09:35:31', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(18, 20, 0, 0, '2023-11-10 09:42:57', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(19, 21, 0, 0, '2023-11-10 09:43:21', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(20, 22, 0, 0, '2023-11-10 09:45:21', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfasfsd1rfdsaf</span>]', ''),
-(21, 23, 0, 0, '2023-11-10 09:50:13', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfasfsd1rfdsaf</span>]', '');
+(1, 1, 0, 0, '2023-11-11 11:11:07', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
+(2, 1, 0, 0, '2023-11-11 11:11:50', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Ask again</span>] TO [<span class=\"text-info\">Unpaid</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2206,7 +2154,7 @@ CREATE TABLE `project_statuses` (
 --
 
 INSERT INTO `project_statuses` (`id`, `name`, `description`, `color`, `visible`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', b'0', '0000-00-00 00:00:00', 0, '2023-11-09 05:38:26', 1),
+(1, 'wait', 'Chờ down task, chưa thêm task được', 'badge badge-warning', b'1', '0000-00-00 00:00:00', 0, '2023-11-09 05:38:26', 1),
 (2, 'Processing', 'Đang trong quá trình xử lý task', 'badge badge-warning', b'0', '0000-00-00 00:00:00', 0, '2023-11-09 05:38:30', 1),
 (3, 'Ready', 'Các task của project đã đc upload', 'badge badge-success', b'0', '2023-10-19 16:28:45', 1, NULL, 0),
 (4, 'Upload Link', 'TLA tiến hành upload link thành phẩm của project ', 'badge badge-success', b'0', '0000-00-00 00:00:00', 0, NULL, 0),
@@ -2264,17 +2212,6 @@ CREATE TABLE `tasks` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   `deleted_by` varchar(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `tasks`
---
-
-INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(2, 15, 'Task description\n', 0, 0, '2023-11-02 03:32:02', 0, 0, 0, 0, '', 0, '2023-11-02 03:32:02', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 3, 1, '', '2023-11-02 08:59:44', 6, '2023-11-03 03:34:42', 0, NULL, NULL),
-(3, 15, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-02 08:59:44', 6, '2023-11-02 01:59:44', 0, NULL, NULL),
-(4, 15, '\n', 0, 0, '2023-11-03 03:30:32', 0, 0, 0, 0, '', 0, '2023-11-03 03:30:32', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 3, 1, '', '2023-11-02 08:59:45', 6, '2023-11-03 03:34:42', 0, NULL, NULL),
-(6, 15, 'NEW CC task 12\n', 0, 0, '2023-11-03 03:38:50', 0, 0, 0, 0, '', 0, '2023-11-03 03:38:50', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 2, 8, 1, '', '2023-11-02 10:30:38', 1, '2023-11-03 03:38:50', 1, NULL, NULL),
-(7, 15, '\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 8, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-03 10:41:08', 1, '2023-11-03 03:41:08', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2907,7 +2844,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2997,19 +2934,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -3021,7 +2958,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`

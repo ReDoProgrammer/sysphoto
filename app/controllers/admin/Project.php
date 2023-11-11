@@ -56,14 +56,14 @@ class Project extends AdminController
 
         $start_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['start_date']))->format('Y-m-d H:i:s');
         $end_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['end_date']))->format('Y-m-d H:i:s');
-
+        $status = $_POST['status'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
         $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        $result = $this->project_model->CreateProject($customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
+        $result = $this->project_model->CreateProject($customer, $name, $start_date, $end_date,$status, $combo, $levels, $priority, $description);
         if ($result['last_id'] > 0) {
             if (!empty(trim($instruction))) {
                 //thêm instruction vào csdl
@@ -94,14 +94,14 @@ class Project extends AdminController
 
         $start_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['start_date']))->format('Y-m-d H:i:s');
         $end_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['end_date']))->format('Y-m-d H:i:s');
-
+        $status = $_POST['status'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
         $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        $result = $this->project_model->UpdateProject($id, $customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
+        $result = $this->project_model->UpdateProject($id, $customer, $name, $start_date, $end_date,$status, $combo, $levels, $priority, $description);
 
         if ($result) {
             $this->project_instruction_model->UpdateInstruction($id, $instruction);

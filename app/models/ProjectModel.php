@@ -12,13 +12,14 @@
             return $this->__db->executeStoredProcedure("ProjectCheckName",$params);
         }
 
-        public function CreateProject($customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description){
+        public function CreateProject($customer,$name,$start_date,$end_date,$status,$combo,$levels,$priority,$description){
             $user = unserialize($_SESSION['user']);
             $params = array(
                 'p_customer_id' => $customer,
                 'p_name' => $name,
                 'p_start_date' => $start_date,
                 'p_end_date' => $end_date,
+                'p_status'=> $status,
                 'p_combo_id' => $combo,
                 'p_levels' => $levels,
                 'p_priority' => $priority,
@@ -28,7 +29,7 @@
             return $this->__db->executeStoredProcedure("ProjectInsert",$params);
         }
 
-        public function UpdateProject($id,$customer,$name,$start_date,$end_date,$combo,$levels,$priority,$description){
+        public function UpdateProject($id,$customer,$name,$start_date,$end_date,$status,$combo,$levels,$priority,$description){
             $user = unserialize($_SESSION['user']);
             $params = array(
                 'p_id'=>$id,
@@ -36,6 +37,7 @@
                 'p_name' => $name,
                 'p_start_date' => $start_date,
                 'p_end_date' => $end_date,
+                'p_status'=> $status,
                 'p_combo_id' => $combo,
                 'p_levels' => $levels,
                 'p_priority' => $priority,

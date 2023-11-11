@@ -176,14 +176,14 @@ function LoadTemplates() {
 
 function LoadProjectStatuses() {
     $.ajax({
-        url: 'projectstatus/InitStatus',
+        url: 'projectstatus/all',
         type: 'get',
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
                 if (content.ps.length > 0) {
                     content.ps.forEach(p => {
-                        selectizeStatuse.addOption({ value: p.id, text: p.name })
+                        selectizeStatuse.addOption({ value: p.id, text: `${p.name} - ${p.description}` })
                     })
                 }
             } catch (error) {
@@ -399,13 +399,13 @@ $('#btnSubmitJob').click(function () {
                     confirmButtonText: "Yes, do it!"
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        createOrUpdateProject(pId, customer, name, start_date, end_date,
+                        createOrUpdateProject(pId, customer, name, start_date, end_date,status,
                             combo, templates, priority, description, instruction);
                     }
 
                 });
             } else {
-                createOrUpdateProject(pId, customer, name, start_date, end_date,
+                createOrUpdateProject(pId, customer, name, start_date, end_date,status,
                     combo, templates, priority, description, instruction);
             }
         })
@@ -413,13 +413,13 @@ $('#btnSubmitJob').click(function () {
             console.log(err);
         })
 })
-async function createOrUpdateProject(id, customer, name, start_date, end_date,
+async function createOrUpdateProject(id, customer, name, start_date, end_date,status,
     combo, templates, priority, description, instruction) {
     try {
 
         const url = id < 1 ? 'project/create' : 'project/update';
         const data = {
-            id, customer, name, start_date, end_date,
+            id, customer, name, start_date, end_date,status,
             combo, templates, priority, description, instruction
         };
 
