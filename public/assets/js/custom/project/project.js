@@ -58,10 +58,11 @@ function UpdateProject(id) {
                     qInstruction.setText(p.instruction ? p.instruction : '');
                     selectizeCustomer.setValue(p.customer_id);
                     selectizeCombo.setValue(p.combo_id);
+                    selectizeStatuse.setValue(p.status_id);
                     let templates = p.levels.split(',');
                     $("#slTemplates").select2("val", templates);
                     $('#ckbPriority').prop('checked', p.priority == 1);
-                    $('#slStatuses').val(p.status_id);
+                    
                 }
             } catch (error) {
                 console.log(data, error);
