@@ -30,8 +30,8 @@
 <!-- Toast -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/toast/jquery.toast.min.js"></script>
 
-<!-- Quill -->
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/quill/quill.js"></script>
+<!-- CKEDITOR -->
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/ckeditor/ckeditor.js"></script>
 
 <!-- Sweet alert  -->
 <script src="<?php echo _WEB_ROOT; ?>/public/assets/plugins/sweetalert2/sweetalert2.min.js"></script>

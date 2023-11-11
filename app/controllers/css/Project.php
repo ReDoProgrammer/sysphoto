@@ -66,7 +66,6 @@ class Project extends CSSController
         $this->data['sub_content'] = [];
         $this->render('__layouts/css_layout', $this->data);
     }
-
     public function create()
     {
 
@@ -75,14 +74,14 @@ class Project extends CSSController
 
         $start_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['start_date']))->format('Y-m-d H:i:s');
         $end_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['end_date']))->format('Y-m-d H:i:s');
-
+        $status = $_POST['status'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
         $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        $result = $this->__project_model->CreateProject($customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
+        $result = $this->__project_model->CreateProject($customer, $name, $start_date, $end_date, $status, $combo, $levels, $priority, $description);
         if ($result['last_id'] > 0) {
             if (!empty(trim($instruction))) {
                 //thêm instruction vào csdl
@@ -113,14 +112,14 @@ class Project extends CSSController
 
         $start_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['start_date']))->format('Y-m-d H:i:s');
         $end_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['end_date']))->format('Y-m-d H:i:s');
-
+        $status = $_POST['status'];
         $combo = !empty($_POST['combo']) ? $_POST['combo'] : 0;
         $levels = !empty($_POST['templates']) ? implode(',', $_POST['templates']) : '';
         $priority = $_POST['priority'];
         $description = $_POST['description'];
         $instruction = $_POST['instruction'];
 
-        $result = $this->__project_model->UpdateProject($id, $customer, $name, $start_date, $end_date, $combo, $levels, $priority, $description);
+        $result = $this->__project_model->UpdateProject($id, $customer, $name, $start_date, $end_date, $status, $combo, $levels, $priority, $description);
 
         if ($result) {
             $this->__project_instruction_model->UpdateInstruction($id, $instruction);
@@ -141,7 +140,27 @@ class Project extends CSSController
 
         echo json_encode($data);
     }
-
+    public function CheckName(){
+        $id = $_GET['id'];
+        $name = $_GET['name'];
+        $result = $this->__project_model->CheckName($id,$name);
+        if($result['available_rows']>0){
+            $data = array(
+                'code' => 409,
+                'msg' => `This project name is already in use`,
+                'icon' => 'warning',
+                'heading' => 'Conflig name!!'              
+            );
+        }else{
+            $data = array(
+                'code' => 200,
+                'msg' => 'This name is available',
+                'icon' => 'info',
+                'heading' => 'Available'
+            );
+        }
+        echo json_encode($data);
+    }
     public function delete()
     {
         $id = $_POST['id'];
@@ -197,7 +216,7 @@ class Project extends CSSController
                 'code' => 200,
                 'msg' => 'Get project detail successfully!',
                 'project' => $project,
-                'stats'=>$stats
+                'stats' => $stats
             );
         } else {
             $data = array(
@@ -212,26 +231,26 @@ class Project extends CSSController
     }
     public function getList()
     {
-        $from_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'].":00"))->format('Y-m-d H:i:s');
-        $to_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'].":00"))->format('Y-m-d H:i:s');
+        $from_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['from_date'] . ":00"))->format('Y-m-d H:i:s');
+        $to_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_GET['to_date'] . ":00"))->format('Y-m-d H:i:s');
         if (isset($_GET['stt'])) {
-            $stt =implode(',', $_GET['stt']) ;
+            $stt = implode(',', $_GET['stt']);
         } else {
             $stt = '';
         }
         $search = $_GET['search'];
         $page = $_GET['page'];
         $limit = $_GET['limit'];
-        
 
-       echo json_encode([
-            'code'=>200,
-            'msg'=>'Filter projects successfully',
-            'icon'=>'success',
-            'heading'=>'SUCCESSFULLY',
-            'projects'=>$this->__project_model->GetList($from_date,$to_date,$stt,$search,$page,$limit)
+
+        echo json_encode([
+            'code' => 200,
+            'msg' => 'Filter projects successfully',
+            'icon' => 'success',
+            'heading' => 'SUCCESSFULLY',
+            'projects' => $this->__project_model->GetList($from_date, $to_date, $stt, $search, $page, $limit)
             // 'pages'=>$this->GetPages($from_date,$to_date,$stt,$search,$limit)
-       ]);
+        ]);
     }
 
 
