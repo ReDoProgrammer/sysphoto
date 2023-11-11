@@ -421,7 +421,7 @@ $('#btnSubmitJob').click(function () {
 
 })
 $('#btnSubmitNewInstruction').click(function () {
-    let instruction = qNewDescription.getText();
+    let instruction = CKEDITOR.instances['txaNewInstruction'].getData();
     if (instruction.trim().length == 0) {
         $.toast({
             heading: `Instruction can not be null`,
