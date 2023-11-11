@@ -39,9 +39,7 @@
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Duration(hour)</label>
                                 <input class="form-control" type="text" id="txtDuration" value="1"
-                                    style="text-align: right;"
-                                    onkeypress="return isNumberKey(event)"
-                                    >
+                                    style="text-align: right;" onkeypress="return isNumberKey(event)">
                             </div>
                         </div>
                         <div class="col-sm-5">
@@ -52,27 +50,14 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- <div class="col-sm-4">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Status</label>
-                                <select id="slStatuses" class="form-control"></select>
-                            </div>
-                        </div> -->
                     </div>
                     <div class="row">
-                        <div class="col-sm-4">
+                        <div class="col-sm-5">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Combo</label>
                                 <select id="slComboes"></select>
                             </div>
                         </div>
-                        <div class="col-sm-6">
-                            <div class="input-block mb-3">
-                                <label class="col-form-label">Template</label>
-                                <select class="select" name="templates[]" multiple="multiple" id="slTemplates"></select>
-                            </div>
-                        </div>
-
                         <div class="col-sm-2">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Priority</label>
@@ -83,6 +68,25 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-sm-5">
+                            <div class="input-block mb-3">
+                                <label class="col-form-label">Init status</label>
+                                <select id="slStatuses"></select>
+                            </div>
+                        </div>
+
+                        
+                    </div>
+                    <div class="row">
+
+                        <div class="col-sm-12">
+                            <div class="input-block mb-3">
+                                <label class="col-form-label">Template</label>
+                                <select class="select" name="templates[]" multiple="multiple" id="slTemplates"></select>
+                            </div>
+                        </div>
+
+
                     </div>
                     <div class="row">
                         <div class="col-sm-12">

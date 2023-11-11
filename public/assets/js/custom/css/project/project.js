@@ -191,7 +191,7 @@ function LoadProjectStatuses() {
             try {
                 let content = $.parseJSON(data);
                 content.ps.forEach(p => {
-                    $('#slProjectStatuses').append(`<option value="${p.id}">${p.name}</option>`);
+                    selectizeStatus.addOption({value:p.id,text:`${p.name} - ${p.description}`})
                 })
             } catch (error) {
                 console.log(data, error);
@@ -530,6 +530,13 @@ $selectizeComboes.selectize({
     sortField: 'text' // Sắp xếp mục theo văn bản
 });
 var selectizeCombo = $selectizeComboes[0].selectize;
+
+
+var $selectizeStatuses = $('#slStatuses');
+$selectizeStatuses.selectize({
+    sortField: 'text' // Sắp xếp mục theo văn bản
+});
+var selectizeStatus = $selectizeStatuses[0].selectize;
 
 
 var qDescription = new Quill('#divDescription', {
