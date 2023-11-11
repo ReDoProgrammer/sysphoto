@@ -172,12 +172,14 @@ class Project extends AdminController
         $id = $_GET['id'];
         $project = $this->project_model->ProjectDetail($id);
         $stats = $this->project_model->StatTasksByStatus($id);
+        $descriptions = $this->project_model->GetDescriptions($id);
         if ($project) {
             $data = array(
                 'code' => 200,
                 'msg' => 'Get project detail successfully!',
                 'project' => $project,
-                'stats'=>$stats
+                'stats'=>$stats,
+                'descriptions'=> $descriptions
             );
         } else {
             $data = array(

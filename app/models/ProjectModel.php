@@ -2,6 +2,12 @@
     class ProjectModel extends Model{
         protected $__table = 'projects';
 
+        public function GetDescriptions($id){
+            $params = [0=> $id];
+            return $this->__db->callStoredProcedure("ProjectDescriptions",$params);
+        }
+
+
         public function ApplyTemplates($id){
             $params = ['p_id'=>$id];
             return $this->__db->executeStoredProcedure("ProjectApplyingTemplates",$params);

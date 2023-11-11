@@ -416,6 +416,8 @@ function LoadTaskStatuses() {
         type: 'get',
         success: function (data) {
             try {
+                console.log(data);
+                return;
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     content.taskstatuses.forEach(t => {

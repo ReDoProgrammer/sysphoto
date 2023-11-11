@@ -2,9 +2,19 @@ var taskId = 0;
 var ccId = 0;
 
 $(document).ready(function () {
-    GetProjectDetail();
-    GetLogs();
-    GetCCs();
+    // Lấy URL hiện tại
+    var currentUrl = window.location.href;
+    // Sử dụng regex để tìm giá trị của tham số "id"
+    var match = currentUrl.match(/[?&]id=([^&]*)/);
+
+    // Kiểm tra xem tham số có tồn tại không
+    if (match) {
+        var id = decodeURIComponent(match[1]);
+        GetProjectDetail(id);
+        GetLogs(id);
+        GetCCs(id);
+    }
+
 })
 
 
@@ -51,19 +61,19 @@ function DeleteCC(id) {
         }
     })
 }
-function GetLogs() {
+function GetLogs(id) {
     $('#ulProjectLogs').empty();
-    if (idValue !== null) {
-        $.ajax({
-            url: '../projectlog/list',
-            type: 'get',
-            data: { projectId: idValue },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data);
-                    let logs = content.logs;
-                    logs.forEach(l => {
-                        $('#ulProjectLogs').append(`
+
+    $.ajax({
+        url: '../projectlog/list',
+        type: 'get',
+        data: { projectId: id },
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                let logs = content.logs;
+                logs.forEach(l => {
+                    $('#ulProjectLogs').append(`
                             <li id="${l.id}">
                                 <p class="mb-0">${l.action}</p>
                                 <div>
@@ -74,54 +84,56 @@ function GetLogs() {
                                 </div>
                             </li>
                         `);
-                    })
-                } catch (error) {
-                    console.log(data, error);
-                }
+                })
+            } catch (error) {
+                console.log(data, error);
             }
-        })
-    }
+        }
+    })
+
 }
-function GetProjectDetail() {
+function GetProjectDetail(id) {
     $('#tblTasksList').empty();
 
     // Kiểm tra xem tham số "id" có tồn tại hay không
-    if (idValue !== null) {
-        $.ajax({
-            url: '../project/getdetail',
-            type: 'get',
-            data: { id: idValue },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data)
-                    if (content.code == 200) {
-                        let idx = 1;
-                        let p = content.project;
-                        $('#project_name').text(p.project_name);
 
-                        
-                        const result = $.map(content.stats, function (item) {
-                            return `${item.count} ${item.status} ${item.count>1?`tasks`:`task`}`
-                        }).join(', ');                        
+    $.ajax({
+        url: '../project/getdetail',
+        type: 'get',
+        data: { id },
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data)
+                let descriptions = content.descriptions;
+                descriptions.forEach(d => {
+                    $('#DescriptionAndInstructions').append(d.content);
+                    $('#DescriptionAndInstructions').append('<hr/>');
+                })
 
-                        $('#ProjectTasksAndStatus').empty();
-                        $('#ProjectTasksAndStatus').append(result);
 
-                        $('#DescriptionAndInstructions').empty();
-                        $('#DescriptionAndInstructions').append(`<p>${p.description}</p>`);
-                        let instructions = $.parseJSON(p.instructions_list);
-                        instructions.forEach(i => {
-                            $('#DescriptionAndInstructions').append(`<hr/><p id="${i.id}">${i.content}</p>`);
-                        })
 
-                        $('#tdStartDate').text(p.start_date);
-                        $('#tdEndDate').text(p.end_date);
-                        $('#tdPriority').html(`${p.priority == 1 ? '<i class="fa fa-dot-circle-o text-danger">URGEN</i>' : '<i class="fa fa-dot-circle-o">NORMAL</i>'}`);
-                        $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo ? p.combo : ''}</i>`);
-                        $('#tdStatus').html(`<i class="fa fa-dot-circle-o ${p.status_color}">${p.status}</i>`);
-                        let tasks = $.parseJSON(p.tasks_list);
-                        tasks.forEach(t => {
-                            $('#tblTasksList').append(`
+                if (content.code == 200) {
+                    let idx = 1;
+                    let p = content.project;
+                    $('#project_name').text(p.project_name);
+
+                    const result = $.map(content.stats, function (item) {
+                        return `${item.count} ${item.status} ${item.count > 1 ? `tasks` : `task`}`
+                    }).join(', ');
+
+                    $('#ProjectTasksAndStatus').empty();
+                    $('#ProjectTasksAndStatus').append(result);
+
+
+
+                    $('#tdStartDate').text(p.start_date);
+                    $('#tdEndDate').text(p.end_date);
+                    $('#tdPriority').html(`${p.priority == 1 ? '<i class="fa fa-dot-circle-o text-danger">URGEN</i>' : '<i class="fa fa-dot-circle-o">NORMAL</i>'}`);
+                    $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo ? p.combo : ''}</i>`);
+                    $('#tdStatus').html(`<i class="fa fa-dot-circle-o ${p.status_color}">${p.status}</i>`);
+                    let tasks = $.parseJSON(p.tasks_list);
+                    tasks.forEach(t => {
+                        $('#tblTasksList').append(`
                                                         <tr id = "${t.id}">
                                                             <td>${idx++}</td>
                                                             <td><span class="text-info">${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger" style="margin-right:5px;"></i>' : ""}${t.level}</span></td>
@@ -144,22 +156,22 @@ function GetProjectDetail() {
                                                             </td>
                                                         </tr>
                                                     `);
-                        })
-                    }
-                } catch (error) {
-                    console.log(data,error);
+                    })
                 }
+            } catch (error) {
+                console.log(data, error);
             }
-        })
-    }
+        }
+    })
+
 }
-function GetCCs() {
-    if (idValue !== null) {
+function GetCCs(id) {
+   
         $.ajax({
             url: '../cc/getccs',
             type: 'get',
             data: {
-                project_id: idValue
+                project_id: id
             },
             success: function (data) {
                 try {
@@ -245,6 +257,6 @@ function GetCCs() {
                 }
             }
         })
-    }
+    
 }
 
