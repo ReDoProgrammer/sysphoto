@@ -17,7 +17,7 @@ class CC extends CSSController
         $start_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['start_date']))->format('Y-m-d H:i:s');
         $end_date = (DateTime::createFromFormat('d/m/Y H:i:s', $_POST['end_date']))->format('Y-m-d H:i:s');
         $rs = $this->cc_model->InsertCC($project_id, $feedback, $start_date, $end_date);
-        if ($rs['last_id'] > 0) {
+        if ($rs && $rs['last_id'] > 0) {
             $data = array(
                 'code' => 201,
                 'msg' => 'Insert CC successfully!',

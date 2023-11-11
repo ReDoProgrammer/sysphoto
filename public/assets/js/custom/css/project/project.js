@@ -312,7 +312,7 @@ async function createOrUpdateProject(id, customer, name, start_date, end_date, s
             type: 'post',
             data: data
         });
-      
+
         const content = $.parseJSON(response);
         if (content.code === (pId < 1 ? 201 : 200)) {
             handleResponse(content);
@@ -462,7 +462,7 @@ $('#btnSubmitNewInstruction').click(function () {
 $('#btnSubmitCC').click(function () {
     let start_date = $('#txtCCBeginDate').val() + ":00";
     let end_date = $('#txtCCEndDate').val() + ":00";
-    let feedback = qCCDescription.getText();
+    let feedback = CKEDITOR.instances['txaCCDescription'].getData();
 
     let sd = strToDateTime($('#txtBeginDate').val());
     let td = strToDateTime($('#txtEndDate').val());
@@ -478,34 +478,34 @@ $('#btnSubmitCC').click(function () {
     }
 
 
-    if (ccId < 1) {
-        $.ajax({
-            url: 'cc/insert',
-            type: 'post',
-            data: {
-                project_id,
-                feedback,
-                start_date, end_date
-            },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data);
-                    if (content.code == 201) {
-                        $('#modal_cc').modal('hide');
-                    }
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        icon: content.icon,
-                        loader: true,        // Change it to false to disable loader
-                        loaderBg: '#9EC600'  // To change the background
-                    })
-                } catch (error) {
-                    console.log(data, error);
+
+    $.ajax({
+        url: 'cc/insert',
+        type: 'post',
+        data: {
+            project_id,
+            feedback,
+            start_date, end_date
+        },
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 201) {
+                    $('#modal_cc').modal('hide');
                 }
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    icon: content.icon,
+                    loader: true,        // Change it to false to disable loader
+                    loaderBg: '#9EC600'  // To change the background
+                })
+            } catch (error) {
+                console.log(data, error);
             }
-        })
-    }
+        }
+    })
+
 
 })
 $(document).on("click", "#pagination li a.page-link", function (e) {
@@ -574,3 +574,5 @@ var project_id = 0;
 
 CKEDITOR.replace('txaDescription');
 CKEDITOR.replace('txaInstruction');
+CKEDITOR.replace('txaNewInstruction');
+CKEDITOR.replace('txaCCDescription');

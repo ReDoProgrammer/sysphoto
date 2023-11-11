@@ -11,7 +11,7 @@
                     <div class="col-sm-12">
                         <div class="input-block mb-3">
                             <label class="col-form-label">Instruction</label>
-                            <div id="divNewInstruction" style="min-height: 100px;"></div>
+                            <textarea name="txaNewInstruction"></textarea>
                         </div>
                     </div>
                 </div>

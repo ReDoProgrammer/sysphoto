@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 11, 2023 lúc 03:15 PM
+-- Thời gian đã tạo: Th10 11, 2023 lúc 03:43 PM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -1427,6 +1427,15 @@ CREATE TABLE `ccs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
+-- Đang đổ dữ liệu cho bảng `ccs`
+--
+
+INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
+(5, 6, '<p>54235325</p>\n', '2023-11-11 21:33:00', '2023-11-11 21:33:00', '2023-11-11 21:36:38', 6, '2023-11-11 14:36:38', 0, '', NULL),
+(6, 6, '<p>54235325</p>\n', '2023-11-11 21:33:00', '2023-11-11 21:33:00', '2023-11-11 21:41:59', 6, '2023-11-11 14:41:59', 0, '', NULL),
+(7, 6, '<p>fdsafsafsdafasdf</p>\n', '2023-11-11 21:42:00', '2023-11-11 21:42:00', '2023-11-11 21:42:19', 6, '2023-11-11 14:42:19', 0, '', NULL);
+
+--
 -- Bẫy `ccs`
 --
 DELIMITER $$
@@ -1440,12 +1449,14 @@ DELIMITER $$
 CREATE TRIGGER `after_cc_inserted` AFTER INSERT ON `ccs` FOR EACH ROW BEGIN
 	DECLARE v_created_by varchar(100); 
     DECLARE v_role varchar(100) DEFAULT '';
+    DECLARE v_action varchar(250) DEFAULT '';
      
-    SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM tasks WHERE id = NEW.id));
+    SET v_created_by = (SELECT acronym FROM users WHERE id = (SELECT created_by FROM ccs WHERE id = NEW.id));
     SET v_role = (SELECT name FROM user_types WHERE id = (SELECT type_id FROM users WHERE id = NEW.created_by));
+    SET v_action = CONCAT(v_role,' [<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">CREATE NEW CC</span> FROM [<span class="text-warning">',DATE_FORMAT(NEW.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-warning">',DATE_FORMAT(NEW.end_date, '%d/%m/%Y %H:%i'),'</span>]');
     
     INSERT INTO project_logs(project_id,cc_id,timestamp,action)
-    VALUES(NEW.project_id,NEW.id,NEW.created_at,CONCAT(v_role,' [<span class="fw-bold text-info">',v_created_by,'</span>] <span class="text-success">CREATE NEW CC</span> FROM [<span class="text-warning">',DATE_FORMAT(NEW.start_date, '%d/%m/%Y %H:%i'),'</span>] TO [<span class="text-warning">',DATE_FORMAT(NEW.end_date, '%d/%m/%Y %H:%i'),'</span>]'));
+    VALUES(NEW.project_id,NEW.id,NEW.created_at,v_action);
     
 END
 $$
@@ -2161,7 +2172,9 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (13, 6, 0, 0, '2023-11-11 20:49:37', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(6)\">View detail</a>', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>The 1st line of description</p>\n<p><strong>The 2nd line of description</strong></p>\n<p><em>The 3rd line of description</em></p>\n<p><u>The 4th line of description</u></p>\n<p>&nbsp;</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>The 1st line of description</p>\n\n<p><strong>The 2nd line of description</strong></p>\n\n<p><em>The 3rd line of description</em></p>\n\n<p><u>The 4th line of description</u></p>\n\n<p>&nbsp;</p>\n'),
 (14, 6, 0, 0, '2023-11-11 21:14:35', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Paid</span>] TO [<span class=\"text-info\">Initital</span>]', ''),
 (15, 5, 0, 0, '2023-11-11 21:15:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(5)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n'),
-(16, 5, 0, 0, '2023-11-11 21:15:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n');
+(16, 5, 0, 0, '2023-11-11 21:15:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n'),
+(17, 6, 0, 6, '2023-11-11 21:41:59', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">11/11/2023 21:33</span>] TO [<span class=\"text-warning\">11/11/2023 21:33</span>]', ''),
+(18, 6, 0, 7, '2023-11-11 21:42:19', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">11/11/2023 21:42</span>] TO [<span class=\"text-warning\">11/11/2023 21:42</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2876,7 +2889,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2978,7 +2991,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
