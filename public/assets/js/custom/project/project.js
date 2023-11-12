@@ -257,7 +257,7 @@ function fetch() {
                                     ${p.end_date.split(' ')[0]}
                                 </td>
                                 <td class="text-center">
-                                    ${p.priority == 1 ? `<i class="fa-regular fa-square-check text-danger"></i>` : `<i class="fa-regular fa-square"></i>`}
+                                    ${p.priority == 1 ? `<i class="fa-solid fa-triangle-exclamation text-danger"></i>` : `-`}
                                 </td>
                                 <td class="fw-bold">${p.templates}</td>
                                 <td>
