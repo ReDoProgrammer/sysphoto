@@ -1,4 +1,5 @@
-$(document).ready(function () {
+
+$(document).ready(function () {    
     getTaskLevels();
     LoadTaskStatuses();
 })
@@ -19,9 +20,14 @@ $("#task_modal").on("hidden.bs.modal", function () {
     // Sử dụng regex để tìm giá trị của tham số "id"
     var match = currentUrl.match(/[?&]id=([^&]*)/);
     if (match) {
-        var id = decodeURIComponent(match[1]);
-        GetCCs(id);
+        const id = decodeURIComponent(match[1]);       
+        GetProjectDetail(id);
         GetLogs(id);
+        GetCCs(id);
+        CKEDITOR.instances['txaTaskDescription'].setData('');
+        selectizeStatus.setValue(0);
+        selectizeEditor.setValue(0);
+        selectizeQA.setValue(0);
     }
 });
 
