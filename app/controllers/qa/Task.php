@@ -63,6 +63,7 @@ class Task extends QAController
     {
         $id = $_POST['id'];
         $content = $_POST['content'];
+       
         $read_instructions = $_POST['read_instructions'];
 
         $result = $this->__task_model->SubmitTask($id, $read_instructions, $content, 5);
