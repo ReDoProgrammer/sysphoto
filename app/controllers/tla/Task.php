@@ -147,12 +147,13 @@ class Task extends TLAController
         $prjId = $_POST['prjId'];
         $description = $_POST['description'];
         $level = $_POST['level'];
+        $status = $_POST['status'];
         $cc = $_POST['cc'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];
 
-        $result = $this->__task_model->create($prjId, $description, $editor, $qa, $quantity, $level, $cc);
+        $result = $this->__task_model->create($prjId, $description, $editor, $qa, $quantity, $level, $cc,$status);
         if ($result['last_id'] > 0) {
             $data = array(
                 'code' => 201,

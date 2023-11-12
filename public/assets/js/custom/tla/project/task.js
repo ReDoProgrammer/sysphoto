@@ -1,5 +1,6 @@
 $(document).ready(function () {
     getTaskLevels();
+    LoadTaskStatuses();
 })
 
 $("#task_modal").on('shown.bs.modal', function () {
@@ -16,8 +17,10 @@ $("#task_modal").on("hidden.bs.modal", function () {
 
 
 $('#btnSubmitTask').click(function () {
-    let description = qDescription.getText();
+    let description = CKEDITOR.instances['txaTaskDescription'].getData();
     let level = $('#slLevels option:selected').val();
+    let status = $('#slStatuses').val()?$('#slStatuses').val():0;
+ 
     let editor = $('#slEditors option:selected').val();
     let qa = $('#slQAs option:selected').val();
     let quantity = $('#txtQuantity').val();
@@ -66,6 +69,7 @@ $('#btnSubmitTask').click(function () {
             prjId: pId,
             description,
             level,
+            status,
             cc: ccId,
             editor: editor ? editor : 0,
             qa: qa ? qa : 0,
@@ -187,7 +191,31 @@ function getTaskLevels() {
     })
 }
 
+function LoadTaskStatuses() {
+    $.ajax({
+        url: 'taskstatus/all',
+        type: 'get',
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                if (content.code == 200) {
+                    content.taskstatuses.forEach(t => {
+                        selectizeStatus.addOption({value:t.id,text:t.name})
+                    })
+                }
+            } catch (error) {
+                console.log(data, error);
+            }
+        }
+    })
+}
 
+var selectizeStatuses = $('#slStatuses');
+selectizeStatuses.selectize({
+    sortField: 'text', // Sắp xếp mục theo văn bản,
+    placeholder: 'Choose a status'
+});
+var selectizeStatus = selectizeStatuses[0].selectize;
 
 
 var selectizeEditors = $('#slEditors');
@@ -203,5 +231,7 @@ selectizeQAs.selectize({
     placeholder: 'Please choose a Q.A'
 });
 var selectizeQA = selectizeQAs[0].selectize;
+
+CKEDITOR.replace('txaTaskDescription');
 
 

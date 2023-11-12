@@ -3,7 +3,7 @@ class TaskModel extends Model
 {
     protected $__table = 'tasks';
 
-    function create($prjId, $description, $editor, $qa, $quantity, $level, $cc)
+    function create($prjId, $description, $editor, $qa, $quantity, $level, $cc, $status = 0)
     {
         $user = unserialize($_SESSION['user']);
         $params = [
@@ -13,6 +13,7 @@ class TaskModel extends Model
             'p_qa' => $qa,
             'p_quantity' => $quantity,
             'p_level' => $level,
+            'p_status'=>$status,
             'p_cc' => $cc,
             'p_created_by' => $user->id
         ];
