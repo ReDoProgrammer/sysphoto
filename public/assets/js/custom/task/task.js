@@ -15,8 +15,92 @@ $("#task_modal").on('shown.bs.modal', function (e) {
 $("#task_modal").on("hidden.bs.modal", function () {
     taskId = 0;
     ccId = 0;
-    GetCCs();
+    var currentUrl = window.location.href;
+    // Sử dụng regex để tìm giá trị của tham số "id"
+    var match = currentUrl.match(/[?&]id=([^&]*)/);
+    if (match) {
+        var id = decodeURIComponent(match[1]);
+        GetCCs(id);
+        GetLogs(id);
+    }
 });
+
+$('#btnSubmitTask').click(function () {
+    var currentUrl = window.location.href;
+    // Sử dụng regex để tìm giá trị của tham số "id"
+    var match = currentUrl.match(/[?&]id=([^&]*)/);
+
+    // Kiểm tra xem tham số có tồn tại không
+    if (match) {
+        var prjId = decodeURIComponent(match[1]);
+        let description = CKEDITOR.instances['txaTaskDescription'].getData();
+        let level = $('#slLevels option:selected').val();
+        let editor = 0;
+        if (selectizeEditor.items && selectizeEditor.items.length > 0) {
+            editor = parseInt(selectizeEditor.items[0]);
+        }
+        let qa = 0;
+        if (selectizeQA.items && selectizeQA.items.length > 0) {
+            qa = parseInt(selectizeQA.items[0]);
+        }
+        let quantity = $('#txtQuantity').val();
+
+        // validation
+        if (!level) {
+            $.toast({
+                heading: `Task level can not be null`,
+                text: `Please chose one level`,
+                icon: 'warning',
+                loader: true,        // Change it to false to disable loader
+                loaderBg: '#9EC600'  // To change the background
+            })
+            return;
+        }
+
+        if (quantity.trim().length == 0) {
+            $.toast({
+                heading: `Quantity is not valid`,
+                text: `Please enter a number`,
+                icon: 'warning',
+                loader: true,        // Change it to false to disable loader
+                loaderBg: '#9EC600'  // To change the background
+            })
+            return;
+        }
+
+        if (parseInt(quantity) < 1) {
+            $.toast({
+                heading: `Quantity is not valid`,
+                text: `Quantity must be larger than 0`,
+                icon: 'warning',
+                loader: true,        // Change it to false to disable loader
+                loaderBg: '#9EC600'  // To change the background
+            })
+            return;
+        }
+
+        //end validation
+
+        createOrUpdateTask(taskId, prjId, description, level, ccId, editor, qa, quantity);
+    }
+
+})
+$('#slLevels').on('change', function () {
+    LoadEditorsByLevel($(this).val());
+    LoadQAsByLevel($(this).val());
+})
+
+$('#slEditors').on('change', function () {
+    var selectedValue = $(this).val();
+
+    // Kiểm tra xem giá trị đã chọn có rỗng không
+    if (selectedValue === null || selectedValue === '') {
+        selectizeQA.disable();
+        selectizeQA.setValue(null);
+    } else {
+        selectizeQA.enable();
+    }
+})
 
 function deleteTask(id) {
     Swal.fire({
@@ -107,53 +191,55 @@ function viewTask(id) {
                 $('#end_date').html(`<span class="text-danger fw-bold">${(t.end_date.split(' ')[1])}</span> <br/>${(t.end_date.split(' ')[0])}`);
 
                 $('#divTaskDescription').empty();
-                let s = $.parseJSON(t.styles);
-                $('#divTaskDescription').append(`
-                    <div class="row">
-                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color ? s.color : ''}</span></div>
-                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output ? s.output : ''}</span></div>
-                        <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
-                    </div>
-                `);
-
-                $('#divTaskDescription').append(`<hr>
-                    <div class="row mt-3">
-                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style ? s.style : ''}</span></div>
-                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud ? s.cloud : ''}</span></div>
-                        <div class="col-sm-4">TV: <span class="fw-bold">${s.tv}</span></div>                        
-                    </div>
-                `);
-
-
-                $('#divTaskDescription').append(`<hr>
-                    <div class="row mt-3">                        
-                        <div class="col-sm-4">Sky: <span class="fw-bold">${s.sky}</span></div>
-                        <div class="col-sm-4">Fire: <span class="fw-bold">${s.fire}</span></div>
-                        <div class="col-sm-4">Grass: <span class="fw-bold">${s.grass}</span></div>
-                    </div>
-                `);
-                $('#divTaskDescription').append(`<hr>
-                    <div class="row mt-3">
-                        <div class="col-sm-12">Straighten: ${s.is_straighten == 1 ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>'}
-                        <span class="fw-bold">${s.straighten_remark}</span></div>
-                    </div>
-                `)
-                $('#divTaskDescription').append(`<hr><span class="text-secondary">Style remark:</span><p class="mt-3 mb-5">${s.style_remark}</p>`);
-
 
                 if (t.cc_id > 0) {
-                    $('#divTaskDescription').append(`<span class="text-secondary">CC description:</span>`);
-                    $('#divTaskDescription').append(`<p class="mt-2">${t.cc_content}</p>`)
+                    $('#divTaskDescription').append(`<span class="text-secondary fw-bold">CC description:</span>`);
+                    $('#divTaskDescription').append(`<div class="mt-2" style="padding-left:20px;">${t.cc_content}</div>`)
                 }
 
-                $('#divTaskDescription').append(`<span class="text-secondary">Task description:</span>`);
-                $('#divTaskDescription').append(`<p class="mt-2">${t.task_description}</p>`);
+                $('#divTaskDescription').append(`<span class="text-secondary fw-bold">Task description:</span>`);
+                $('#divTaskDescription').append(`<div class="mt-2" style="padding-left:20px;">${t.task_description}</div>`);
 
                 let instructions = $.parseJSON(t.instructions_list);
-                $('#divTaskDescription').append(`<span class="text-secondary">Instructions:</span>`);
+                $('#divTaskDescription').append(`<span class="text-secondary fw-bold">Instructions:</span>`);
                 instructions.forEach(i => {
-                    $('#divTaskDescription').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
+                    $('#divTaskDescription').append(`<div class="mt-2" style="padding-left:20px;">${i.content}</div>`)
                 })
+
+                let styles = `
+                    <div class="card mb-3 bg-light">
+                        <div class="card-header bg-light fw-bold pt-3"> Customer styles</div>
+                        <div class="card-body"><hr/>`;
+                         let s = $.parseJSON(t.styles);                     
+                        styles+=    `<div class="row">
+                                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color ? s.color : ''}</span></div>
+                                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output ? s.output : ''}</span></div>
+                                        <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style ? s.style : ''}</span></div>
+                                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud ? s.cloud : ''}</span></div>
+                                        <div class="col-sm-4">TV: <span class="fw-bold">${s.tv}</span></div>                        
+                                    </div>
+                                    <div class="row mt-3">                        
+                                        <div class="col-sm-4">Sky: <span class="fw-bold">${s.sky}</span></div>
+                                        <div class="col-sm-4">Fire: <span class="fw-bold">${s.fire}</span></div>
+                                        <div class="col-sm-4">Grass: <span class="fw-bold">${s.grass}</span></div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-sm-12">Straighten: ${s.is_straighten == 1 ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>'}
+                                        <span class="fw-bold">${s.straighten_remark}</span></div>
+                                    </div>
+                                    `;
+                        
+                    styles+=     `</div>
+                    </div>
+                `;
+                $('#divTaskDescription').append(styles);
+
+             
+
+               
 
                 let logs = $.parseJSON(t.task_logs);
                 $('#ulTaskLogs').empty();
@@ -184,66 +270,7 @@ function viewTask(id) {
 
 }
 
-$('#btnSubmitTask').click(function () {
-    var currentUrl = window.location.href;
-    // Sử dụng regex để tìm giá trị của tham số "id"
-    var match = currentUrl.match(/[?&]id=([^&]*)/);
 
-    // Kiểm tra xem tham số có tồn tại không
-    if (match) {
-        var prjId = decodeURIComponent(match[1]);
-        let description = CKEDITOR.instances['txaTaskDescription'].getData();
-        let level = $('#slLevels option:selected').val();
-        let editor = 0;
-        if (selectizeEditor.items && selectizeEditor.items.length > 0) {
-            editor = parseInt(selectizeEditor.items[0]);
-        }
-        let qa = 0;
-        if (selectizeQA.items && selectizeQA.items.length > 0) {
-            qa = parseInt(selectizeQA.items[0]);
-        }
-        let quantity = $('#txtQuantity').val();
-
-        // validation
-        if (!level) {
-            $.toast({
-                heading: `Task level can not be null`,
-                text: `Please chose one level`,
-                icon: 'warning',
-                loader: true,        // Change it to false to disable loader
-                loaderBg: '#9EC600'  // To change the background
-            })
-            return;
-        }
-
-        if (quantity.trim().length == 0) {
-            $.toast({
-                heading: `Quantity is not valid`,
-                text: `Please enter a number`,
-                icon: 'warning',
-                loader: true,        // Change it to false to disable loader
-                loaderBg: '#9EC600'  // To change the background
-            })
-            return;
-        }
-
-        if (parseInt(quantity) < 1) {
-            $.toast({
-                heading: `Quantity is not valid`,
-                text: `Quantity must be larger than 0`,
-                icon: 'warning',
-                loader: true,        // Change it to false to disable loader
-                loaderBg: '#9EC600'  // To change the background
-            })
-            return;
-        }
-
-        //end validation
-
-        createOrUpdateTask(taskId, prjId, description, level, ccId, editor, qa, quantity);
-    }
-
-})
 
 async function createOrUpdateTask(id, prjId, description, level, cc, editor, qa, quantity) {
     try {
@@ -279,22 +306,7 @@ function handleResponse(content) {
     });
 }
 
-$('#slLevels').on('change', function () {
-    LoadEditorsByLevel($(this).val());
-    LoadQAsByLevel($(this).val());
-})
 
-$('#slEditors').on('change', function () {
-    var selectedValue = $(this).val();
-
-    // Kiểm tra xem giá trị đã chọn có rỗng không
-    if (selectedValue === null || selectedValue === '') {
-        selectizeQA.disable();
-        selectizeQA.setValue(null);
-    } else {
-        selectizeQA.enable();
-    }
-})
 
 function LoadEditorsByLevel(level, selected = null) {
 
@@ -414,9 +426,3 @@ selectizeQAs.selectize({
 });
 var selectizeQA = selectizeQAs[0].selectize;
 
-
-
-var url = new URL(window.location.href);
-
-// Lấy giá trị của tham số "id" từ URL
-var idValue = url.searchParams.get("id");

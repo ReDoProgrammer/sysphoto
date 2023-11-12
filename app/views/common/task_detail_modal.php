@@ -12,7 +12,7 @@
                         <label for="">Level</label>
                         <h4 id="level" class="mt-2"></h4>
                     </div>
-                    <div class="col-sm-2 form-group">
+                    <div class="col-sm-2 form-group text-center">
                         <label for="">Quantity</label>
                         <h4 id="quantity" class="mt-2"></h4>
                     </div>
