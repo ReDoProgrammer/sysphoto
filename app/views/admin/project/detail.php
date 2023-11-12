@@ -41,7 +41,7 @@
                                 <th>Editor</th>
                                 <th>Q.A</th>
                                 <th>DC</th>
-                                <th>Status</th>
+                                <th class="text-center">Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>

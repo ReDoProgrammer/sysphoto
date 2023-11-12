@@ -148,7 +148,6 @@ function editTask(id) {
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
-                console.log(content);
                 if (content.code == 200) {
                     let t = content.task;
                     

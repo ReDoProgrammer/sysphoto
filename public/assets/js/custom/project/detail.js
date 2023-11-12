@@ -103,7 +103,8 @@ function GetProjectDetail(id) {
         data: { id },
         success: function (data) {
             try {
-                let content = $.parseJSON(data)
+                let content = $.parseJSON(data);
+                console.log(content);
                 let descriptions = content.descriptions;
                 descriptions.forEach(d => {
                     $('#DescriptionAndInstructions').append(d.content);
@@ -141,7 +142,7 @@ function GetProjectDetail(id) {
                                                             <td>${t.editor ? t.editor : '-'}</td>
                                                             <td>${t.qa ? t.qa : '-'}</td>
                                                             <td>${t.dc ? t.dc : '-'}</td>
-                                                            <td class="text-center"><span class="${t.status_color ? t.status_color : ''}">${t.status ? t.status : '-'}</span></td>
+                                                            <td class="text-center"><span class="${t.status_color ? t.status_color : ''}">${t.status ? t.status : 'Init'}</span></td>
                                                             <td>
                                                                 <div class="dropdown action-label">
                                                                     <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
