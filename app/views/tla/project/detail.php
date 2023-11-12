@@ -162,7 +162,6 @@
 
 
 
-<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/tla/project/detail.js"></script>
 
 
 
@@ -171,4 +170,5 @@ $this->render('tla/task/modal');
 $this->render('common/task_detail_modal');
 
 ?>
+<script src="<?php echo _WEB_ROOT; ?>/public/assets/js/custom/tla/project/detail.js"></script>
 

@@ -357,38 +357,4 @@ var selectizeTaskStatus = $selectizeTaskStatuses[0].selectize;
 
 
 
-var qTaskRejectingRemark = new Quill('#divTaskRejectingRemark', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter Rejecting Remark here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
 
-var qTaskSubmitingRemark = new Quill('#divTaskSubmitingRemark', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter Upload content here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});

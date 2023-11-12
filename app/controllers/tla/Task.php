@@ -172,4 +172,53 @@ class Task extends TLAController
         echo json_encode($data);
 
     }
+    public function update()
+    {
+        $id = $_POST['id'];
+        $description = $_POST['description'];
+        $level = $_POST['level'];
+        $editor = $_POST['editor'];
+        $qa = $_POST['qa'];
+        $quantity = $_POST['quantity'];
+        $result = $this->__task_model->UpdateTask($id, $description, $editor, $qa, $quantity, $level);
+        if ($result['updated_rows'] > 0) {
+            $data = array(
+                'code' => 200,
+                'msg' => 'The task has been updated!',
+                'heading' => 'Successfully!',
+                'icon' => 'success'
+            );
+        } else {
+            $data = array(
+                'code' => 204,
+                'msg' => 'Update task failed!',
+                'icon' => 'danger'
+            );
+        }
+        echo json_encode($data);
+    }
+
+    public function delete()
+    {
+        $id = $_POST['id'];
+        $rs = $this->__task_model->destroy($id);
+        
+        if ($rs['deleted_rows']>0) {
+            $data = array(
+                'code' => 200,
+                'msg' => 'The task has been deleted!',
+                'heading' => 'Successfully!',
+                'icon' => 'success'
+            );
+        } else {
+            $data = array(
+                'code' => 204,
+                'msg' => 'Can not delete this task. Error: '.$rs,
+                'icon' => 'danger',
+                'heading' => 'OPP!!!'
+            );
+        }
+        echo json_encode($data);
+    }
+
 }

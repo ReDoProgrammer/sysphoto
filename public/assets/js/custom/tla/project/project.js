@@ -103,48 +103,49 @@ function fetch() {
                     }
 
                     let idx = (page - 1) * limit;
-                    content.projects.forEach(p => {                       
+                    content.projects.forEach(p => {   
+                        console.log(parseInt(p.gen_number));                    
                         $('#tblProjects').append(`
-                    <tr id="${p.id}">
-                        <td>${++idx}</td>                        
-                        <td>
-                            <span class="text-info fw-bold">${p.name}</span><br/>
-                            <span>[${p.acronym}]</span>
-                        </td>
-                        <td>
-                            <span>${p.start_date.split(' ')[1]}</span><br/>
-                            ${p.start_date.split(' ')[0]}
-                        </td>
-                        <td>
-                            <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
-                            ${p.end_date.split(' ')[0]}
-                        </td>
-                        <td class="fw-bold text-info">${p.templates}</td>
-                        <td>${p.task_count}</td>
-                        <td class="text-center">
-                            <span class="badge ${p.status_color?p.status_color:'text-info'}">${p.status_name?p.status_name:'Initial'}</span>
-                        </td>                       
-                        <td class="text-center">
-                            <div class="dropdown action-label">
-                                <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-cog"></i></a>	
-                                <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
-                                    ${p.gen_number > 0 ?``
-                                    :`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
-                                   
-                                    ${p.status_id < 3 ?
-                                `<a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle text-primary"></i>  Add new task</a>`:
-                                `
-                                ${p.status_id == 3 ? `
-                                <a class="dropdown-item" href="javascript:void(0)" onClick="UploadProject(${p.id})"><i class="fa-solid fa-cloud-arrow-up text-success"></i>  Submit</a>
-                                `: ``}
-                                `
-                            }
-                                </div> 
-                            </div>
-                        </td>
-                    </tr>
+                                <tr id="${p.id}">
+                                    <td>${++idx}</td>                        
+                                    <td>
+                                        <span class="text-info fw-bold">${p.name}</span><br/>
+                                        <span>[${p.acronym}]</span>
+                                    </td>
+                                    <td>
+                                        <span>${p.start_date.split(' ')[1]}</span><br/>
+                                        ${p.start_date.split(' ')[0]}
+                                    </td>
+                                    <td>
+                                        <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
+                                        ${p.end_date.split(' ')[0]}
+                                    </td>
+                                    <td class="fw-bold text-info">${p.templates}</td>
+                                    <td>${p.task_count}</td>
+                                    <td class="text-center">
+                                        <span class="badge ${p.status_color?p.status_color:'text-info'}">${p.status_name?p.status_name:'Initial'}</span>
+                                    </td>                       
+                                    <td class="text-center">
+                                        <div class="dropdown action-label">
+                                            <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-cog"></i></a>	
+                                            <div class="dropdown-menu dropdown-menu-right">
+                                                <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
+                                                ${parseInt(p.gen_number) > 0 ?``
+                                                :`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
+                                            
+                                                ${p.status_id < 3 ?
+                                            `<a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle text-primary"></i>  Add new task</a>`:
+                                            `
+                                            ${p.status_id == 3 ? `
+                                            <a class="dropdown-item" href="javascript:void(0)" onClick="UploadProject(${p.id})"><i class="fa-solid fa-cloud-arrow-up text-success"></i>  Submit</a>
+                                            `: ``}
+                                            `
+                                        }
+                                            </div> 
+                                        </div>
+                                    </td>
+                                </tr>
                 `);
                     })
                 }
@@ -223,35 +224,6 @@ $('#slPageSize').on('change', function () {
 
 
 
-var qDescription = new Quill('#divDescription', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter project's description here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
-var qInstruction = new Quill('#divInstruction', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter intruction for Editor here...",
-});
 
 var $selectizeCustomers = $('#slCustomers');
 $selectizeCustomers.selectize({
@@ -270,39 +242,6 @@ var selectizeCombo = $selectizeComboes[0].selectize;
 var ccId = 0;
 var project_id = 0;
 
-var qCCDescription = new Quill('#divCCDescription', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter CC description here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
 
 
-var qNewDescription = new Quill('#divNewInstruction', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter Instruction here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
+
