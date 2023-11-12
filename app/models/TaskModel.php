@@ -127,6 +127,13 @@ class TaskModel extends Model
         $params = ['p_actioner' => $user->id, 'p_role' => $role,'p_task'=>$task_id];
         return $this->__db->executeStoredProcedure("TaskGetting", $params);
     }
+    public function QAGetTask()
+    {
+        $user = unserialize($_SESSION['user']);
+        $params = ['p_qa' => $user->id];
+        return $this->__db->executeStoredProcedure("QAGetTask", $params);
+    }
+
     public function GetOwnerTasks($from_date, $to_date, $status, $page = 1, $limit = 0)
     {
         $user = unserialize($_SESSION['user']);

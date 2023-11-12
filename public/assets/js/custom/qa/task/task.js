@@ -7,42 +7,25 @@ $(document).ready(function () {
     LoadTaskStatuses();
 })
 $('#btnGetTask').click(function () {
-    Swal.fire({
-        icon: 'question',
-        title: 'What role do you want to take on for the task?',
-        showDenyButton: true,
-        showCancelButton: false,
-        confirmButtonText: 'Editor',
-        denyButtonText: `QA`,
-    }).then((result) => {
-        let role = 0;
-        if (result.isConfirmed) {
-            role = 6;
-        } else if (result.isDenied) {
-            role = 5;
-        }
-        $.ajax({
-            url: 'task/gettask',
-            type: 'get',
-            data: { role },
-            success: function (data) {
-
-                try {
-                    let content = $.parseJSON(data);
-                    $.toast({
-                        heading: content.heading,
-                        text: content.msg,
-                        showHideTransition: 'fade',
-                        icon: content.icon
-                    })
-                    if (content.code == 200) {
-                        LoadOwnTasks();
-                    }
-                } catch (error) {
-                    console.log(data, error);
+    $.ajax({
+        url: 'task/gettask',
+        type: 'get',      
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                $.toast({
+                    heading: content.heading,
+                    text: content.msg,
+                    showHideTransition: 'fade',
+                    icon: content.icon
+                })
+                if (content.code == 200) {
+                    LoadOwnTasks();
                 }
+            } catch (error) {
+                console.log(data, error);
             }
-        })
+        }
     })
 
 })
@@ -53,16 +36,16 @@ $('#btnSearch').click(function (e) {
 })
 $('#btnSubmitTask').click(function () {
     let content = $('#txtContent').val();
-    let read_instructions = $('#ckbReadInstruction').is(':checked')?1:0;
+    let read_instructions = $('#ckbReadInstruction').is(':checked') ? 1 : 0;
     $.ajax({
         url: 'task/submit',
         type: 'post',
-        data: { 
-                id: taskId, 
-                content,
-                read_instructions,
-                role:roleId
-             },
+        data: {
+            id: taskId,
+            content,
+            read_instructions,
+            role: roleId
+        },
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
@@ -182,8 +165,8 @@ function ViewTaskDetail(id) {
                     <div class="card mb-3 bg-light">
                         <div class="card-header bg-light fw-bold pt-3"> Customer styles</div>
                         <div class="card-body"><hr/>`;
-                         let s = $.parseJSON(t.styles);                     
-                        styles+=    `<div class="row">
+                let s = $.parseJSON(t.styles);
+                styles += `<div class="row">
                                         <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color ? s.color : ''}</span></div>
                                         <div class="col-sm-4">Output: <span class="fw-bold">${s.output ? s.output : ''}</span></div>
                                         <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
@@ -203,15 +186,15 @@ function ViewTaskDetail(id) {
                                         <span class="fw-bold">${s.straighten_remark}</span></div>
                                     </div>
                                     `;
-                        
-                    styles+=     `</div>
+
+                styles += `</div>
                     </div>
                 `;
                 $('#divTaskDescription').append(styles);
 
-             
 
-               
+
+
 
                 let logs = $.parseJSON(t.task_logs);
                 $('#ulTaskLogs').empty();
@@ -243,10 +226,10 @@ function SubmitTask(id, role) {
     taskId = id;
     roleId = role;
 
-    $('#SubmitingModalTitle').text(`Submiting task as ${role==6?`Editor`:`QA`}`);
-    if(role == 5){
+    $('#SubmitingModalTitle').text(`Submiting task as ${role == 6 ? `Editor` : `QA`}`);
+    if (role == 5) {
         $('#divSubmitTaskContent').hide();
-    }else{
+    } else {
         $('#divSubmitTaskContent').show();
     }
     $('#task_submit_modal').modal('show');
