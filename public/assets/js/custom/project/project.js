@@ -1,6 +1,9 @@
 var page, limit;
 var pId = 0;
 
+var ccId = 0;
+var project_id = 0;
+
 
 $(document).ready(function () {
     LoadComboes();
@@ -237,49 +240,50 @@ function fetch() {
 
                     let idx = (page - 1) * limit;
                     content.projects.forEach(p => {
+                        
                         $('#tblProjects').append(`
-                    <tr id="${p.id}">
-                        <td>${++idx}</td>
-                        <td>
-                            <span class="text-info fw-bold">${p.name}</span><br/>
-                            <span>[${p.acronym}]</span>
-                        </td>
-                        <td>
-                            <span>${p.start_date.split(' ')[1]}</span><br/>
-                            ${p.start_date.split(' ')[0]}
-                        </td>
-                        <td>
-                            <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
-                            ${p.end_date.split(' ')[0]}
-                        </td>
-                        <td class="text-center">
-                            ${p.priority == 1 ? `<i class="fa-regular fa-square-check text-danger"></i>` : `<i class="fa-regular fa-square"></i>`}
-                        </td>
-                        <td class="fw-bold">${p.templates}</td>
-                        <td>
-                            ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
-                        </td>
-                        <td class="text-center">
-                            <span class="badge ${p.status_color ? p.status_color : `text-secondary fw-bold`}">${p.status_name ? p.status_name : 'Initial'}</span>
-                        </td>                       
-                        <td class="text-center">
-                            <div class="dropdown action-label">
-                                <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-cog"></i>								</a>	
-                                <div class="dropdown-menu dropdown-menu-right">                                
-                                    <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
-                                    ${p.gen_number > 0 ? ``
-                                : `<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
-                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
-                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
-                                    <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment"></i>  Add new Instruction</a>
-                                    <a class="dropdown-item" href="javascript:void(0)" onClick="UpdateProject(${p.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
-                                    ${p.status == 1 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(' + p.id + ')"><i class="fas fa-trash-alt"></i>  Destroy</a>' : ''}
-                                    
-                                </div> 
-                            </div>
-                        </td>
-                    </tr>
+                            <tr id="${p.id}">
+                                <td>${++idx}</td>
+                                <td>
+                                    <span class="text-info fw-bold">${p.name}</span><br/>
+                                    <span>[${p.acronym}]</span>
+                                </td>
+                                <td>
+                                    <span>${p.start_date.split(' ')[1]}</span><br/>
+                                    ${p.start_date.split(' ')[0]}
+                                </td>
+                                <td>
+                                    <span class="text-danger fw-bold">${p.end_date.split(' ')[1]}</span><br/>
+                                    ${p.end_date.split(' ')[0]}
+                                </td>
+                                <td class="text-center">
+                                    ${p.priority == 1 ? `<i class="fa-regular fa-square-check text-danger"></i>` : `<i class="fa-regular fa-square"></i>`}
+                                </td>
+                                <td class="fw-bold">${p.templates}</td>
+                                <td>
+                                    ${isURL(p.product_url) ? `<a href="${p.product_url}" class="text-info" target="_blank"><i class="fa-solid fa-link"></i> Link</a>` : `-`}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge ${p.status_color ? p.status_color : `text-secondary fw-bold`}">${p.status_name ? p.status_name : 'Initial'}</span>
+                                </td>                       
+                                <td class="text-center">
+                                    <div class="dropdown action-label">
+                                        <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-cog"></i>								</a>	
+                                        <div class="dropdown-menu dropdown-menu-right">                                
+                                            <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
+                                            ${p.gen_number > 0 ? ``
+                                        : `<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
+                                            <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
+                                            <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
+                                            <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment"></i>  Add new Instruction</a>
+                                            <a class="dropdown-item" href="javascript:void(0)" onClick="UpdateProject(${p.id})"><i class="fas fa-pencil-alt"></i>  Update</a>
+                                            ${p.task_count == 0 ? '<a class="dropdown-item" href="javascript:void(0)" onClick="DestroyProject(' + p.id + ')"><i class="fas fa-trash-alt"></i>  Destroy</a>' : ''}
+                                            
+                                        </div> 
+                                    </div>
+                                </td>
+                            </tr>
                 `);
                     })
                 }
@@ -553,7 +557,7 @@ $("#modal_project").on("hidden.bs.modal", function () {
 });
 $("#modal_instruction").on("hidden.bs.modal", function () {
     pId = 0;
-    qNewDescription.setText('');
+    CKEDITOR.instances['txaNewInstruction'].setData('');
 });
 
 
@@ -610,9 +614,6 @@ var selectizeStatus = $selectizeStatuses[0].selectize;
 
 
 
-
-var ccId = 0;
-var project_id = 0;
 
 
 
