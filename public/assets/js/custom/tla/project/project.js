@@ -103,8 +103,7 @@ function fetch() {
                     }
 
                     let idx = (page - 1) * limit;
-                    content.projects.forEach(p => {   
-                        console.log(parseInt(p.gen_number));                    
+                    content.projects.forEach(p => {  
                         $('#tblProjects').append(`
                                 <tr id="${p.id}">
                                     <td>${++idx}</td>                        
@@ -131,8 +130,7 @@ function fetch() {
                                             <i class="fas fa-cog"></i></a>	
                                             <div class="dropdown-menu dropdown-menu-right">
                                                 <a class="dropdown-item" href="../tla/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
-                                                ${parseInt(p.gen_number) > 0 ?``
-                                                :`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
+                                                ${(p.gen_number == 0  && p.templates.trim().length > 1)?`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`:``}
                                             
                                                 ${p.status_id < 3 ?
                                             `<a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle text-primary"></i>  Add new task</a>`:

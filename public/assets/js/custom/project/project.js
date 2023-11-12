@@ -272,8 +272,7 @@ function fetch() {
                                         <i class="fas fa-cog"></i>								</a>	
                                         <div class="dropdown-menu dropdown-menu-right">                                
                                             <a class="dropdown-item" href="../admin/project/detail?id=${p.id}" ><i class="fa fa-eye text-info" aria-hidden="true"></i> Detail</a>
-                                            ${p.gen_number > 0 ? ``
-                                        : `<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`}
+                                            ${(p.gen_number == 0  && p.templates.trim().length > 1)?`<a class="dropdown-item" href="javascript:void(0)" onClick="ApplyTemplates(${p.id})"><i class="fa-solid fa-hammer text-success"></i> Apply templates</a>`:``}
                                             <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewTask(${p.id})"><i class="fas fa-plus-circle"></i>  Add new task</a>
                                             <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewCC(${p.id})"><i class="far fa-closed-captioning"></i>  Add new CC</a>
                                             <a class="dropdown-item" href="javascript:void(0)" onClick="AddNewInstruction(${p.id})"><i class="fa-regular fa-comment"></i>  Add new Instruction</a>
