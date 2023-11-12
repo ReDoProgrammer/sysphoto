@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 12, 2023 lúc 02:37 PM
+-- Thời gian đã tạo: Th10 12, 2023 lúc 03:21 PM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -619,33 +619,25 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `QAGetTask` (IN `p_qa` INT)   BEGIN
             SELECT JSON_OBJECT('code', '423', 'msg', CONCAT('You cannot get more tasks until your current task has been submitted.'), 'icon', 'danger', 'heading', 'Locked') AS msg;
         ELSE
             -- lấy thông tin của task chưa có editor
-            SELECT 
-            CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END AS v_editor_date,
-            t.id AS v_editor_taskid
-            INTO v_editor_date, v_editor_taskid
+            SELECT CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END AS v_editor_date,t.id AS v_editor_taskid INTO v_editor_date, v_editor_taskid
             FROM tasks t
             LEFT JOIN projects p ON t.project_id = p.id AND t.cc_id = 0
             LEFT JOIN ccs c ON t.cc_id = c.id AND t.cc_id > 0
-            WHERE t.editor_id = 0
+            WHERE t.editor_id = 0 AND t.qa_id = 0 -- chưa có editor và qa nào nhận task
             AND FIND_IN_SET(t.level_id,GetAccessLevels(p_qa,6))>0
-            ORDER BY 
-            CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END,
-            c.end_date, p.end_date
+            ORDER BY CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END,c.end_date, p.end_date
             LIMIT 1;
             
             -- lấy thông tin của task chưa có QA
-            SELECT 
-            CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END AS v_qa_date,
-            t.id AS v_qa_taskid
-            INTO v_qa_date, v_qa_taskid
+            SELECT CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END AS v_qa_date,t.id AS v_qa_taskid INTO v_qa_date, v_qa_taskid
             FROM tasks t
             LEFT JOIN projects p ON t.project_id = p.id AND t.cc_id = 0
             LEFT JOIN ccs c ON t.cc_id = c.id AND t.cc_id > 0
-            WHERE t.qa_id = 0
+            WHERE t.qa_id = 0 
+            AND t.editor_id <> 0 AND t.status_id = 1 -- phải được editor submit trước đó
+            AND t.editor_id <> p_qa -- tránh việc vừa làm editor vừa làm QA            
             AND FIND_IN_SET(t.level_id,GetAccessLevels(p_qa,5))>0
-            ORDER BY 
-            CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END,
-            c.end_date, p.end_date
+            ORDER BY CASE WHEN t.cc_id > 0 THEN c.end_date ELSE p.end_date END,c.end_date, p.end_date
             LIMIT 1;
             
             CASE WHEN v_editor_date IS NOT NULL AND v_qa_date IS NOT NULL THEN
@@ -653,26 +645,37 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `QAGetTask` (IN `p_qa` INT)   BEGIN
                     UPDATE tasks 
                     SET updated_at = NOW(), updated_by = p_qa, editor_id = p_qa
                     WHERE id = v_editor_taskid;
-                    SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as Editor') AS msg;
+                    IF ROW_COUNT() > 0 THEN 
+                    	SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as Editor') AS msg;
+                    END IF;	
                 ELSE
                     UPDATE tasks 
                     SET updated_at = NOW(), updated_by = p_qa, qa_id = p_qa
                     WHERE id = v_qa_taskid;
-                    SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as QA') AS msg;
+                    IF ROW_COUNT() > 0 THEN 
+                    	SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as QA') AS msg;
+                    END IF;
                 END IF;
             WHEN v_editor_date IS NOT NULL THEN
                 UPDATE tasks 
                 SET updated_at = NOW(), updated_by = p_qa, editor_id = p_qa
                 WHERE id = v_editor_taskid;
-                SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as Editor') AS msg;
+                IF ROW_COUNT() > 0 THEN 
+                	SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as Editor') AS msg;
+                END IF;
             WHEN v_qa_date IS NOT NULL THEN
                 UPDATE tasks 
                 SET updated_at = NOW(), updated_by = p_qa, qa_id = p_qa
                 WHERE id = v_qa_taskid;
-                SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as QA') AS msg;
+                IF ROW_COUNT() > 0 THEN 
+                	SELECT JSON_OBJECT('code', '200', 'msg', CONCAT('You have successfully obtained the task.'), 'icon', 'success', 'heading', 'Get Task as QA') AS msg;
+                END IF;
             ELSE
                 SELECT JSON_OBJECT('code', '404', 'msg', CONCAT('No available task found.'), 'icon', 'warning', 'heading', 'Not Found') AS msg;
             END CASE;
+            IF ROW_COUNT() = 0 THEN 
+            	SELECT JSON_OBJECT('code', '422', 'msg', CONCAT('Get task failed.'), 'icon', 'warning', 'heading', 'Not Found') AS msg;
+            END IF;
         END IF;
     END IF;
 END$$
@@ -1496,14 +1499,7 @@ CREATE TABLE `ccs` (
 --
 
 INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(5, 6, '<p>54235325</p>\n', '2023-11-11 21:33:00', '2023-11-11 21:33:00', '2023-11-11 21:36:38', 6, '2023-11-11 14:36:38', 0, '', NULL),
-(6, 6, '<p>54235325</p>\n', '2023-11-11 21:33:00', '2023-11-11 21:33:00', '2023-11-11 21:41:59', 6, '2023-11-11 14:41:59', 0, '', NULL),
-(7, 6, '<p>fdsafsafsdafasdf</p>\n', '2023-11-11 21:42:00', '2023-11-11 21:42:00', '2023-11-11 21:42:19', 6, '2023-11-11 14:42:19', 0, '', NULL),
-(8, 6, '<p>fdsafsaf</p>\n', '2023-11-11 22:00:00', '2023-11-11 22:00:00', '2023-11-11 22:00:49', 1, '2023-11-11 15:00:49', 0, '', NULL),
-(9, 1, '<p>fsdafsadfs</p>\n', '2023-11-12 13:25:00', '2023-11-12 13:25:00', '2023-11-12 13:25:53', 1, '2023-11-12 06:25:53', 0, '', NULL),
-(10, 1, '<p>fadsfsấdf</p>\n', '2023-11-12 13:42:00', '2023-11-12 13:42:00', '2023-11-12 13:43:13', 6, '2023-11-12 06:43:13', 0, '', NULL),
-(11, 9, '<p>fdsafsadfsadfasdf</p>\n', '2023-11-12 18:01:00', '2023-11-12 18:01:00', '2023-11-12 18:01:44', 1, '2023-11-12 11:01:44', 0, '', NULL),
-(12, 10, '<p>fdasfasdfasdf</p>\n', '2023-11-12 18:08:00', '2023-11-12 18:08:00', '2023-11-12 18:09:52', 6, '2023-11-12 11:09:52', 0, '', NULL);
+(1, 1, '<p>The 1st line of CC</p>\n<p>The 2nd line of CC</p>\n<p>The 3rd line of CC</p>\n<p>The 4th line of CC</p>\n', '2023-11-12 21:04:00', '2023-11-12 23:04:00', '2023-11-12 21:07:23', 6, '2023-11-12 14:07:23', 0, '', NULL);
 
 --
 -- Bẫy `ccs`
@@ -1969,16 +1965,7 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `product_url`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 27, 'Test 111123 with status', '\n', 6, '2023-11-11 11:04:00', '2023-11-11 14:04:00', '1,2,3', '', NULL, NULL, 2, 0, '2023-11-11 11:11:07', 1, '2023-11-11 19:50:18', 6, NULL, ''),
-(2, 29, 'TEST PROJECT 61123', 'fdà\n', 6, '2023-11-11 19:45:00', '2023-11-11 22:45:00', '2', '', NULL, NULL, 1, 1, '2023-11-11 19:47:10', 6, NULL, 0, NULL, ''),
-(3, 29, 'TEST PROJECT 61123', '<p>fd&agrave;fsadfasf</p>\n', 2, '2023-11-11 19:45:00', '2023-11-11 22:45:00', '2', '', NULL, NULL, 1, 1, '2023-11-11 19:47:28', 6, '2023-11-12 16:54:34', 3, NULL, ''),
-(4, 27, 'fsadfasd', '\n', 8, '2023-11-11 19:55:00', '2023-11-11 22:55:00', '1', '', NULL, NULL, 3, 1, '2023-11-11 19:55:46', 6, NULL, 0, NULL, ''),
-(5, 29, 'TEST PROJECT 111123', '<p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n', 0, '2023-11-11 20:04:00', '2023-11-11 23:04:00', '1', '', NULL, NULL, 2, 0, '2023-11-11 20:05:57', 6, '2023-11-11 21:15:03', 6, NULL, ''),
-(6, 27, 'The test project using ckeditor plugin', '<p>The 1st line of description</p>\n\n<p><strong>The 2nd line of description</strong></p>\n\n<p><em>The 3rd line of description</em></p>\n\n<p><u>The 4th line of description</u></p>\n\n<p>&nbsp;</p>\n', 2, '2023-11-11 20:47:00', '2023-11-11 23:47:00', '3', '', NULL, NULL, 2, 0, '2023-11-11 20:49:22', 6, '2023-11-11 22:07:28', 1, NULL, ''),
-(7, 27, 'test 123', '', 0, '2023-11-11 20:47:00', '2023-11-11 23:47:00', '', '', NULL, NULL, 2, 0, '2023-11-11 22:10:07', 1, '2023-11-11 22:10:19', 1, NULL, ''),
-(8, 26, 'TEST PROJECT 611231234', '<p>fs&aacute;d&agrave;</p>\n\n<p>fsadf&aacute;df</p>\n\n<p>fdsầ</p>\n', 2, '2023-11-12 13:46:00', '2023-11-12 16:46:00', '1,3', '', NULL, NULL, 2, 1, '2023-11-12 13:47:40', 6, '2023-11-12 15:25:30', 3, NULL, ''),
-(9, 27, 'TEstnew 121123', '<p>fdsajfkldasjf</p>\n\n<p>fdaskjfaslkfdsa</p>\n\n<p>fsadjflskafdjas</p>\n\n<p>3124j12k4lj</p>\n\n<p>fdasf</p>\n', 2, '2023-11-12 18:01:00', '2023-11-12 21:01:00', '1,2,3,5', '', NULL, NULL, 2, 1, '2023-11-12 18:01:32', 1, '2023-11-12 18:01:59', 1, NULL, ''),
-(10, 26, 'fadsfasfsdafasd', '<p>faskfjasklfddsa</p>\n\n<p>fasdkfjaslkfdasdf</p>\n\n<p>jkfdsaklf;jsadf</p>\n\n<p>faskdljfas;lfdksdaf</p>\n\n<p>fkslajdflksadfj;</p>\n\n<p>&nbsp;</p>\n', 6, '2023-11-12 18:08:00', '2023-11-12 21:08:00', '1,3,5', '', NULL, NULL, 1, 1, '2023-11-12 18:09:28', 6, '2023-11-12 18:09:45', 6, NULL, '');
+(1, 13, 'Test project 121123', '<p>This is the 1st line of description</p>\n\n<p><strong>This is the 2nd line of description</strong></p>\n\n<p><em>This is the 3rd line of description</em></p>\n\n<p><u>This is the 4th line of description</u></p>\n', 2, '2023-11-12 21:04:00', '2023-11-12 23:54:00', '1,2,3,4,5', '', NULL, NULL, 1, 0, '2023-11-12 21:06:25', 6, '2023-11-12 21:09:09', 3, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -2163,21 +2150,8 @@ CREATE TABLE `project_instructions` (
 --
 
 INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
-(1, 2, 'fá\n', '2023-11-11 19:47:10', 6, NULL, 0, NULL, NULL),
-(2, 3, '<p>f&aacute;fdasfasdf</p>\n', '2023-11-11 19:47:28', 6, '2023-11-12 06:27:46', 1, NULL, NULL),
-(3, 5, '<p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n', '2023-11-11 20:05:57', 6, '2023-11-11 14:15:03', 6, NULL, NULL),
-(4, 6, '<p>fasdfasfasdfasdfasfdasf</p>\n', '2023-11-11 20:49:22', 6, '2023-11-11 15:07:28', 1, NULL, NULL),
-(5, 6, '<p>new instruction</p>\n', '2023-11-11 21:44:52', 6, NULL, 0, NULL, NULL),
-(6, 6, '<p>fasdfasfasdfasdfasfdasf</p>\n', '2023-11-11 22:01:41', 1, NULL, 0, NULL, NULL),
-(7, 2, '<p>fsdafasfasd</p>\n', '2023-11-12 13:26:01', 1, NULL, 0, NULL, NULL),
-(8, 6, '<p>fsdafasfasd</p>\n', '2023-11-12 13:26:46', 1, NULL, 0, NULL, NULL),
-(9, 7, '<p>fsdafasfasdf</p>\n', '2023-11-12 13:27:59', 1, NULL, 0, NULL, NULL),
-(10, 2, '<p>ầd&aacute;đaf</p>\n', '2023-11-12 13:43:21', 6, NULL, 0, NULL, NULL),
-(11, 8, '<p>fdsfsadfsadf&agrave;</p>\n<p>324141234</p>\n<p>fdầ</p>\n', '2023-11-12 13:47:40', 6, '2023-11-12 06:47:53', 6, NULL, NULL),
-(12, 9, '<p>4321432fasfjasdf</p>\n<p>fasjfsaklfdjsa</p>\n<p>23k14jklj2f</p>\n<p>asfasdkfjsal;fkdas</p>\n<p>jk4kl321;4j123</p>\n', '2023-11-12 18:01:32', 1, '2023-11-12 11:01:59', 1, NULL, NULL),
-(13, 9, '<p>fsdafsadf124321r fdasfasdf</p>\n<p>r124312421</p>\n', '2023-11-12 18:01:53', 1, NULL, 0, NULL, NULL),
-(14, 10, '<p>fsdafsadfsadjfkljasdf</p>\n<p>fdaslfkdjaskl;fas</p>\n<p>fksajf;laskdfdsa</p>\n<p>fsadklfjsa;dflsa</p>\n<p>fksdajf;lsakdfjsa</p>\n<p>kj132l;421412</p>\n', '2023-11-12 18:09:28', 6, '2023-11-12 11:09:45', 6, NULL, NULL),
-(15, 10, '<p>fsdafasdfasdf</p>\n', '2023-11-12 18:09:57', 6, NULL, 0, NULL, NULL);
+(1, 1, '<p>The 1st line of instruction</p>\n<p><strong>The 2nd line of instruction</strong></p>\n<p><em>The 3rd line of instruction</em></p>\n<p><u>The 4th line of instruction</u></p>\n', '2023-11-12 21:06:25', 6, '2023-11-12 14:07:46', 6, NULL, NULL),
+(2, 1, '<p>The 2nd instruction</p>\n', '2023-11-12 21:08:00', 6, NULL, 0, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -2242,168 +2216,34 @@ CREATE TABLE `project_logs` (
 --
 
 INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`, `action`, `content`) VALUES
-(1, 1, 0, 0, '2023-11-11 11:11:07', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(2, 1, 0, 0, '2023-11-11 11:11:50', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Ask again</span>] TO [<span class=\"text-info\">Unpaid</span>]', ''),
-(3, 2, 0, 0, '2023-11-11 19:47:10', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdafsaf</span>]', ''),
-(4, 3, 0, 0, '2023-11-11 19:47:28', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdafsaf</span>]', ''),
-(5, 1, 0, 0, '2023-11-11 19:48:44', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Unpaid</span>] TO [<span class=\"text-info\">Paid</span>]', ''),
-(6, 4, 0, 0, '2023-11-11 19:55:46', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(7, 5, 0, 0, '2023-11-11 20:05:57', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdafsaf</span>]', ''),
-(8, 5, 0, 0, '2023-11-11 20:06:27', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(5)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>This is html description for the 111123 project</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;This is html description for the 111123 project&lt;/p&gt;</p>'),
-(9, 5, 0, 0, '2023-11-11 20:06:27', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>This is html instruction for</p><p>the 111123 project </p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;This is html instruction for&lt;/p&gt;&lt;p&gt;the 111123 project &lt;/p&gt;</p>'),
-(10, 5, 0, 0, '2023-11-11 20:06:51', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(5)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;This is html description for the 111123 project&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>'),
-(11, 5, 0, 0, '2023-11-11 20:06:51', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;This is html instruction for&lt;/p&gt;&lt;p&gt;the 111123 project &lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>'),
-(12, 6, 0, 0, '2023-11-11 20:49:22', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(13, 6, 0, 0, '2023-11-11 20:49:37', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(6)\">View detail</a>', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>The 1st line of description</p>\n<p><strong>The 2nd line of description</strong></p>\n<p><em>The 3rd line of description</em></p>\n<p><u>The 4th line of description</u></p>\n<p>&nbsp;</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>The 1st line of description</p>\n\n<p><strong>The 2nd line of description</strong></p>\n\n<p><em>The 3rd line of description</em></p>\n\n<p><u>The 4th line of description</u></p>\n\n<p>&nbsp;</p>\n'),
-(14, 6, 0, 0, '2023-11-11 21:14:35', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Paid</span>] TO [<span class=\"text-info\">Initital</span>]', ''),
-(15, 5, 0, 0, '2023-11-11 21:15:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(5)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n'),
-(16, 5, 0, 0, '2023-11-11 21:15:03', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p><span class=\"mt-3 text-secondary\">TO:</span><hr/><p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n'),
-(17, 6, 0, 6, '2023-11-11 21:41:59', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">11/11/2023 21:33</span>] TO [<span class=\"text-warning\">11/11/2023 21:33</span>]', ''),
-(18, 6, 0, 7, '2023-11-11 21:42:19', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">11/11/2023 21:42</span>] TO [<span class=\"text-warning\">11/11/2023 21:42</span>]', ''),
-(19, 6, 0, 0, '2023-11-11 21:44:52', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>new instruction</p>\n\')\">View detail</a>', ''),
-(20, 6, 0, 0, '2023-11-11 21:46:43', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(4)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>The 1st line of instruction</p>\n<p><strong>The 2nd line of instruction</strong></p>\n<p><em>The 3rd line of instruction</em></p>\n<p><u>The 4th line of instruction</u></p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>new instruction</p>\n'),
-(21, 6, 1, 0, '2023-11-11 21:54:06', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] with quantity: [1]', ''),
-(22, 6, 0, 0, '2023-11-11 21:54:06', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', ''),
-(23, 6, 0, 8, '2023-11-11 22:00:49', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">11/11/2023 22:00</span>] TO [<span class=\"text-warning\">11/11/2023 22:00</span>]', ''),
-(24, 6, 0, 0, '2023-11-11 22:01:41', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>fasdfasfasdfasdfasfdasf</p>\n\')\">View detail</a>', ''),
-(25, 6, 2, 0, '2023-11-11 22:02:13', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(26, 6, 0, 0, '2023-11-11 22:07:28', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(4)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>new instruction</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>fasdfasfasdfasdfasfdasf</p>\n'),
-(27, 7, 0, 0, '2023-11-11 22:10:07', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(28, 7, 0, 0, '2023-11-11 22:10:19', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Processing</span>] TO [<span class=\"text-info\">Initital</span>]', ''),
-(29, 6, 3, 0, '2023-11-11 23:56:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold text-success\">Re-Stand</span>] with quantity: [1]', ''),
-(30, 6, 4, 0, '2023-11-11 23:57:04', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(31, 6, 5, 0, '2023-11-11 23:57:39', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [1]', ''),
-(32, 6, 6, 0, '2023-11-11 23:58:05', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] with quantity: [1]', ''),
-(33, 6, 7, 0, '2023-11-11 23:58:36', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW CC TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] with quantity: [1]', ''),
-(34, 6, 8, 0, '2023-11-12 10:26:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
-(35, 6, 9, 0, '2023-11-12 10:31:50', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold text-warning\">Re-ADV</span>] with quantity: [1]', ''),
-(36, 6, 7, 0, '2023-11-12 13:14:20', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">1</span>] TO [<span class=\"text-primary\">3</span>]', ''),
-(37, 1, 10, 0, '2023-11-12 13:25:48', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [1]', ''),
-(38, 1, 0, 9, '2023-11-12 13:25:53', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">12/11/2023 13:25</span>] TO [<span class=\"text-warning\">12/11/2023 13:25</span>]', ''),
-(39, 2, 0, 0, '2023-11-12 13:26:01', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>fsdafasfasd</p>\n\')\">View detail</a>', ''),
-(40, 6, 0, 0, '2023-11-12 13:26:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>fsdafasfasd</p>\n\')\">View detail</a>', ''),
-(41, 3, 0, 0, '2023-11-12 13:27:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>', '<span class=\"text-secondary\">FROM:</span><br/><hr>fdà\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>fd&agrave;fsadfasf</p>\n'),
-(42, 3, 0, 0, '2023-11-12 13:27:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(2)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr>fá\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>f&aacute;fdasfasdf</p>\n'),
-(43, 1, 0, 10, '2023-11-12 13:43:13', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">12/11/2023 13:42</span>] TO [<span class=\"text-warning\">12/11/2023 13:42</span>]', ''),
-(44, 2, 0, 0, '2023-11-12 13:43:21', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>ầd&aacute;đaf</p>\n\')\">View detail</a>', ''),
-(45, 8, 0, 0, '2023-11-12 13:47:40', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf</span>]', ''),
-(46, 8, 0, 0, '2023-11-12 13:47:53', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(8)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>fs&aacute;d&agrave;</p>\n<p>fsadf&aacute;df</p>\n<p>fdsầ</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>fs&aacute;d&agrave;</p>\n\n<p>fsadf&aacute;df</p>\n\n<p>fdsầ</p>\n'),
-(47, 6, 11, 0, '2023-11-12 15:06:50', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] with quantity: [1]', ''),
-(48, 6, 11, 0, '2023-11-12 15:09:31', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED LEVEL</span> TO [<span class=\"fw-bold text-info\">Re-Stand</span>]', ''),
-(49, 6, 11, 0, '2023-11-12 15:09:31', 'UPDATED TASK [<span <span class=\"text-warning\">ASSIGNED QA</span> [<span class=\"text-warning\">chu.dv</span>]', ''),
-(50, 6, 11, 0, '2023-11-12 15:11:06', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-Stand]', ''),
-(51, 6, 9, 0, '2023-11-12 15:11:37', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-ADV]', ''),
-(52, 6, 1, 0, '2023-11-12 15:11:53', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]', ''),
-(53, 6, 2, 0, '2023-11-12 15:12:00', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]', ''),
-(54, 6, 3, 0, '2023-11-12 15:13:27', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-Stand]', ''),
-(55, 6, 12, 0, '2023-11-12 15:14:25', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [4]', ''),
-(56, 6, 6, 0, '2023-11-12 15:14:37', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">1</span>] TO [<span class=\"text-primary\">4</span>]', ''),
-(57, 6, 4, 0, '2023-11-12 15:14:47', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]', ''),
-(58, 8, 13, 0, '2023-11-12 15:25:30', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
-(59, 8, 0, 0, '2023-11-12 15:25:30', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', ''),
-(60, 8, 14, 0, '2023-11-12 15:31:51', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold text-danger\">Re-Basic</span>] with quantity: [1]', ''),
-(61, 8, 15, 0, '2023-11-12 15:37:15', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
-(62, 2, 16, 0, '2023-11-12 16:52:09', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] FROM TEMPLATE with quantity: [1]', ''),
-(63, 3, 17, 0, '2023-11-12 16:52:15', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] FROM TEMPLATE with quantity: [1]', ''),
-(64, 4, 18, 0, '2023-11-12 16:52:17', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
-(65, 5, 19, 0, '2023-11-12 16:54:17', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
-(66, 3, 20, 0, '2023-11-12 16:54:34', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
-(67, 3, 0, 0, '2023-11-12 16:54:34', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', ''),
-(68, 1, 21, 0, '2023-11-12 17:05:27', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
-(69, 1, 21, 0, '2023-11-12 17:15:42', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">DC Reject</span>] TO [<span class=\"fw-bold text-info\">DC Fixed</span>]', ''),
-(70, 8, 22, 0, '2023-11-12 17:18:01', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
-(71, 8, 23, 0, '2023-11-12 17:18:01', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(72, 8, 24, 0, '2023-11-12 17:31:15', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
-(73, 8, 25, 0, '2023-11-12 17:59:20', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [4]', ''),
-(74, 8, 24, 0, '2023-11-12 17:59:30', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">DC Reject</span>] TO [<span class=\"fw-bold text-info\">DC OK</span>]', ''),
-(75, 8, 24, 0, '2023-11-12 17:59:30', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">5</span>]', ''),
-(76, 9, 0, 0, '2023-11-12 18:01:32', 'CEO [<span class=\"text-info fw-bold\">admin</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf2</span>]', ''),
-(77, 9, 26, 0, '2023-11-12 18:01:38', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
-(78, 9, 27, 0, '2023-11-12 18:01:38', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] FROM TEMPLATE with quantity: [1]', ''),
-(79, 9, 28, 0, '2023-11-12 18:01:38', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(80, 9, 29, 0, '2023-11-12 18:01:38', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold text-danger\">Re-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(81, 9, 0, 11, '2023-11-12 18:01:44', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">12/11/2023 18:01</span>] TO [<span class=\"text-warning\">12/11/2023 18:01</span>]', ''),
-(82, 9, 0, 0, '2023-11-12 18:01:53', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>fsdafsadf124321r fdasfasdf</p>\n<p>r124312421</p>\n\')\">View detail</a>', ''),
-(83, 9, 0, 0, '2023-11-12 18:01:59', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(9)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>fdsajfkldasjf</p>\n<p>fdaskjfaslkfdsa</p>\n<p>fsadjflskafdjas</p>\n<p>3124j12k4lj</p>\n<p>fdasf</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>fdsajfkldasjf</p>\n\n<p>fdaskjfaslkfdsa</p>\n\n<p>fsadjflskafdjas</p>\n\n<p>3124j12k4lj</p>\n\n<p>fdasf</p>\n'),
-(84, 9, 30, 0, '2023-11-12 18:02:30', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [7]', ''),
-(85, 9, 30, 0, '2023-11-12 18:02:42', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">DC OK</span>] TO [<span class=\"fw-bold text-info\">DC Fixed</span>]', ''),
-(86, 9, 29, 0, '2023-11-12 18:05:11', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">DC OK</span>]', ''),
-(87, 9, 30, 0, '2023-11-12 18:05:18', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">DC Fixed</span>] TO [<span class=\"fw-bold text-info\">DC Reject</span>]', ''),
-(88, 9, 31, 0, '2023-11-12 18:05:29', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW CC TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [7]', ''),
-(89, 9, 32, 0, '2023-11-12 18:06:15', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [5]', ''),
-(90, 9, 33, 0, '2023-11-12 18:06:48', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [4]', ''),
-(91, 9, 34, 0, '2023-11-12 18:07:40', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [4]', ''),
-(92, 9, 34, 0, '2023-11-12 18:07:50', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">DC Reject</span>] TO [<span class=\"fw-bold text-info\">DC OK</span>]', ''),
-(93, 9, 33, 0, '2023-11-12 18:07:56', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">DC Reject</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
-(94, 10, 0, 0, '2023-11-12 18:09:28', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf</span>]', ''),
-(95, 10, 0, 0, '2023-11-12 18:09:45', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(10)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-second', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>faskfjasklfddsa</p>\n<p>fasdkfjaslkfdasdf</p>\n<p>jkfdsaklf;jsadf</p>\n<p>faskdljfas;lfdksdaf</p>\n<p>fkslajdflksadfj;</p>\n<p>&nbsp;</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>faskfjasklfddsa</p>\n\n<p>fasdkfjaslkfdasdf</p>\n\n<p>jkfdsaklf;jsadf</p>\n\n<p>faskdljfas;lfdksdaf</p>\n\n<p>fkslajdflksadfj;</p>\n\n<p>&nbsp;</p>\n'),
-(96, 10, 0, 12, '2023-11-12 18:09:52', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">12/11/2023 18:08</span>] TO [<span class=\"text-warning\">12/11/2023 18:08</span>]', ''),
-(97, 10, 0, 0, '2023-11-12 18:09:57', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>fsdafasdfasdf</p>\n\')\">View detail</a>', ''),
-(98, 8, 35, 0, '2023-11-12 18:10:44', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [3]', ''),
-(99, 8, 35, 0, '2023-11-12 18:10:54', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">DC OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
-(100, 8, 35, 0, '2023-11-12 18:10:54', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">anh.dd</span>]', ''),
-(101, 8, 35, 0, '2023-11-12 18:10:54', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED QA</span> [<span class=\"fw-bold text-secondary\">dung.ha</span>]', ''),
-(102, 8, 35, 0, '2023-11-12 18:10:54', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">3</span>] TO [<span class=\"text-primary\">5</span>]', ''),
-(103, 8, 35, 0, '2023-11-12 18:11:02', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]', ''),
-(104, 8, 23, 0, '2023-11-12 18:11:05', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]', ''),
-(105, 8, 22, 0, '2023-11-12 18:11:08', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]', ''),
-(106, 10, 36, 0, '2023-11-12 18:11:14', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
-(107, 10, 37, 0, '2023-11-12 18:11:14', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(108, 10, 38, 0, '2023-11-12 18:11:14', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold text-danger\">Re-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(109, 8, 39, 0, '2023-11-12 18:11:19', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
-(110, 8, 40, 0, '2023-11-12 18:11:19', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
-(111, 8, 14, 0, '2023-11-12 18:18:55', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>] with <a href=\"https://www.youtube.com/watch?v=T7aVAIAiRKY&ab_channel=Roma', ''),
-(112, 1, 10, 0, '2023-11-12 18:18:58', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(113, 1, 10, 0, '2023-11-12 18:19:17', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(114, 2, 16, 0, '2023-11-12 18:19:54', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(115, 1, 10, 0, '2023-11-12 19:04:51', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(116, 1, 10, 0, '2023-11-12 20:31:14', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(117, 6, 7, 0, '2023-11-12 20:31:44', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(118, 6, 7, 0, '2023-11-12 20:32:09', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(119, 6, 7, 0, '2023-11-12 20:32:31', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(120, 6, 7, 0, '2023-11-12 20:32:42', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(121, 2, 16, 0, '2023-11-12 20:32:57', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(122, 2, 16, 0, '2023-11-12 20:33:12', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(123, 2, 16, 0, '2023-11-12 20:33:24', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(124, 3, 17, 0, '2023-11-12 20:33:37', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(125, 3, 17, 0, '2023-11-12 20:33:43', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(126, 3, 17, 0, '2023-11-12 20:33:50', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(127, 3, 17, 0, '2023-11-12 20:33:54', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(128, 4, 18, 0, '2023-11-12 20:33:57', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(129, 4, 18, 0, '2023-11-12 20:34:02', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(130, 4, 18, 0, '2023-11-12 20:34:06', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(131, 4, 18, 0, '2023-11-12 20:34:16', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(132, 5, 19, 0, '2023-11-12 20:34:23', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(133, 5, 19, 0, '2023-11-12 20:34:28', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(134, 5, 19, 0, '2023-11-12 20:34:36', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(135, 5, 19, 0, '2023-11-12 20:34:41', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(136, 6, 12, 0, '2023-11-12 20:34:44', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(137, 6, 12, 0, '2023-11-12 20:34:48', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(138, 6, 12, 0, '2023-11-12 20:34:52', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(139, 6, 5, 0, '2023-11-12 20:34:54', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(140, 6, 6, 0, '2023-11-12 20:34:54', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(141, 6, 8, 0, '2023-11-12 20:34:54', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(142, 6, 5, 0, '2023-11-12 20:34:54', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(143, 6, 6, 0, '2023-11-12 20:35:06', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(144, 6, 8, 0, '2023-11-12 20:35:10', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(145, 6, 5, 0, '2023-11-12 20:35:14', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(146, 6, 5, 0, '2023-11-12 20:35:18', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(147, 6, 8, 0, '2023-11-12 20:35:22', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(148, 6, 6, 0, '2023-11-12 20:35:26', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(149, 6, 6, 0, '2023-11-12 20:35:33', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(150, 6, 8, 0, '2023-11-12 20:35:33', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(151, 8, 14, 0, '2023-11-12 20:35:34', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(152, 8, 14, 0, '2023-11-12 20:35:42', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(153, 8, 25, 0, '2023-11-12 20:35:43', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(154, 8, 39, 0, '2023-11-12 20:35:43', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(155, 8, 40, 0, '2023-11-12 20:35:43', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
-(156, 8, 39, 0, '2023-11-12 20:35:43', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(157, 8, 39, 0, '2023-11-12 20:35:50', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(158, 8, 40, 0, '2023-11-12 20:35:54', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
-(159, 8, 39, 0, '2023-11-12 20:35:58', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(160, 8, 40, 0, '2023-11-12 20:36:04', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
-(161, 8, 40, 0, '2023-11-12 20:36:13', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(162, 9, 31, 0, '2023-11-12 20:36:14', 'UPDATED TASK [<span GOT TASK AS A QA', '');
+(1, 1, 0, 0, '2023-11-12 21:06:25', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">C431651-TNA</span>]', ''),
+(2, 1, 0, 0, '2023-11-12 21:06:44', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(1)\">View detail</a>, <span class=\"text-warning\">CHANGE END DATE</span> FROM [<span class=\"text-secon', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>This is the 1st line of description</p>\n<p><strong>This is the 2nd line of description</strong></p>\n<p><em>This is the 3rd line of description</em></p>\n<p><u>This is the 4th line of description</u></p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>This is the 1st line of description</p>\n\n<p><strong>This is the 2nd line of description</strong></p>\n\n<p><em>This is the 3rd line of description</em></p>\n\n<p><u>This is the 4th line of description</u></p>\n'),
+(3, 1, 0, 1, '2023-11-12 21:07:23', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">12/11/2023 21:04</span>] TO [<span class=\"text-warning\">12/11/2023 23:04</span>]', ''),
+(4, 1, 0, 0, '2023-11-12 21:07:46', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE END DATE</span> FROM [<span class=\"text-secondary\">12/11/2023 23:04</span>] TO [<span class=\"text-info\">12/11/2023 23:54</span>]', ''),
+(5, 1, 0, 0, '2023-11-12 21:08:00', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>The 2nd instruction</p>\n\')\">View detail</a>', ''),
+(6, 1, 1, 0, '2023-11-12 21:08:40', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
+(7, 1, 2, 0, '2023-11-12 21:08:40', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] FROM TEMPLATE with quantity: [1]', ''),
+(8, 1, 3, 0, '2023-11-12 21:08:40', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
+(9, 1, 4, 0, '2023-11-12 21:08:40', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold text-success\">Re-Stand</span>] FROM TEMPLATE with quantity: [1]', ''),
+(10, 1, 5, 0, '2023-11-12 21:08:40', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold text-danger\">Re-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
+(11, 1, 6, 0, '2023-11-12 21:09:09', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [5]', ''),
+(12, 1, 0, 0, '2023-11-12 21:09:09', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-secondary\">Initital</span>] TO [<span class=\"text-info\">Processing</span>]', ''),
+(13, 1, 6, 0, '2023-11-12 21:09:36', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(14, 1, 1, 0, '2023-11-12 21:09:45', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(15, 1, 6, 0, '2023-11-12 21:09:59', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>]', ''),
+(16, 1, 1, 0, '2023-11-12 21:13:18', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C', ''),
+(17, 1, 1, 0, '2023-11-12 21:18:05', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(18, 1, 1, 0, '2023-11-12 21:18:34', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(19, 1, 6, 0, '2023-11-12 21:19:08', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
+(20, 1, 6, 0, '2023-11-12 21:19:15', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(21, 1, 2, 0, '2023-11-12 21:19:18', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(22, 1, 2, 0, '2023-11-12 21:19:23', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(23, 1, 3, 0, '2023-11-12 21:19:34', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(24, 1, 3, 0, '2023-11-12 21:19:38', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(25, 1, 4, 0, '2023-11-12 21:19:53', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(26, 1, 4, 0, '2023-11-12 21:20:00', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(27, 1, 5, 0, '2023-11-12 21:20:21', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(28, 1, 5, 0, '2023-11-12 21:20:25', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', '');
 
 -- --------------------------------------------------------
 
@@ -2492,37 +2332,12 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(5, 6, '<p>fsdafsdaf</p>\n', 4, 9, '2023-11-12 08:09:05', 0, 0, 0, 0, '', 9, '2023-11-12 08:09:05', 0, 200, 1, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-11-11 23:57:39', 1, '2023-11-12 13:35:18', 9, NULL, NULL),
-(6, 6, '<p>fdsafsadf</p>\n', 4, 9, '2023-11-12 08:14:37', 0, 0, 0, 0, '', 9, '2023-11-12 08:14:37', 0, 1000, 1, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 0, 0, 4, 1, '', '2023-11-11 23:58:05', 1, '2023-11-12 13:35:33', 9, NULL, NULL),
-(7, 6, '<p>Task description</p>\n<p>Line 1&nbsp;</p>\n<p><strong>Line 2</strong></p>\n<p>Line 3</p>\n<div alt=\"0\" id=\"SL_balloon_obj\" style=\"display:block\">\n<div class=\"SL_ImTranslatorLogo\" id=\"SL_button\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/imtranslator-s.png&quot;); opacity:100\">&nbsp;</div>\n<div id=\"SL_shadow_translation_result2\" style=\"display:none\">&nbsp;</div>\n<div class=\"notranslate\" id=\"SL_shadow_translator\">\n<div id=\"SL_planshet\">\n<div id=\"SL_arrow_up\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/up.png&quot;)\">&nbsp;</div>\n<div id=\"SL_Bproviders\">\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P0\" title=\"Google\">\n<div id=\"SL_PN0\">G</div>\n</div>\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P1\" title=\"Microsoft\">\n<div id=\"SL_PN1\">M</div>\n</div>\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P2\" title=\"Translator\">\n<div id=\"SL_PN2\">T</div>\n</div>\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P3\" title=\"Yandex\">\n<div id=\"SL_PN3\">Y</div>\n</div>\n</div>\n<div id=\"SL_alert_bbl\">\n<div id=\"SLHKclose\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/delete.png&quot;)\">&nbsp;</div>\n<div id=\"SL_alert_cont\">&nbsp;</div>\n</div>\n<div id=\"SL_TB\">\n<div cellspacing=\"1\" id=\"SL_tables\">&nbsp;</div>\n</div>\n</div>\n</div>\n</div>\n<tr>\n	<td align=\"right\" class=\"SL_td\" width=\"10%\"><input checked=\"true\" id=\"SL_locer\" title=\"Khóa ngôn ngữ\" type=\"checkbox\" /></td>\n	<td align=\"left\" class=\"SL_td\" width=\"20%\"><select class=\"SL_lngs\" id=\"SL_lng_from\"><option value=\"auto\">Ph&aacute;t hiện ng&ocirc;n ngữ</option><option value=\"eo\">Quốc Tế Ngữ</option><option value=\"ar\">Tiếng Ả Rập</option><option value=\"sq\">Tiếng Albania</option><option value=\"am\">Tiếng Amharic</option><option value=\"en\">Tiếng Anh</option><option value=\"hy\">Tiếng Armenia</option><option value=\"az\">Tiếng Azerbaijan</option><option value=\"pl\">Tiếng Ba Lan</option><option value=\"fa\">Tiếng Ba Tư</option><option value=\"sw\">Tiếng Swahili</option><option value=\"eu\">Tiếng Basque</option><option value=\"be\">Tiếng Belarus</option><option value=\"bn\">Tiếng Bengal</option><option value=\"pt\">Tiếng Bồ Đ&agrave;o Nha</option><option value=\"bs\">Tiếng Bosnia</option><option value=\"bg\">Tiếng Bulgaria</option><option value=\"ca\">Tiếng Catalan</option><option value=\"ceb\">Tiếng Cebuano</option><option value=\"ny\">Tiếng Chichewa</option><option value=\"co\">Tiếng Corsi</option><option value=\"ht\">Tiếng Creole ở Haiti</option><option value=\"hr\">Tiếng Croatia</option><option value=\"da\">Tiếng Đan Mạch</option><option value=\"iw\">Tiếng Do Th&aacute;i</option><option value=\"de\">Tiếng Đức</option><option value=\"et\">Tiếng Estonia</option><option value=\"tl\">Tiếng Filipino</option><option value=\"fy\">Tiếng Frisia</option><option value=\"gd\">Tiếng Gael Scotland</option><option value=\"gl\">Tiếng Galicia</option><option value=\"ka\">Ti&ecirc;́ng George</option><option value=\"gu\">Tiếng Gujarat</option><option value=\"nl\">Tiếng H&agrave; Lan</option><option value=\"af\">Tiếng H&agrave; Lan (Nam Phi)</option><option value=\"ko\">Tiếng H&agrave;n</option><option value=\"ha\">Tiếng Hausa</option><option value=\"haw\">Tiếng Hawaii</option><option value=\"hi\">Tiếng Hindi</option><option value=\"hmn\">Tiếng Hmong</option><option value=\"hu\">Tiếng Hungary</option><option value=\"el\">Tiếng Hy Lạp</option><option value=\"is\">Tiếng Iceland</option><option value=\"ig\">Tiếng Igbo</option><option value=\"id\">Tiếng Indonesia</option><option value=\"ga\">Tiếng Ireland</option><option value=\"jw\">Tiếng Java</option><option value=\"kn\">Tiếng Kannada</option><option value=\"kk\">Tiếng Kazakh</option><option value=\"km\">Tiếng Khmer</option><option value=\"ku\">Tiếng Kurd (Kurmanji)</option><option value=\"ckb\">Tiếng Kurd (Sorani)</option><option value=\"ky\">Tiếng Kyrgyz</option><option value=\"lo\">Tiếng L&agrave;o</option><option value=\"la\">Tiếng Latinh</option><option value=\"lv\">Tiếng Latvia</option><option value=\"lt\">Tiếng Litva</option><option value=\"lb\">Tiếng Luxembourg</option><option value=\"ms\">Tiếng M&atilde; Lai</option><option value=\"mk\">Tiếng Macedonia</option><option value=\"mg\">Tiếng Malagasy</option><option value=\"ml\">Tiếng Malayalam</option><option value=\"mt\">Tiếng Malta</option><option value=\"mi\">Tiếng Maori</option><option value=\"mr\">Tiếng Marathi</option><option value=\"mn\">Tiếng M&ocirc;ng Cổ</option><option value=\"my\">Tiếng Myanmar</option><option value=\"no\">Tiếng Na Uy</option><option value=\"ne\">Tiếng Nepal</option><option value=\"ru\">Tiếng Nga</option><option value=\"ja\">Tiếng Nhật</option><option value=\"ps\">Tiếng Pashto</option><option value=\"fi\">Tiếng Phần Lan</option><option value=\"fr\">Tiếng Ph&aacute;p</option><option value=\"pa\">Tiếng Punjab</option><option value=\"ro\">Tiếng Rumani</option><option value=\"sm\">Tiếng Samoa</option><option value=\"cs\">Tiếng S&eacute;c</option><option value=\"sr\">Tiếng Serbia</option><option value=\"st\">Tiếng Sesotho</option><option value=\"sn\">Tiếng Shona</option><option value=\"sd\">Tiếng Sindhi</option><option value=\"si\">Tiếng Sinhala</option><option value=\"sk\">Tiếng Slovak</option><option value=\"sl\">Tiếng Slovenia</option><option value=\"so\">Tiếng Somali</option><option value=\"su\">Tiếng Sunda</option><option value=\"sw\">Tiếng Swahili</option><option value=\"tg\">Tiếng Tajik</option><option value=\"ta\">Tiếng Tamil</option><option value=\"tt\">Tiếng Tatar</option><option value=\"es\">Tiếng T&acirc;y Ban Nha</option><option value=\"te\">Tiếng Telugu</option><option value=\"th\">Tiếng Th&aacute;i</option><option value=\"tr\">Tiếng Thổ Nhĩ Kỳ</option><option value=\"sv\">Tiếng Thụy Điển</option><option value=\"zh-CN\">Tiếng Trung</option><option value=\"zh-TW\">Tiếng Trung giản thể</option><option value=\"uk\">Tiếng Ukraina</option><option value=\"ur\">Tiếng Urdu</option><option value=\"uz\">Tiếng Uzbek</option><option value=\"vi\">Tiếng Việt</option><option value=\"cy\">Tiếng Xứ Wales</option><option value=\"it\">Tiếng &Yacute;</option><option value=\"yi\">Tiếng Yiddish</option><option value=\"yo\">Tiếng Yoruba</option><option value=\"zu\">Tiếng Zulu</option></select></td>\n	<td align=\"center\" class=\"SL_td\" width=\"3\">\n	<div id=\"SL_switch_b\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/switchb.png&quot;)\" title=\"Chuyển ngôn ngữ\">&nbsp;</div>\n	</td>\n	<td align=\"left\" class=\"SL_td\" width=\"20%\"><select class=\"SL_lngs\" id=\"SL_lng_to\"><option selected=\"selected\" value=\"vi\">Tiếng Việt</option><option disabled=\"true\">-------- [ Tất cả ] --------</option><option value=\"eo\">Quốc Tế Ngữ</option><option value=\"ar\">Tiếng Ả Rập</option><option value=\"sq\">Tiếng Albania</option><option value=\"am\">Tiếng Amharic</option><option value=\"en\">Tiếng Anh</option><option value=\"hy\">Tiếng Armenia</option><option value=\"az\">Tiếng Azerbaijan</option><option value=\"pl\">Tiếng Ba Lan</option><option value=\"fa\">Tiếng Ba Tư</option><option value=\"sw\">Tiếng Swahili</option><option value=\"eu\">Tiếng Basque</option><option value=\"be\">Tiếng Belarus</option><option value=\"bn\">Tiếng Bengal</option><option value=\"pt\">Tiếng Bồ Đ&agrave;o Nha</option><option value=\"bs\">Tiếng Bosnia</option><option value=\"bg\">Tiếng Bulgaria</option><option value=\"ca\">Tiếng Catalan</option><option value=\"ceb\">Tiếng Cebuano</option><option value=\"ny\">Tiếng Chichewa</option><option value=\"co\">Tiếng Corsi</option><option value=\"ht\">Tiếng Creole ở Haiti</option><option value=\"hr\">Tiếng Croatia</option><option value=\"da\">Tiếng Đan Mạch</option><option value=\"iw\">Tiếng Do Th&aacute;i</option><option value=\"de\">Tiếng Đức</option><option value=\"et\">Tiếng Estonia</option><option value=\"tl\">Tiếng Filipino</option><option value=\"fy\">Tiếng Frisia</option><option value=\"gd\">Tiếng Gael Scotland</option><option value=\"gl\">Tiếng Galicia</option><option value=\"ka\">Ti&ecirc;́ng George</option><option value=\"gu\">Tiếng Gujarat</option><option value=\"nl\">Tiếng H&agrave; Lan</option><option value=\"af\">Tiếng H&agrave; Lan (Nam Phi)</option><option value=\"ko\">Tiếng H&agrave;n</option><option value=\"ha\">Tiếng Hausa</option><option value=\"haw\">Tiếng Hawaii</option><option value=\"hi\">Tiếng Hindi</option><option value=\"hmn\">Tiếng Hmong</option><option value=\"hu\">Tiếng Hungary</option><option value=\"el\">Tiếng Hy Lạp</option><option value=\"is\">Tiếng Iceland</option><option value=\"ig\">Tiếng Igbo</option><option value=\"id\">Tiếng Indonesia</option><option value=\"ga\">Tiếng Ireland</option><option value=\"jw\">Tiếng Java</option><option value=\"kn\">Tiếng Kannada</option><option value=\"kk\">Tiếng Kazakh</option><option value=\"km\">Tiếng Khmer</option><option value=\"ku\">Tiếng Kurd (Kurmanji)</option><option value=\"ckb\">Tiếng Kurd (Sorani)</option><option value=\"ky\">Tiếng Kyrgyz</option><option value=\"lo\">Tiếng L&agrave;o</option><option value=\"la\">Tiếng Latinh</option><option value=\"lv\">Tiếng Latvia</option><option value=\"lt\">Tiếng Litva</option><option value=\"lb\">Tiếng Luxembourg</option><option value=\"ms\">Tiếng M&atilde; Lai</option><option value=\"mk\">Tiếng Macedonia</option><option value=\"mg\">Tiếng Malagasy</option><option value=\"ml\">Tiếng Malayalam</option><option value=\"mt\">Tiếng Malta</option><option value=\"mi\">Tiếng Maori</option><option value=\"mr\">Tiếng Marathi</option><option value=\"mn\">Tiếng M&ocirc;ng Cổ</option><option value=\"my\">Tiếng Myanmar</option><option value=\"no\">Tiếng Na Uy</option><option value=\"ne\">Tiếng Nepal</option><option value=\"ru\">Tiếng Nga</option><option value=\"ja\">Tiếng Nhật</option><option value=\"ps\">Tiếng Pashto</option><option value=\"fi\">Tiếng Phần Lan</option><option value=\"fr\">Tiếng Ph&aacute;p</option><option value=\"pa\">Tiếng Punjab</option><option value=\"ro\">Tiếng Rumani</option><option value=\"sm\">Tiếng Samoa</option><option value=\"cs\">Tiếng S&eacute;c</option><option value=\"sr\">Tiếng Serbia</option><option value=\"st\">Tiếng Sesotho</option><option value=\"sn\">Tiếng Shona</option><option value=\"sd\">Tiếng Sindhi</option><option value=\"si\">Tiếng Sinhala</option><option value=\"sk\">Tiếng Slovak</option><option value=\"sl\">Tiếng Slovenia</option><option value=\"so\">Tiếng Somali</option><option value=\"su\">Tiếng Sunda</option><option value=\"sw\">Tiếng Swahili</option><option value=\"tg\">Tiếng Tajik</option><option value=\"ta\">Tiếng Tamil</option><option value=\"tt\">Tiếng Tatar</option><option value=\"es\">Tiếng T&acirc;y Ban Nha</option><option value=\"te\">Tiếng Telugu</option><option value=\"th\">Tiếng Th&aacute;i</option><option value=\"tr\">Tiếng Thổ Nhĩ Kỳ</option><option value=\"sv\">Tiếng Thụy Điển</option><option value=\"zh-CN\">Tiếng Trung</option><option value=\"zh-TW\">Tiếng Trung giản thể</option><option value=\"uk\">Tiếng Ukraina</option><option value=\"ur\">Tiếng Urdu</option><option value=\"uz\">Tiếng Uzbek</option><option value=\"vi\">Tiếng Việt</option><option value=\"cy\">Tiếng Xứ Wales</option><option value=\"it\">Tiếng &Yacute;</option><option value=\"yi\">Tiếng Yiddish</option><option value=\"yo\">Tiếng Yoruba</option><option value=\"zu\">Tiếng Zulu</option></select></td>\n	<td align=\"center\" class=\"SL_td\" width=\"5%\">&nbsp;</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div id=\"SL_TTS_voice\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/ttsvoice.png&quot;)\" title=\"undefined\">&nbsp;</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div class=\"SL_copy\" id=\"SL_copy\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/copy.png&quot;)\" title=\"Chép bản dịch\">\n	<div id=\"SL_copy_tip\">&nbsp;</div>\n	</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div id=\"SL_bbl_font_patch\">&nbsp;</div>\n	<div class=\"SL_bbl_font\" id=\"SL_bbl_font\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/font.png&quot;)\" title=\"Cỡ chữ\">&nbsp;</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div id=\"SL_bbl_help\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/bhelp.png&quot;)\" title=\"Trợ giúp\">&nbsp;</div>\n	</td>\n	<td align=\"right\" class=\"SL_td\" width=\"15%\">\n	<div class=\"SL_pin_off\" id=\"SL_pin\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/pin-on.png&quot;)\" title=\"Gắn cửa sổ pop-up\">&nbsp;</div>\n	</td>\n</tr>\n<div id=\"SL_shadow_translation_result\">&nbsp;</div>\n<div class=\"SL_loading\" id=\"SL_loading\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/loading.gif&quot;)\">&nbsp;</div>\n<div id=\"SL_player2\">&nbsp;</div>\n<div id=\"SL_alert100\">Chức năng ph&aacute;t &acirc;m giới hạn ở 200 k&yacute; tự</div>\n<div id=\"SL_Balloon_options\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/bg3.png&quot;) #ffffff\">\n<div id=\"SL_arrow_down\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/down.png&quot;)\">&nbsp;</div>\n<div id=\"SL_tbl_opt\">&nbsp;</div>\n</div>\n<tr>\n	<td align=\"center\" class=\"SL_td\" width=\"5%\"><input checked=\"true\" id=\"SL_BBL_locer\" title=\"Hiển thị nút của biên dịch viên 3 giây\" type=\"checkbox\" /></td>\n	<td align=\"left\" class=\"SL_td\" width=\"5%\">\n	<div id=\"SL_BBL_IMG\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/bbl-logo.png&quot;)\" title=\"Hiển thị nút của biên dịch viên 3 giây\">&nbsp;</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"100%\"><span class=\"SL_options\" id=\"BBL_OPT\" title=\"Hiển thị các tùy chọn\">C&aacute;c T&ugrave;y chọn</span> : <span class=\"SL_options\" id=\"HIST_OPT\" title=\"Lược sử biên dịch\">Lược sử</span> : <span class=\"SL_options\" id=\"FEED_OPT\" title=\"Phản hồi\">Phản hồi</span> : <span class=\"SL_options\" id=\"DONATE_OPT\" title=\"Đóng góp\">Donate</span></td>\n	<td align=\"right\" class=\"SL_td\" nowrap=\"nowrap\" width=\"15%\"><span class=\"SL_options\" id=\"SL_Balloon_Close\" title=\"Đóng\">Đ&oacute;ng</span></td>\n</tr>\n', 4, 9, '2023-11-12 06:14:20', 0, 0, 0, 0, '', 9, '2023-11-12 06:14:20', 0, 1000, 1, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 0, 5, 3, 1, '', '2023-11-11 23:58:36', 1, '2023-11-12 13:32:42', 9, NULL, NULL),
-(8, 6, '<p>fsadfasfasdf</p>\n', 4, 9, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 200, 1, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-12 10:26:43', 1, '2023-11-12 13:35:33', 9, NULL, NULL),
-(10, 1, '<p>fasfsadf</p>\n', 4, 4, '2023-11-12 11:18:58', 0, 0, 0, 0, '', 9, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-11-12 13:25:48', 1, '2023-11-12 13:31:14', 9, NULL, NULL),
-(12, 6, '<p>gsdfgsdgsdfg</p>\n', 4, 43, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 4, 1, '', '2023-11-12 15:14:25', 3, '2023-11-12 13:34:52', 9, NULL, NULL),
-(13, 8, '<p>fsdafasdfsda</p>\n', 0, 45, NULL, 0, 0, 0, 0, '', 50, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-12 15:25:30', 3, '2023-11-12 08:25:30', 0, NULL, NULL),
-(14, 8, '<p>fasfasf</p>\n', 4, 4, NULL, 0, 0, 0, 0, 'https://www.youtube.com/watch?v=T7aVAIAiRKY&ab_channel=RomanticGuitar', 9, NULL, 0, 600, 1, 0, 0, NULL, 0, 0, 0, 5, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-11-12 15:31:51', 3, '2023-11-12 13:35:42', 9, NULL, NULL),
-(15, 8, '<p>new task inserted with status</p>\n', 6, 9, NULL, 0, 0, 0, 0, '', 49, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-12 15:37:15', 3, '2023-11-12 08:37:15', 0, NULL, NULL),
-(16, 2, NULL, 4, 4, '2023-11-12 11:19:54', 0, 0, 0, 0, '', 9, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 16:52:09', 6, '2023-11-12 13:33:24', 9, NULL, NULL),
-(17, 3, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 16:52:15', 6, '2023-11-12 13:33:54', 9, NULL, NULL),
-(18, 4, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 1000, 1, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 16:52:17', 6, '2023-11-12 13:34:16', 9, NULL, NULL),
-(19, 5, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 1000, 1, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 16:54:17', 6, '2023-11-12 13:34:41', 9, NULL, NULL),
-(20, 3, '<p>ffsafsdaf</p>\n', 6, 43, NULL, 0, 0, 0, 0, '', 50, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-12 16:54:34', 3, '2023-11-12 09:54:34', 0, NULL, NULL),
-(21, 1, '<p>asfasfd</p>\n', 8, 9, '2023-11-12 10:15:42', 1, 0, 0, 0, '', 49, '2023-11-12 10:15:42', 1, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-12 17:05:27', 3, '2023-11-12 10:15:42', 3, NULL, NULL),
-(24, 8, '<p>431432</p>\n', 6, 9, '2023-11-12 10:59:30', 1, 0, 0, 0, '', 50, '2023-11-12 10:59:30', 1, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 5, 1, '', '2023-11-12 17:31:15', 1, '2023-11-12 10:59:30', 1, NULL, NULL),
-(25, 8, '<p>gfsdgsdgsd</p>\n', 6, 43, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 4, 1, '', '2023-11-12 17:59:20', 1, '2023-11-12 13:35:43', 9, NULL, NULL),
-(26, 9, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:01:38', 1, '2023-11-12 11:01:38', 0, NULL, NULL),
-(27, 9, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:01:38', 1, '2023-11-12 11:01:38', 0, NULL, NULL),
-(28, 9, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:01:38', 1, '2023-11-12 11:01:38', 0, NULL, NULL),
-(29, 9, '', 6, 0, '2023-11-12 11:05:11', 0, 0, 0, 0, '', 0, '2023-11-12 11:05:11', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:01:38', 1, '2023-11-12 11:05:11', 1, NULL, NULL),
-(30, 9, '<p>trwetwertwert</p>\n', 5, 0, '2023-11-12 11:05:18', 0, 0, 0, 0, '', 0, '2023-11-12 11:05:18', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 7, 1, '', '2023-11-12 18:02:30', 1, '2023-11-12 11:05:18', 1, NULL, NULL),
-(31, 9, '<p>fdsafasdfasdf</p>\n', 5, 0, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 11, 7, 1, '', '2023-11-12 18:05:29', 1, '2023-11-12 13:36:14', 9, NULL, NULL),
-(32, 9, '<p>hfdgdfghfh</p>\n', 6, 43, NULL, 0, 0, 0, 0, '', 50, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 5, 1, '', '2023-11-12 18:06:15', 1, '2023-11-12 11:06:15', 0, NULL, NULL),
-(33, 9, '<p>gfsdgsdgsd</p>\n', 0, 43, '2023-11-12 11:07:56', 1, 0, 0, 0, '', 0, '2023-11-12 11:07:56', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 4, 1, '', '2023-11-12 18:06:48', 1, '2023-11-12 11:07:56', 1, NULL, NULL),
-(34, 9, '<p>gfsdgdsfg</p>\n', 6, 9, '2023-11-12 11:07:50', 1, 0, 0, 0, '', 49, '2023-11-12 11:07:50', 1, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 4, 1, '', '2023-11-12 18:07:40', 1, '2023-11-12 11:07:50', 1, NULL, NULL),
-(36, 10, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:11:14', 6, '2023-11-12 11:11:14', 0, NULL, NULL),
-(37, 10, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:11:14', 6, '2023-11-12 11:11:14', 0, NULL, NULL),
-(38, 10, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:11:14', 6, '2023-11-12 11:11:14', 0, NULL, NULL),
-(39, 8, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 1000, 1, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:11:19', 6, '2023-11-12 13:35:58', 9, NULL, NULL),
-(40, 8, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 9, NULL, 0, 200, 1, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 18:11:19', 6, '2023-11-12 13:36:13', 9, NULL, NULL);
+(1, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, 'https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0ngAT%C5%A9nLive', 0, NULL, 0, 1000, 1, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:18:34', 9, NULL, NULL),
+(2, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:19:23', 9, NULL, NULL),
+(3, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 200, 1, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:19:38', 9, NULL, NULL),
+(4, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 1200, 1, 0, 0, NULL, 0, 0, 0, 4, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:20:00', 9, NULL, NULL),
+(5, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 600, 1, 0, 0, NULL, 0, 0, 0, 5, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:20:25', 9, NULL, NULL),
+(6, 1, '<p>Normally created task</p>\n', 4, 4, '2023-11-12 14:09:36', 0, 0, 0, 0, '', 9, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 5, 1, '', '2023-11-12 21:09:09', 3, '2023-11-12 14:19:15', 9, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -3155,7 +2970,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -3245,19 +3060,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=163;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -3269,7 +3084,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`
