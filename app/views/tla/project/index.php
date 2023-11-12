@@ -36,6 +36,7 @@
                 <th>Start</th>
                 <th>Deadline</th>
                 <th>Templates</th>
+                <th class="text-center">Task numbers</th>
                 <th class="text-center">Status</th>
                 <th></th>
             </tr>

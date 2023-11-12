@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 12, 2023 lúc 07:23 AM
+-- Thời gian đã tạo: Th10 12, 2023 lúc 08:08 AM
 -- Phiên bản máy phục vụ: 10.4.28-MariaDB
 -- Phiên bản PHP: 8.0.28
 
@@ -435,6 +435,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectFilter` (IN `p_from_date` TI
              WHERE FIND_IN_SET(levels.id, p.levels)
             )
         ) AS templates,
+        COUNT(t.id) as task_count,
         SUM(CASE WHEN t.auto_gen = 1 THEN 1 ELSE 0 END) as gen_number,
         IFNULL(p.status_id, '-1') as status_id,
         IFNULL(ps.name, 'Initial') AS status_name,
@@ -563,6 +564,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusInsert` (IN `p_name` V
     VALUES(p_name,p_color,p_description,p_visible,p_created_by);
     
     SELECT ROW_COUNT() as rows_inserted;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusInvisible` ()   BEGIN
+	SELECT id,name FROM project_statuses WHERE visible = 0;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `ProjectStatusUpdate` (IN `p_id` INT, IN `p_name` VARCHAR(100), IN `p_color` VARCHAR(100), IN `p_description` VARCHAR(250), IN `p_visible` TINYINT(1), IN `p_updated_by` INT)   BEGIN
@@ -1415,7 +1420,9 @@ INSERT INTO `ccs` (`id`, `project_id`, `feedback`, `start_date`, `end_date`, `cr
 (5, 6, '<p>54235325</p>\n', '2023-11-11 21:33:00', '2023-11-11 21:33:00', '2023-11-11 21:36:38', 6, '2023-11-11 14:36:38', 0, '', NULL),
 (6, 6, '<p>54235325</p>\n', '2023-11-11 21:33:00', '2023-11-11 21:33:00', '2023-11-11 21:41:59', 6, '2023-11-11 14:41:59', 0, '', NULL),
 (7, 6, '<p>fdsafsafsdafasdf</p>\n', '2023-11-11 21:42:00', '2023-11-11 21:42:00', '2023-11-11 21:42:19', 6, '2023-11-11 14:42:19', 0, '', NULL),
-(8, 6, '<p>fdsafsaf</p>\n', '2023-11-11 22:00:00', '2023-11-11 22:00:00', '2023-11-11 22:00:49', 1, '2023-11-11 15:00:49', 0, '', NULL);
+(8, 6, '<p>fdsafsaf</p>\n', '2023-11-11 22:00:00', '2023-11-11 22:00:00', '2023-11-11 22:00:49', 1, '2023-11-11 15:00:49', 0, '', NULL),
+(9, 1, '<p>fsdafsadfs</p>\n', '2023-11-12 13:25:00', '2023-11-12 13:25:00', '2023-11-12 13:25:53', 1, '2023-11-12 06:25:53', 0, '', NULL),
+(10, 1, '<p>fadsfsấdf</p>\n', '2023-11-12 13:42:00', '2023-11-12 13:42:00', '2023-11-12 13:43:13', 6, '2023-11-12 06:43:13', 0, '', NULL);
 
 --
 -- Bẫy `ccs`
@@ -1883,11 +1890,12 @@ CREATE TABLE `projects` (
 INSERT INTO `projects` (`id`, `customer_id`, `name`, `description`, `status_id`, `start_date`, `end_date`, `levels`, `invoice_id`, `product_url`, `wait_note`, `combo_id`, `priority`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (1, 27, 'Test 111123 with status', '\n', 6, '2023-11-11 11:04:00', '2023-11-11 14:04:00', '1,2,3', '', NULL, NULL, 2, 0, '2023-11-11 11:11:07', 1, '2023-11-11 19:50:18', 6, NULL, ''),
 (2, 29, 'TEST PROJECT 61123', 'fdà\n', 6, '2023-11-11 19:45:00', '2023-11-11 22:45:00', '2', '', NULL, NULL, 1, 1, '2023-11-11 19:47:10', 6, NULL, 0, NULL, ''),
-(3, 29, 'TEST PROJECT 61123', 'fdà\n', 0, '2023-11-11 19:45:00', '2023-11-11 22:45:00', '2', '', NULL, NULL, 1, 1, '2023-11-11 19:47:28', 6, '2023-11-11 19:50:31', 6, NULL, ''),
+(3, 29, 'TEST PROJECT 61123', '<p>fd&agrave;fsadfasf</p>\n', 0, '2023-11-11 19:45:00', '2023-11-11 22:45:00', '2', '', NULL, NULL, 1, 1, '2023-11-11 19:47:28', 6, '2023-11-12 13:27:46', 1, NULL, ''),
 (4, 27, 'fsadfasd', '\n', 8, '2023-11-11 19:55:00', '2023-11-11 22:55:00', '1', '', NULL, NULL, 3, 1, '2023-11-11 19:55:46', 6, NULL, 0, NULL, ''),
 (5, 29, 'TEST PROJECT 111123', '<p>&lt;p&gt;&amp;lt;p&amp;gt;This is html description for the 111123 project&amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n', 0, '2023-11-11 20:04:00', '2023-11-11 23:04:00', '1', '', NULL, NULL, 2, 0, '2023-11-11 20:05:57', 6, '2023-11-11 21:15:03', 6, NULL, ''),
 (6, 27, 'The test project using ckeditor plugin', '<p>The 1st line of description</p>\n\n<p><strong>The 2nd line of description</strong></p>\n\n<p><em>The 3rd line of description</em></p>\n\n<p><u>The 4th line of description</u></p>\n\n<p>&nbsp;</p>\n', 2, '2023-11-11 20:47:00', '2023-11-11 23:47:00', '3', '', NULL, NULL, 2, 0, '2023-11-11 20:49:22', 6, '2023-11-11 22:07:28', 1, NULL, ''),
-(7, 27, 'test 123', '', 0, '2023-11-11 20:47:00', '2023-11-11 23:47:00', '', '', NULL, NULL, 2, 0, '2023-11-11 22:10:07', 1, '2023-11-11 22:10:19', 1, NULL, '');
+(7, 27, 'test 123', '', 0, '2023-11-11 20:47:00', '2023-11-11 23:47:00', '', '', NULL, NULL, 2, 0, '2023-11-11 22:10:07', 1, '2023-11-11 22:10:19', 1, NULL, ''),
+(8, 26, 'TEST PROJECT 611231234', '<p>fs&aacute;d&agrave;</p>\n\n<p>fsadf&aacute;df</p>\n\n<p>fdsầ</p>\n', 0, '2023-11-12 13:46:00', '2023-11-12 16:46:00', '1,3', '', NULL, NULL, 2, 1, '2023-11-12 13:47:40', 6, '2023-11-12 13:47:53', 6, NULL, '');
 
 --
 -- Bẫy `projects`
@@ -2073,11 +2081,16 @@ CREATE TABLE `project_instructions` (
 
 INSERT INTO `project_instructions` (`id`, `project_id`, `content`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_by`, `deleted_at`) VALUES
 (1, 2, 'fá\n', '2023-11-11 19:47:10', 6, NULL, 0, NULL, NULL),
-(2, 3, 'fá\n', '2023-11-11 19:47:28', 6, '2023-11-11 12:50:31', 6, NULL, NULL),
+(2, 3, '<p>f&aacute;fdasfasdf</p>\n', '2023-11-11 19:47:28', 6, '2023-11-12 06:27:46', 1, NULL, NULL),
 (3, 5, '<p>&lt;p&gt;&amp;lt;p&amp;gt;This is html instruction for&amp;lt;/p&amp;gt;&amp;lt;p&amp;gt;the 111123 project &amp;lt;/p&amp;gt;&lt;/p&gt;</p>\n', '2023-11-11 20:05:57', 6, '2023-11-11 14:15:03', 6, NULL, NULL),
 (4, 6, '<p>fasdfasfasdfasdfasfdasf</p>\n', '2023-11-11 20:49:22', 6, '2023-11-11 15:07:28', 1, NULL, NULL),
 (5, 6, '<p>new instruction</p>\n', '2023-11-11 21:44:52', 6, NULL, 0, NULL, NULL),
-(6, 6, '<p>fasdfasfasdfasdfasfdasf</p>\n', '2023-11-11 22:01:41', 1, NULL, 0, NULL, NULL);
+(6, 6, '<p>fasdfasfasdfasdfasfdasf</p>\n', '2023-11-11 22:01:41', 1, NULL, 0, NULL, NULL),
+(7, 2, '<p>fsdafasfasd</p>\n', '2023-11-12 13:26:01', 1, NULL, 0, NULL, NULL),
+(8, 6, '<p>fsdafasfasd</p>\n', '2023-11-12 13:26:46', 1, NULL, 0, NULL, NULL),
+(9, 7, '<p>fsdafasfasdf</p>\n', '2023-11-12 13:27:59', 1, NULL, 0, NULL, NULL),
+(10, 2, '<p>ầd&aacute;đaf</p>\n', '2023-11-12 13:43:21', 6, NULL, 0, NULL, NULL),
+(11, 8, '<p>fdsfsadfsadf&agrave;</p>\n<p>324141234</p>\n<p>fdầ</p>\n', '2023-11-12 13:47:40', 6, '2023-11-12 06:47:53', 6, NULL, NULL);
 
 --
 -- Bẫy `project_instructions`
@@ -2177,7 +2190,17 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (33, 6, 7, 0, '2023-11-11 23:58:36', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW CC TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] with quantity: [1]', ''),
 (34, 6, 8, 0, '2023-11-12 10:26:43', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] with quantity: [3]', ''),
 (35, 6, 9, 0, '2023-11-12 10:31:50', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold text-warning\">Re-ADV</span>] with quantity: [1]', ''),
-(36, 6, 7, 0, '2023-11-12 13:14:20', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">1</span>] TO [<span class=\"text-primary\">3</span>]', '');
+(36, 6, 7, 0, '2023-11-12 13:14:20', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED QUANTITY</span> FROM [<span class=\"text-secondary\">1</span>] TO [<span class=\"text-primary\">3</span>]', ''),
+(37, 1, 10, 0, '2023-11-12 13:25:48', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [1]', ''),
+(38, 1, 0, 9, '2023-11-12 13:25:53', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">12/11/2023 13:25</span>] TO [<span class=\"text-warning\">12/11/2023 13:25</span>]', ''),
+(39, 2, 0, 0, '2023-11-12 13:26:01', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>fsdafasfasd</p>\n\')\">View detail</a>', ''),
+(40, 6, 0, 0, '2023-11-12 13:26:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>fsdafasfasd</p>\n\')\">View detail</a>', ''),
+(41, 3, 0, 0, '2023-11-12 13:27:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(3)\">View detail</a>', '<span class=\"text-secondary\">FROM:</span><br/><hr>fdà\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>fd&agrave;fsadfasf</p>\n'),
+(42, 3, 0, 0, '2023-11-12 13:27:46', 'CEO [<span class=\"fw-bold text-info\">admin</span>] <span class=\"text-warning\">CHANGE INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(2)\">View detail</a>,', '<span class=\"text-secondary\">FROM:</span><br/><hr>fá\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>f&aacute;fdasfasdf</p>\n'),
+(43, 1, 0, 10, '2023-11-12 13:43:13', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">CREATE NEW CC</span> FROM [<span class=\"text-warning\">12/11/2023 13:42</span>] TO [<span class=\"text-warning\">12/11/2023 13:42</span>]', ''),
+(44, 2, 0, 0, '2023-11-12 13:43:21', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-success\">INSERT NEW INSTRUCTION</span> <a href=\"javascript:void(0)\" onClick=\"ViewContent(\'<p>ầd&aacute;đaf</p>\n\')\">View detail</a>', ''),
+(45, 8, 0, 0, '2023-11-12 13:47:40', 'CSS [<span class=\"text-info fw-bold\">binh.tt</span>] <span class=\"text-success\">CREATE PROJECT FOR CUSTOMER</span> [<span class=\"text-primary\">fdasfsdaf</span>]', ''),
+(46, 8, 0, 0, '2023-11-12 13:47:53', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-warning\">CHANGE DESCRIPTION</span><a href=\"javascript:void(0)\" onClick=\"ViewContent(8)\">View detail</a>, <span class=\"text-warning\">CHANGE STATUS</span> FROM [<span class=\"text-seconda', '<span class=\"text-secondary\">FROM:</span><br/><hr><p>fs&aacute;d&agrave;</p>\n<p>fsadf&aacute;df</p>\n<p>fdsầ</p>\n<span class=\"mt-3 text-secondary\">TO:</span><hr/><p>fs&aacute;d&agrave;</p>\n\n<p>fsadf&aacute;df</p>\n\n<p>fdsầ</p>\n');
 
 -- --------------------------------------------------------
 
@@ -2274,7 +2297,8 @@ INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`
 (6, 6, '<p>fdsafsadf</p>\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-11-11 23:58:05', 1, '2023-11-11 16:58:05', 0, NULL, NULL),
 (7, 6, '<p>Task description</p>\n<p>Line 1&nbsp;</p>\n<p><strong>Line 2</strong></p>\n<p>Line 3</p>\n<div alt=\"0\" id=\"SL_balloon_obj\" style=\"display:block\">\n<div class=\"SL_ImTranslatorLogo\" id=\"SL_button\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/imtranslator-s.png&quot;); opacity:100\">&nbsp;</div>\n<div id=\"SL_shadow_translation_result2\" style=\"display:none\">&nbsp;</div>\n<div class=\"notranslate\" id=\"SL_shadow_translator\">\n<div id=\"SL_planshet\">\n<div id=\"SL_arrow_up\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/up.png&quot;)\">&nbsp;</div>\n<div id=\"SL_Bproviders\">\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P0\" title=\"Google\">\n<div id=\"SL_PN0\">G</div>\n</div>\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P1\" title=\"Microsoft\">\n<div id=\"SL_PN1\">M</div>\n</div>\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P2\" title=\"Translator\">\n<div id=\"SL_PN2\">T</div>\n</div>\n<div class=\"SL_BL_LABLE_ON\" id=\"SL_P3\" title=\"Yandex\">\n<div id=\"SL_PN3\">Y</div>\n</div>\n</div>\n<div id=\"SL_alert_bbl\">\n<div id=\"SLHKclose\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/delete.png&quot;)\">&nbsp;</div>\n<div id=\"SL_alert_cont\">&nbsp;</div>\n</div>\n<div id=\"SL_TB\">\n<div cellspacing=\"1\" id=\"SL_tables\">&nbsp;</div>\n</div>\n</div>\n</div>\n</div>\n<tr>\n	<td align=\"right\" class=\"SL_td\" width=\"10%\"><input checked=\"true\" id=\"SL_locer\" title=\"Khóa ngôn ngữ\" type=\"checkbox\" /></td>\n	<td align=\"left\" class=\"SL_td\" width=\"20%\"><select class=\"SL_lngs\" id=\"SL_lng_from\"><option value=\"auto\">Ph&aacute;t hiện ng&ocirc;n ngữ</option><option value=\"eo\">Quốc Tế Ngữ</option><option value=\"ar\">Tiếng Ả Rập</option><option value=\"sq\">Tiếng Albania</option><option value=\"am\">Tiếng Amharic</option><option value=\"en\">Tiếng Anh</option><option value=\"hy\">Tiếng Armenia</option><option value=\"az\">Tiếng Azerbaijan</option><option value=\"pl\">Tiếng Ba Lan</option><option value=\"fa\">Tiếng Ba Tư</option><option value=\"sw\">Tiếng Swahili</option><option value=\"eu\">Tiếng Basque</option><option value=\"be\">Tiếng Belarus</option><option value=\"bn\">Tiếng Bengal</option><option value=\"pt\">Tiếng Bồ Đ&agrave;o Nha</option><option value=\"bs\">Tiếng Bosnia</option><option value=\"bg\">Tiếng Bulgaria</option><option value=\"ca\">Tiếng Catalan</option><option value=\"ceb\">Tiếng Cebuano</option><option value=\"ny\">Tiếng Chichewa</option><option value=\"co\">Tiếng Corsi</option><option value=\"ht\">Tiếng Creole ở Haiti</option><option value=\"hr\">Tiếng Croatia</option><option value=\"da\">Tiếng Đan Mạch</option><option value=\"iw\">Tiếng Do Th&aacute;i</option><option value=\"de\">Tiếng Đức</option><option value=\"et\">Tiếng Estonia</option><option value=\"tl\">Tiếng Filipino</option><option value=\"fy\">Tiếng Frisia</option><option value=\"gd\">Tiếng Gael Scotland</option><option value=\"gl\">Tiếng Galicia</option><option value=\"ka\">Ti&ecirc;́ng George</option><option value=\"gu\">Tiếng Gujarat</option><option value=\"nl\">Tiếng H&agrave; Lan</option><option value=\"af\">Tiếng H&agrave; Lan (Nam Phi)</option><option value=\"ko\">Tiếng H&agrave;n</option><option value=\"ha\">Tiếng Hausa</option><option value=\"haw\">Tiếng Hawaii</option><option value=\"hi\">Tiếng Hindi</option><option value=\"hmn\">Tiếng Hmong</option><option value=\"hu\">Tiếng Hungary</option><option value=\"el\">Tiếng Hy Lạp</option><option value=\"is\">Tiếng Iceland</option><option value=\"ig\">Tiếng Igbo</option><option value=\"id\">Tiếng Indonesia</option><option value=\"ga\">Tiếng Ireland</option><option value=\"jw\">Tiếng Java</option><option value=\"kn\">Tiếng Kannada</option><option value=\"kk\">Tiếng Kazakh</option><option value=\"km\">Tiếng Khmer</option><option value=\"ku\">Tiếng Kurd (Kurmanji)</option><option value=\"ckb\">Tiếng Kurd (Sorani)</option><option value=\"ky\">Tiếng Kyrgyz</option><option value=\"lo\">Tiếng L&agrave;o</option><option value=\"la\">Tiếng Latinh</option><option value=\"lv\">Tiếng Latvia</option><option value=\"lt\">Tiếng Litva</option><option value=\"lb\">Tiếng Luxembourg</option><option value=\"ms\">Tiếng M&atilde; Lai</option><option value=\"mk\">Tiếng Macedonia</option><option value=\"mg\">Tiếng Malagasy</option><option value=\"ml\">Tiếng Malayalam</option><option value=\"mt\">Tiếng Malta</option><option value=\"mi\">Tiếng Maori</option><option value=\"mr\">Tiếng Marathi</option><option value=\"mn\">Tiếng M&ocirc;ng Cổ</option><option value=\"my\">Tiếng Myanmar</option><option value=\"no\">Tiếng Na Uy</option><option value=\"ne\">Tiếng Nepal</option><option value=\"ru\">Tiếng Nga</option><option value=\"ja\">Tiếng Nhật</option><option value=\"ps\">Tiếng Pashto</option><option value=\"fi\">Tiếng Phần Lan</option><option value=\"fr\">Tiếng Ph&aacute;p</option><option value=\"pa\">Tiếng Punjab</option><option value=\"ro\">Tiếng Rumani</option><option value=\"sm\">Tiếng Samoa</option><option value=\"cs\">Tiếng S&eacute;c</option><option value=\"sr\">Tiếng Serbia</option><option value=\"st\">Tiếng Sesotho</option><option value=\"sn\">Tiếng Shona</option><option value=\"sd\">Tiếng Sindhi</option><option value=\"si\">Tiếng Sinhala</option><option value=\"sk\">Tiếng Slovak</option><option value=\"sl\">Tiếng Slovenia</option><option value=\"so\">Tiếng Somali</option><option value=\"su\">Tiếng Sunda</option><option value=\"sw\">Tiếng Swahili</option><option value=\"tg\">Tiếng Tajik</option><option value=\"ta\">Tiếng Tamil</option><option value=\"tt\">Tiếng Tatar</option><option value=\"es\">Tiếng T&acirc;y Ban Nha</option><option value=\"te\">Tiếng Telugu</option><option value=\"th\">Tiếng Th&aacute;i</option><option value=\"tr\">Tiếng Thổ Nhĩ Kỳ</option><option value=\"sv\">Tiếng Thụy Điển</option><option value=\"zh-CN\">Tiếng Trung</option><option value=\"zh-TW\">Tiếng Trung giản thể</option><option value=\"uk\">Tiếng Ukraina</option><option value=\"ur\">Tiếng Urdu</option><option value=\"uz\">Tiếng Uzbek</option><option value=\"vi\">Tiếng Việt</option><option value=\"cy\">Tiếng Xứ Wales</option><option value=\"it\">Tiếng &Yacute;</option><option value=\"yi\">Tiếng Yiddish</option><option value=\"yo\">Tiếng Yoruba</option><option value=\"zu\">Tiếng Zulu</option></select></td>\n	<td align=\"center\" class=\"SL_td\" width=\"3\">\n	<div id=\"SL_switch_b\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/switchb.png&quot;)\" title=\"Chuyển ngôn ngữ\">&nbsp;</div>\n	</td>\n	<td align=\"left\" class=\"SL_td\" width=\"20%\"><select class=\"SL_lngs\" id=\"SL_lng_to\"><option selected=\"selected\" value=\"vi\">Tiếng Việt</option><option disabled=\"true\">-------- [ Tất cả ] --------</option><option value=\"eo\">Quốc Tế Ngữ</option><option value=\"ar\">Tiếng Ả Rập</option><option value=\"sq\">Tiếng Albania</option><option value=\"am\">Tiếng Amharic</option><option value=\"en\">Tiếng Anh</option><option value=\"hy\">Tiếng Armenia</option><option value=\"az\">Tiếng Azerbaijan</option><option value=\"pl\">Tiếng Ba Lan</option><option value=\"fa\">Tiếng Ba Tư</option><option value=\"sw\">Tiếng Swahili</option><option value=\"eu\">Tiếng Basque</option><option value=\"be\">Tiếng Belarus</option><option value=\"bn\">Tiếng Bengal</option><option value=\"pt\">Tiếng Bồ Đ&agrave;o Nha</option><option value=\"bs\">Tiếng Bosnia</option><option value=\"bg\">Tiếng Bulgaria</option><option value=\"ca\">Tiếng Catalan</option><option value=\"ceb\">Tiếng Cebuano</option><option value=\"ny\">Tiếng Chichewa</option><option value=\"co\">Tiếng Corsi</option><option value=\"ht\">Tiếng Creole ở Haiti</option><option value=\"hr\">Tiếng Croatia</option><option value=\"da\">Tiếng Đan Mạch</option><option value=\"iw\">Tiếng Do Th&aacute;i</option><option value=\"de\">Tiếng Đức</option><option value=\"et\">Tiếng Estonia</option><option value=\"tl\">Tiếng Filipino</option><option value=\"fy\">Tiếng Frisia</option><option value=\"gd\">Tiếng Gael Scotland</option><option value=\"gl\">Tiếng Galicia</option><option value=\"ka\">Ti&ecirc;́ng George</option><option value=\"gu\">Tiếng Gujarat</option><option value=\"nl\">Tiếng H&agrave; Lan</option><option value=\"af\">Tiếng H&agrave; Lan (Nam Phi)</option><option value=\"ko\">Tiếng H&agrave;n</option><option value=\"ha\">Tiếng Hausa</option><option value=\"haw\">Tiếng Hawaii</option><option value=\"hi\">Tiếng Hindi</option><option value=\"hmn\">Tiếng Hmong</option><option value=\"hu\">Tiếng Hungary</option><option value=\"el\">Tiếng Hy Lạp</option><option value=\"is\">Tiếng Iceland</option><option value=\"ig\">Tiếng Igbo</option><option value=\"id\">Tiếng Indonesia</option><option value=\"ga\">Tiếng Ireland</option><option value=\"jw\">Tiếng Java</option><option value=\"kn\">Tiếng Kannada</option><option value=\"kk\">Tiếng Kazakh</option><option value=\"km\">Tiếng Khmer</option><option value=\"ku\">Tiếng Kurd (Kurmanji)</option><option value=\"ckb\">Tiếng Kurd (Sorani)</option><option value=\"ky\">Tiếng Kyrgyz</option><option value=\"lo\">Tiếng L&agrave;o</option><option value=\"la\">Tiếng Latinh</option><option value=\"lv\">Tiếng Latvia</option><option value=\"lt\">Tiếng Litva</option><option value=\"lb\">Tiếng Luxembourg</option><option value=\"ms\">Tiếng M&atilde; Lai</option><option value=\"mk\">Tiếng Macedonia</option><option value=\"mg\">Tiếng Malagasy</option><option value=\"ml\">Tiếng Malayalam</option><option value=\"mt\">Tiếng Malta</option><option value=\"mi\">Tiếng Maori</option><option value=\"mr\">Tiếng Marathi</option><option value=\"mn\">Tiếng M&ocirc;ng Cổ</option><option value=\"my\">Tiếng Myanmar</option><option value=\"no\">Tiếng Na Uy</option><option value=\"ne\">Tiếng Nepal</option><option value=\"ru\">Tiếng Nga</option><option value=\"ja\">Tiếng Nhật</option><option value=\"ps\">Tiếng Pashto</option><option value=\"fi\">Tiếng Phần Lan</option><option value=\"fr\">Tiếng Ph&aacute;p</option><option value=\"pa\">Tiếng Punjab</option><option value=\"ro\">Tiếng Rumani</option><option value=\"sm\">Tiếng Samoa</option><option value=\"cs\">Tiếng S&eacute;c</option><option value=\"sr\">Tiếng Serbia</option><option value=\"st\">Tiếng Sesotho</option><option value=\"sn\">Tiếng Shona</option><option value=\"sd\">Tiếng Sindhi</option><option value=\"si\">Tiếng Sinhala</option><option value=\"sk\">Tiếng Slovak</option><option value=\"sl\">Tiếng Slovenia</option><option value=\"so\">Tiếng Somali</option><option value=\"su\">Tiếng Sunda</option><option value=\"sw\">Tiếng Swahili</option><option value=\"tg\">Tiếng Tajik</option><option value=\"ta\">Tiếng Tamil</option><option value=\"tt\">Tiếng Tatar</option><option value=\"es\">Tiếng T&acirc;y Ban Nha</option><option value=\"te\">Tiếng Telugu</option><option value=\"th\">Tiếng Th&aacute;i</option><option value=\"tr\">Tiếng Thổ Nhĩ Kỳ</option><option value=\"sv\">Tiếng Thụy Điển</option><option value=\"zh-CN\">Tiếng Trung</option><option value=\"zh-TW\">Tiếng Trung giản thể</option><option value=\"uk\">Tiếng Ukraina</option><option value=\"ur\">Tiếng Urdu</option><option value=\"uz\">Tiếng Uzbek</option><option value=\"vi\">Tiếng Việt</option><option value=\"cy\">Tiếng Xứ Wales</option><option value=\"it\">Tiếng &Yacute;</option><option value=\"yi\">Tiếng Yiddish</option><option value=\"yo\">Tiếng Yoruba</option><option value=\"zu\">Tiếng Zulu</option></select></td>\n	<td align=\"center\" class=\"SL_td\" width=\"5%\">&nbsp;</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div id=\"SL_TTS_voice\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/ttsvoice.png&quot;)\" title=\"undefined\">&nbsp;</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div class=\"SL_copy\" id=\"SL_copy\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/copy.png&quot;)\" title=\"Chép bản dịch\">\n	<div id=\"SL_copy_tip\">&nbsp;</div>\n	</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div id=\"SL_bbl_font_patch\">&nbsp;</div>\n	<div class=\"SL_bbl_font\" id=\"SL_bbl_font\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/font.png&quot;)\" title=\"Cỡ chữ\">&nbsp;</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"8%\">\n	<div id=\"SL_bbl_help\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/bhelp.png&quot;)\" title=\"Trợ giúp\">&nbsp;</div>\n	</td>\n	<td align=\"right\" class=\"SL_td\" width=\"15%\">\n	<div class=\"SL_pin_off\" id=\"SL_pin\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/pin-on.png&quot;)\" title=\"Gắn cửa sổ pop-up\">&nbsp;</div>\n	</td>\n</tr>\n<div id=\"SL_shadow_translation_result\">&nbsp;</div>\n<div class=\"SL_loading\" id=\"SL_loading\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/loading.gif&quot;)\">&nbsp;</div>\n<div id=\"SL_player2\">&nbsp;</div>\n<div id=\"SL_alert100\">Chức năng ph&aacute;t &acirc;m giới hạn ở 200 k&yacute; tự</div>\n<div id=\"SL_Balloon_options\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/bg3.png&quot;) #ffffff\">\n<div id=\"SL_arrow_down\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/down.png&quot;)\">&nbsp;</div>\n<div id=\"SL_tbl_opt\">&nbsp;</div>\n</div>\n<tr>\n	<td align=\"center\" class=\"SL_td\" width=\"5%\"><input checked=\"true\" id=\"SL_BBL_locer\" title=\"Hiển thị nút của biên dịch viên 3 giây\" type=\"checkbox\" /></td>\n	<td align=\"left\" class=\"SL_td\" width=\"5%\">\n	<div id=\"SL_BBL_IMG\" style=\"background:url(&quot;chrome-extension://noaijdpnepcgjemiklgfkcfbkokogabh/content/img/util/bbl-logo.png&quot;)\" title=\"Hiển thị nút của biên dịch viên 3 giây\">&nbsp;</div>\n	</td>\n	<td align=\"center\" class=\"SL_td\" width=\"100%\"><span class=\"SL_options\" id=\"BBL_OPT\" title=\"Hiển thị các tùy chọn\">C&aacute;c T&ugrave;y chọn</span> : <span class=\"SL_options\" id=\"HIST_OPT\" title=\"Lược sử biên dịch\">Lược sử</span> : <span class=\"SL_options\" id=\"FEED_OPT\" title=\"Phản hồi\">Phản hồi</span> : <span class=\"SL_options\" id=\"DONATE_OPT\" title=\"Đóng góp\">Donate</span></td>\n	<td align=\"right\" class=\"SL_td\" nowrap=\"nowrap\" width=\"15%\"><span class=\"SL_options\" id=\"SL_Balloon_Close\" title=\"Đóng\">Đ&oacute;ng</span></td>\n</tr>\n', 0, 0, '2023-11-12 06:14:20', 0, 0, 0, 0, '', 0, '2023-11-12 06:14:20', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 0, 5, 3, 1, '', '2023-11-11 23:58:36', 1, '2023-11-12 06:14:20', 1, NULL, NULL),
 (8, 6, '<p>fsadfasfasdf</p>\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 0, 0, 3, 1, '', '2023-11-12 10:26:43', 1, '2023-11-12 03:26:43', 0, NULL, NULL),
-(9, 6, '<p>retwetewt</p>\n', 0, 0, '2023-11-12 06:13:47', 0, 0, 0, 0, '', 0, '2023-11-12 06:13:47', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-11-12 10:31:50', 1, '2023-11-12 06:13:47', 1, NULL, NULL);
+(9, 6, '<p>retwetewt</p>\n', 0, 0, '2023-11-12 06:13:47', 0, 0, 0, 0, '', 0, '2023-11-12 06:13:47', 0, 0, 0, 0, 0, NULL, 0, 0, 0, 6, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-11-12 10:31:50', 1, '2023-11-12 06:13:47', 1, NULL, NULL),
+(10, 1, '<p>fasfsadf</p>\n', 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 1, 1, '', '2023-11-12 13:25:48', 1, '2023-11-12 06:25:48', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -2907,7 +2931,7 @@ ALTER TABLE `user_types`
 -- AUTO_INCREMENT cho bảng `ccs`
 --
 ALTER TABLE `ccs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `clouds`
@@ -2997,19 +3021,19 @@ ALTER TABLE `outputs`
 -- AUTO_INCREMENT cho bảng `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT cho bảng `project_instructions`
 --
 ALTER TABLE `project_instructions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -3021,7 +3045,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`

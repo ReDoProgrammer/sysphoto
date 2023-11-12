@@ -9,6 +9,9 @@
         public function InitStatuses(){
             return $this->__db->callStoredProcedure("ProjectStatusCSSVisible");
         }
+        public function GetInvisibleStatuses(){
+            return $this->__db->callStoredProcedure("ProjectStatusInvisible");
+        }
 
         public function add($name, $color, $description, $visible){
             $user = unserialize($_SESSION['user']);

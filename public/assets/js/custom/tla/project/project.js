@@ -51,7 +51,7 @@ function ApplyTemplates(id){
 
 function LoadProjectStatuses() {
     $.ajax({
-        url: 'projectstatus/all',
+        url: 'projectstatus/GetInvisibleStatuses',
         type: 'get',
         success: function (data) {
             try {
@@ -120,6 +120,7 @@ function fetch() {
                             ${p.end_date.split(' ')[0]}
                         </td>
                         <td class="fw-bold text-info">${p.templates}</td>
+                        <td>${p.task_count}</td>
                         <td class="text-center">
                             <span class="badge ${p.status_color?p.status_color:'text-info'}">${p.status_name?p.status_name:'Initial'}</span>
                         </td>                       
