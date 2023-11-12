@@ -13,10 +13,16 @@
                         <textarea name="" id="txaTaskDescription" class="form-control"></textarea>
                     </div>
                     <div class="row">
-                        <div class="col-sm-10">
+                        <div class="col-sm-5">
                             <div class="input-block mb-3">
                                 <label class="col-form-label">Level</label>
                                 <select class="form-control" id="slLevels"></select>
+                            </div>
+                        </div>
+                        <div class="col-sm-5">
+                            <div class="input-block mb-3">
+                                <label class="col-form-label">Status</label>
+                                <select id="slStatuses"></select>
                             </div>
                         </div>
                         <div class="col-sm-2">

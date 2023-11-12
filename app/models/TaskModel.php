@@ -19,7 +19,7 @@ class TaskModel extends Model
         ];
         return $this->__db->executeStoredProcedure("TaskInsert", $params);
     }
-    function UpdateTask($id, $description, $editor, $qa, $quantity, $level)
+    function UpdateTask($id, $description, $editor, $qa, $quantity, $level,$status = 0)
     {
         $user = unserialize($_SESSION['user']);
         $params = [
@@ -31,6 +31,7 @@ class TaskModel extends Model
             'p_assign_qa' => $qa > 0 ? 1 : 0,
             'p_quantity' => $quantity,
             'p_level' => $level,
+            'p_status'=>$status,
             'p_updated_by' => $user->id
         ];
         return $this->__db->executeStoredProcedure("TaskUpdate", $params);

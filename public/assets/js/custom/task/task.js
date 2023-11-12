@@ -35,6 +35,8 @@ $('#btnSubmitTask').click(function () {
         var prjId = decodeURIComponent(match[1]);
         let description = CKEDITOR.instances['txaTaskDescription'].getData();
         let level = $('#slLevels option:selected').val();
+        let status = (selectizeStatus.items && selectizeStatus.items.length>0)?parseInt(selectizeStatus.items[0]):0;
+     
         let editor = 0;
         if (selectizeEditor.items && selectizeEditor.items.length > 0) {
             editor = parseInt(selectizeEditor.items[0]);
@@ -81,7 +83,7 @@ $('#btnSubmitTask').click(function () {
 
         //end validation
 
-        createOrUpdateTask(taskId, prjId, description, level, ccId, editor, qa, quantity);
+        createOrUpdateTask(taskId, prjId, description, level,status, ccId, editor, qa, quantity);
     }
 
 })
@@ -155,6 +157,7 @@ function editTask(id) {
                     $('#slLevels').val(t.level_id);
                     LoadEditorsByLevel(t.level_id, t.editor_id);
                     LoadQAsByLevel(t.level_id, t.qa_id);
+                    selectizeStatus.setValue(t.status_id);
                     $('#txtQuantity').val(t.quantity)
                 }
                 taskId = id;
@@ -271,11 +274,11 @@ function viewTask(id) {
 
 
 
-async function createOrUpdateTask(id, prjId, description, level, cc, editor, qa, quantity) {
+async function createOrUpdateTask(id, prjId, description, level,status, cc, editor, qa, quantity) {
     try {
 
         const url = id < 1 ? '../task/create' : '../task/update';
-        const data = {id, prjId, description, level, cc, editor, qa, quantity};
+        const data = {id, prjId, description, level,status, cc, editor, qa, quantity};
 
         const response = await $.ajax({
             url: url,
@@ -395,10 +398,7 @@ function LoadTaskStatuses() {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     content.statuses.forEach(t => {
-                        // selectizeTaskStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
-                        // if (t.id != 7) {
-                        //     $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
-                        // }
+                        selectizeStatus.addOption({value:t.id,text:t.name})
                     })
                 }
             } catch (error) {
@@ -410,6 +410,13 @@ function LoadTaskStatuses() {
 
 
 CKEDITOR.replace('txaTaskDescription');
+
+var selectizeStatuses = $('#slStatuses');
+selectizeStatuses.selectize({
+    sortField: 'text', // Sắp xếp mục theo văn bản,
+    placeholder: 'Choose a status'
+});
+var selectizeStatus = selectizeStatuses[0].selectize;
 
 var selectizeEditors = $('#slEditors');
 selectizeEditors.selectize({

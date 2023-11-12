@@ -21,12 +21,13 @@ class Task extends AdminController
         $prjId = $_POST['prjId'];
         $description = $_POST['description'];
         $level = $_POST['level'];
+        $status = $_POST['status'];
         $cc = $_POST['cc'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];
 
-        $result = $this->task_model->create($prjId, $description, $editor, $qa, $quantity, $level,$cc);
+        $result = $this->task_model->create($prjId, $description, $editor, $qa, $quantity, $level,$cc,$status);
         if ($result['last_id'] > 0) {
             $data = array(
                 'code' => 201,
@@ -53,10 +54,11 @@ class Task extends AdminController
         $id = $_POST['id'];
         $description = $_POST['description'];
         $level = $_POST['level'];
+        $status = $_POST['status'];
         $editor = $_POST['editor'];
         $qa = $_POST['qa'];
         $quantity = $_POST['quantity'];
-        $result = $this->task_model->UpdateTask($id, $description, $editor, $qa, $quantity, $level);
+        $result = $this->task_model->UpdateTask($id, $description, $editor, $qa, $quantity, $level,$status);
         if ($result['updated_rows'] > 0) {
             $data = array(
                 'code' => 200,

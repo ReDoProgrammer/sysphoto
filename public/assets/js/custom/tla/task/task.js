@@ -246,7 +246,7 @@ function LoadTaskStatuses() {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     content.taskstatuses.forEach(t => {
-                        selectizeTaskStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
+                        selectizeStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
                         if (t.id != 7) {
                             $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
                         }
@@ -348,12 +348,12 @@ function RejectTask(id) {
 }
 
 
-var $selectizeTaskStatuses = $('#slTaskStatuses');
-$selectizeTaskStatuses.selectize({
+var $selectizeStatuseses = $('#slStatuses');
+$selectizeStatuseses.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản
     placeholder: 'Task Status'
 });
-var selectizeTaskStatus = $selectizeTaskStatuses[0].selectize;
+var selectizeStatus = $selectizeStatuseses[0].selectize;
 
 
 

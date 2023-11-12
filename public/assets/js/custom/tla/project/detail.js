@@ -70,11 +70,13 @@ function GetProjectDetail(id) {
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
-                console.log(content);
                 let descriptions = content.descriptions;
                 descriptions.forEach(d => {
-                    $('#DescriptionAndInstructions').append(d.content);
-                    $('#DescriptionAndInstructions').append('<hr/>');
+                    if(d.content.trim().length>0){
+                        $('#DescriptionAndInstructions').append(d.content);
+                        $('#DescriptionAndInstructions').append('<hr/>');
+                    }
+                   
                 })
 
 
@@ -369,9 +371,10 @@ function editTask(id) {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     let t = content.task;
-                    
+              
                     CKEDITOR.instances['txaTaskDescription'].setData(t.task_description);
                     $('#slLevels').val(t.level_id);
+                    selectizeStatus.setValue(t.status_id);
                     LoadEditorsByLevel(t.level_id, t.editor_id);
                     LoadQAsByLevel(t.level_id, t.qa_id);
                     $('#txtQuantity').val(t.quantity)
@@ -415,12 +418,9 @@ function LoadTaskStatuses() {
             try {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
-                    // content.statuses.forEach(t => {
-                    //     // selectizeTaskStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
-                    //     // if (t.id != 7) {
-                    //     //     $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
-                    //     // }
-                    // })
+                    content.taskstatuses.forEach(t => {
+                        selectizeStatus.addOption({value:t.id,text:t.name})
+                    })
                 }
             } catch (error) {
                 console.log(data, error);
@@ -481,11 +481,11 @@ function LoadQAsByLevel(level, selected = null) {
     })
 }
 
-async function createOrUpdateTask(id, prjId, description, level, cc, editor, qa, quantity) {
+async function createOrUpdateTask(id, prjId, description, level,status, cc, editor, qa, quantity) {
     try {
 
         const url = id < 1 ? '../task/create' : '../task/update';
-        const data = {id, prjId, description, level, cc, editor, qa, quantity};
+        const data = {id, prjId, description, level,status, cc, editor, qa, quantity};
 
         const response = await $.ajax({
             url: url,
@@ -493,7 +493,6 @@ async function createOrUpdateTask(id, prjId, description, level, cc, editor, qa,
             data: data
         });
    
-
         const content = $.parseJSON(response);
         if (content.code === (id < 1 ? 201 : 200)) {
             handleResponse(content);
@@ -532,6 +531,8 @@ $('#btnSubmitTask').click(function () {
         var prjId = decodeURIComponent(match[1]);
         let description = CKEDITOR.instances['txaTaskDescription'].getData();
         let level = $('#slLevels option:selected').val();
+        let status = (selectizeStatus.items && selectizeStatus.items.length>0)?parseInt(selectizeStatus.items[0]):0;
+       
         let editor = 0;
         if (selectizeEditor.items && selectizeEditor.items.length > 0) {
             editor = parseInt(selectizeEditor.items[0]);
@@ -578,7 +579,7 @@ $('#btnSubmitTask').click(function () {
 
         //end validation
 
-        createOrUpdateTask(taskId, prjId, description, level, ccId, editor, qa, quantity);
+        createOrUpdateTask(taskId, prjId, description, level,status, ccId, editor, qa, quantity);
     }
 
 })
@@ -624,6 +625,12 @@ $('#slEditors').on('change', function () {
 
 CKEDITOR.replace('txaTaskDescription');
 
+var selectizeStatuses = $('#slStatuses');
+selectizeStatuses.selectize({
+    sortField: 'text', // Sắp xếp mục theo văn bản,
+    placeholder: 'Choose a status'
+});
+var selectizeStatus = selectizeStatuses[0].selectize;
 
 var selectizeEditors = $('#slEditors');
 selectizeEditors.selectize({
