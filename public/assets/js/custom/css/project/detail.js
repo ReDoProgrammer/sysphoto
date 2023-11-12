@@ -1,17 +1,22 @@
 var taskId = 0;
 var ccId = 0;
-var idValue = 0;
+
 $(document).ready(function () {
-    idValue = getParameterByName("id", window.location.href);
-    GetProjectDetail();
-    GetLogs();
-    GetCCs();
+    // Lấy URL hiện tại
+    var currentUrl = window.location.href;
+    // Sử dụng regex để tìm giá trị của tham số "id"
+    var match = currentUrl.match(/[?&]id=([^&]*)/);
+
+    // Kiểm tra xem tham số có tồn tại không
+    if (match) {
+        var id = decodeURIComponent(match[1]);
+        GetProjectDetail(id);
+        GetLogs(id);
+        GetCCs(id);
+    }
+
 })
 
-function AddCCTask(id) {
-    ccId = id;
-    $("#task_modal").modal('show');
-}
 function viewTask(id) {
     $.ajax({
         url: '../task/detail',
@@ -20,9 +25,8 @@ function viewTask(id) {
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
-
                 let t = content.task;
-                console.log(t);
+
                 $('#level').addClass(t.level_color);
                 $('#level').text(t.level);
 
@@ -31,81 +35,77 @@ function viewTask(id) {
                 $('#status').addClass(t.status_color);
                 $('#status').text(t.status ? t.status : '-');
 
-                
+
 
                 $('#start_date').html(`<span class="text-danger fw-bold">${(t.start_date.split(' ')[1])}</span> <br/>${(t.start_date.split(' ')[0])}`);
                 $('#end_date').html(`<span class="text-danger fw-bold">${(t.end_date.split(' ')[1])}</span> <br/>${(t.end_date.split(' ')[0])}`);
 
                 $('#divTaskDescription').empty();
-                let s = $.parseJSON(t.styles);
-                $('#divTaskDescription').append(`
-                    <div class="row">
-                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color?s.color:''}</span></div>
-                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output?s.output:''}</span></div>
-                        <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
-                    </div>
-                `);
-
-                $('#divTaskDescription').append(`<hr>
-                    <div class="row mt-3">
-                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style?s.style:''}</span></div>
-                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud?s.cloud:''}</span></div>
-                        <div class="col-sm-4">TV: <span class="fw-bold">${s.tv}</span></div>                        
-                    </div>
-                `);
-
-
-                $('#divTaskDescription').append(`<hr>
-                    <div class="row mt-3">                        
-                        <div class="col-sm-4">Sky: <span class="fw-bold">${s.sky}</span></div>
-                        <div class="col-sm-4">Fire: <span class="fw-bold">${s.fire}</span></div>
-                        <div class="col-sm-4">Grass: <span class="fw-bold">${s.grass}</span></div>
-                    </div>
-                `);
-                $('#divTaskDescription').append(`<hr>
-                    <div class="row mt-3">
-                        <div class="col-sm-12">Straighten: ${s.is_straighten==1?'<i class="fa-regular fa-square-check"></i>':'<i class="fa-regular fa-square"></i>'}
-                        <span class="fw-bold">${s.straighten_remark}</span></div>
-                    </div>
-                `)
-                $('#divTaskDescription').append(`<hr><span class="text-secondary">Style remark:</span><p class="mt-3 mb-5">${s.style_remark}</p>`);
-
 
                 if (t.cc_id > 0) {
-                    $('#divTaskDescription').append(`<span class="text-secondary">CC description:</span>`);
-                    $('#divTaskDescription').append(`<p class="mt-2">${t.cc_content}</p>`)
+                    $('#divTaskDescription').append(`<span class="text-secondary fw-bold">CC description:</span>`);
+                    $('#divTaskDescription').append(`<div class="mt-2" style="padding-left:20px;">${t.cc_content}</div>`)
                 }
 
-                $('#divTaskDescription').append(`<span class="text-secondary">Task description:</span>`);
-                $('#divTaskDescription').append(`<p class="mt-2">${t.task_description}</p>`);
+                $('#divTaskDescription').append(`<span class="text-secondary fw-bold">Task description:</span>`);
+                $('#divTaskDescription').append(`<div class="mt-2" style="padding-left:20px;">${t.task_description}</div>`);
 
-                if(t.instructions_list){
-                    let instructions = $.parseJSON(t.instructions_list);
-                    $('#divTaskDescription').append(`<span class="text-secondary">Instructions:</span>`);
-                    console.log(instructions)
-                    instructions.forEach(i => {
-                        $('#divTaskDescription').append(`<p class="mt-2" style="padding-left:20px;">${i.content}</p> <hr>`)
-                    })
-                }
-                
-                if(t.task_logs){
-                    let logs = $.parseJSON(t.task_logs);
-                    $('#ulTaskLogs').empty();
-                    logs.forEach(l => {
-                        $('#ulTaskLogs').append(`
-                                <li class="mb-2">
-                                    <p class="mb-0">${l.content}</p>
-                                    <div>
-                                        <span class="res-activity-time">
-                                            <i class="fa-regular fa-clock"></i>
-                                            ${l.timestamp}
-                                        </span>
+                let instructions = $.parseJSON(t.instructions_list);
+                $('#divTaskDescription').append(`<span class="text-secondary fw-bold">Instructions:</span>`);
+                instructions.forEach(i => {
+                    $('#divTaskDescription').append(`<div class="mt-2" style="padding-left:20px;">${i.content}</div>`)
+                })
+
+                let styles = `
+                    <div class="card mb-3 bg-light">
+                        <div class="card-header bg-light fw-bold pt-3"> Customer styles</div>
+                        <div class="card-body"><hr/>`;
+                         let s = $.parseJSON(t.styles);                     
+                        styles+=    `<div class="row">
+                                        <div class="col-sm-4">Color mode: <span class="fw-bold">${s.color ? s.color : ''}</span></div>
+                                        <div class="col-sm-4">Output: <span class="fw-bold">${s.output ? s.output : ''}</span></div>
+                                        <div class="col-sm-4">Size: <span class="fw-bold">${s.size}</span></div>
                                     </div>
-                                </li>
-                            `);
-                    })
-                }
+                                    <div class="row mt-3">
+                                        <div class="col-sm-4">National style: <span class="fw-bold">${s.style ? s.style : ''}</span></div>
+                                        <div class="col-sm-4">Cloud: <span class="fw-bold">${s.cloud ? s.cloud : ''}</span></div>
+                                        <div class="col-sm-4">TV: <span class="fw-bold">${s.tv}</span></div>                        
+                                    </div>
+                                    <div class="row mt-3">                        
+                                        <div class="col-sm-4">Sky: <span class="fw-bold">${s.sky}</span></div>
+                                        <div class="col-sm-4">Fire: <span class="fw-bold">${s.fire}</span></div>
+                                        <div class="col-sm-4">Grass: <span class="fw-bold">${s.grass}</span></div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-sm-12">Straighten: ${s.is_straighten == 1 ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>'}
+                                        <span class="fw-bold">${s.straighten_remark}</span></div>
+                                    </div>
+                                    `;
+                        
+                    styles+=     `</div>
+                    </div>
+                `;
+                $('#divTaskDescription').append(styles);
+
+             
+
                
+
+                let logs = $.parseJSON(t.task_logs);
+                $('#ulTaskLogs').empty();
+                logs.forEach(l => {
+                    $('#ulTaskLogs').append(`
+                            <li class="mb-2">
+                                <p class="mb-0">${l.content}</p>
+                                <div>
+                                    <span class="res-activity-time">
+                                        <i class="fa-regular fa-clock"></i>
+                                        ${l.timestamp}
+                                    </span>
+                                </div>
+                            </li>
+                        `);
+                })
                 $('#editor').text(t.editor ? t.editor : '-');
                 $('#qa').text(t.qa ? t.qa : '-');
                 $('#dc').text(t.dc ? t.dc : '-');
@@ -119,6 +119,7 @@ function viewTask(id) {
     })
 
 }
+
 function DeleteCC(id) {
     Swal.fire({
         title: 'Are you sure want to delete this task?',
@@ -157,19 +158,19 @@ function DeleteCC(id) {
         }
     })
 }
-function GetLogs() {
+function GetLogs(id) {
     $('#ulProjectLogs').empty();
-    if (idValue !== null) {
-        $.ajax({
-            url: '../projectlog/list',
-            type: 'get',
-            data: { projectId: idValue },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data);
-                    let logs = content.logs;
-                    logs.forEach(l => {
-                        $('#ulProjectLogs').append(`
+
+    $.ajax({
+        url: '../projectlog/list',
+        type: 'get',
+        data: { projectId: id },
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                let logs = content.logs;
+                logs.forEach(l => {
+                    $('#ulProjectLogs').append(`
                             <li id="${l.id}">
                                 <p class="mb-0">${l.action}</p>
                                 <div>
@@ -180,54 +181,57 @@ function GetLogs() {
                                 </div>
                             </li>
                         `);
-                    })
-                } catch (error) {
-                    console.log(data, error);
-                }
+                })
+            } catch (error) {
+                console.log(data, error);
             }
-        })
-    }
+        }
+    })
+
 }
-function GetProjectDetail() {
+function GetProjectDetail(id) {
     $('#tblTasksList').empty();
 
     // Kiểm tra xem tham số "id" có tồn tại hay không
-    if (idValue !== null) {
-        $.ajax({
-            url: '../project/getdetail',
-            type: 'get',
-            data: { id: idValue },
-            success: function (data) {
-                try {
-                    let content = $.parseJSON(data)
-                    if (content.code == 200) {
-                        let idx = 1;
-                        let p = content.project;
-                        $('#project_name').text(p.project_name);
 
-                        
-                        const result = $.map(content.stats, function (item) {
-                            return `${item.count} ${item.status} ${item.count>1?`tasks`:`task`}`
-                        }).join(', ');                        
+    $.ajax({
+        url: '../project/getdetail',
+        type: 'get',
+        data: { id },
+        success: function (data) {
+            try {
+                let content = $.parseJSON(data);
+                console.log(content);
+                let descriptions = content.descriptions;
+                descriptions.forEach(d => {
+                    $('#DescriptionAndInstructions').append(d.content);
+                    $('#DescriptionAndInstructions').append('<hr/>');
+                })
 
-                        $('#ProjectTasksAndStatus').empty();
-                        $('#ProjectTasksAndStatus').append(result);
 
-                        $('#DescriptionAndInstructions').empty();
-                        $('#DescriptionAndInstructions').append(`<p>${p.description}</p>`);
-                        let instructions = $.parseJSON(p.instructions_list);
-                        instructions.forEach(i => {
-                            $('#DescriptionAndInstructions').append(`<hr/><p id="${i.id}">${i.content}</p>`);
-                        })
 
-                        $('#tdStartDate').text(p.start_date);
-                        $('#tdEndDate').text(p.end_date);
-                        $('#tdPriority').html(`${p.priority == 1 ? '<i class="fa fa-dot-circle-o text-danger">URGEN</i>' : '<i class="fa fa-dot-circle-o">NORMAL</i>'}`);
-                        $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo ? p.combo : ''}</i>`);
-                        $('#tdStatus').html(`<i class="fa fa-dot-circle-o ${p.status_color}">${p.status}</i>`);
-                        let tasks = $.parseJSON(p.tasks_list);
-                        tasks.forEach(t => {
-                            $('#tblTasksList').append(`
+                if (content.code == 200) {
+                    let idx = 1;
+                    let p = content.project;
+                    $('#project_name').text(p.project_name);
+
+                    const result = $.map(content.stats, function (item) {
+                        return `${item.count} ${item.status} ${item.count > 1 ? `tasks` : `task`}`
+                    }).join(', ');
+
+                    $('#ProjectTasksAndStatus').empty();
+                    $('#ProjectTasksAndStatus').append(result);
+
+
+
+                    $('#tdStartDate').text(p.start_date);
+                    $('#tdEndDate').text(p.end_date);
+                    $('#tdPriority').html(`${p.priority == 1 ? '<i class="fa fa-dot-circle-o text-danger">URGEN</i>' : '<i class="fa fa-dot-circle-o">NORMAL</i>'}`);
+                    $('#tdCombo').html(`<i class="fa fa-dot-circle-o ${p.combo_color}">${p.combo ? p.combo : ''}</i>`);
+                    $('#tdStatus').html(`<i class="fa fa-dot-circle-o ${p.status_color}">${p.status}</i>`);
+                    let tasks = $.parseJSON(p.tasks_list);
+                    tasks.forEach(t => {
+                        $('#tblTasksList').append(`
                                                         <tr id = "${t.id}">
                                                             <td>${idx++}</td>
                                                             <td><span class="text-info">${t.cc_id > 0 ? '<i class="fa-regular fa-closed-captioning text-danger" style="margin-right:5px;"></i>' : ""}${t.level}</span></td>
@@ -235,34 +239,28 @@ function GetProjectDetail() {
                                                             <td>${t.editor ? t.editor : '-'}</td>
                                                             <td>${t.qa ? t.qa : '-'}</td>
                                                             <td>${t.dc ? t.dc : '-'}</td>
-                                                            <td class="text-center"><span class="${t.status_color ? t.status_color : ''}">${t.status ? t.status : '-'}</span></td>
+                                                            <td class="text-center"><span class="${t.status_color ? t.status_color : ''}">${t.status ? t.status : 'Init'}</span></td>
                                                             <td>
-                                                                <div class="dropdown action-label">
-                                                                    <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                                                                    <i class="fas fa-cog"></i>								</a>	
-                                                                    <div class="dropdown-menu dropdown-menu-right">
-                                                                        <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> View</a>
-                                                                    </div> 
-                                                                </div>
+                                                                <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.id})"><i class="fa fa-eye text-info" aria-hidden="true"></i> View</a>
                                                             </td>
                                                         </tr>
                                                     `);
-                        })
-                    }
-                } catch (error) {
-                    console.log(data, error, 123);
+                    })
                 }
+            } catch (error) {
+                console.log(data, error);
             }
-        })
-    }
+        }
+    })
+
 }
-function GetCCs() {
-    if (idValue !== null) {
+function GetCCs(id) {
+   
         $.ajax({
             url: '../cc/getccs',
             type: 'get',
             data: {
-                project_id: idValue
+                project_id: id
             },
             success: function (data) {
                 try {
@@ -317,13 +315,7 @@ function GetCCs() {
                                                         <td>${t.dc ? t.dc : '-'}</td>
                                                         <td><span class="${t.status_color}">${t.status ? t.status : '-'}</span></td>
                                                         <td>
-                                                            <div class="dropdown action-label">
-                                                                <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                                                                <i class="fas fa-cog"></i>								</a>	
-                                                                <div class="dropdown-menu dropdown-menu-right">
-                                                                    <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.task_id})"><i class="fa fa-eye" aria-hidden="true"></i> View</a>
-                                                                </div> 
-                                                            </div>
+                                                        <a class="dropdown-item" href="javascript:void(0)" onClick="viewTask(${t.task_id})"><i class="fa fa-eye text-info" aria-hidden="true"></i> View</a>
                                                         </td>
                                                     </td>`;
                         });
@@ -340,6 +332,6 @@ function GetCCs() {
                 }
             }
         })
-    }
+    
 }
 

@@ -37,11 +37,11 @@
     <table class="table table-hover mb-0">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Customer</th>
+                <th>#</th>              
                 <th>Job</th>
                 <th>Start</th>
                 <th>Deadline</th>
+                <th>Task numbers</th>
                 <th>Product Url</th>
                 <th class="text-center">Status</th>
                 <th>Action</th>
