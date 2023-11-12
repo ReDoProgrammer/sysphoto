@@ -88,6 +88,7 @@ $('#btnSubmitTask').click(function () {
 
                 if (content.code == 201) {
                     $('#task_modal').modal('hide');
+                    CKEDITOR.instances['txaTaskDescription'].setData('');
                 }
             } catch (error) {
                 console.log(data, error);
