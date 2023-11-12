@@ -151,7 +151,8 @@ function editTask(id) {
                 console.log(content);
                 if (content.code == 200) {
                     let t = content.task;
-                    qDescription.setText(t.task_description ? t.task_description : '');
+                    
+                    CKEDITOR.instances['txaTaskDescription'].setData(t.task_description);
                     $('#slLevels').val(t.level_id);
                     LoadEditorsByLevel(t.level_id, t.editor_id);
                     LoadQAsByLevel(t.level_id, t.qa_id);
@@ -174,9 +175,8 @@ function viewTask(id) {
         success: function (data) {
             try {
                 let content = $.parseJSON(data);
-
                 let t = content.task;
-                console.log(t);
+
                 $('#level').addClass(t.level_color);
                 $('#level').text(t.level);
 
