@@ -37,6 +37,8 @@ $('#btnSearch').click(function (e) {
 $('#btnSubmitTask').click(function () {
     let content = $('#txtContent').val();
     let read_instructions = $('#ckbReadInstruction').is(':checked') ? 1 : 0;
+    // let qa = $('tbody#tblTasks').find(`tr#${taskId} td:eq(10)`).text();
+
     $.ajax({
         url: 'task/submit',
         type: 'post',
@@ -44,7 +46,7 @@ $('#btnSubmitTask').click(function () {
             id: taskId,
             content,
             read_instructions,
-            role: roleId
+            role: 5
         },
         success: function (data) {
             try {
@@ -232,6 +234,7 @@ function SubmitTask(id, role) {
     } else {
         $('#divSubmitTaskContent').show();
     }
+    $('#txtContent').val('');
     $('#task_submit_modal').modal('show');
 
 }
@@ -295,10 +298,10 @@ function LoadOwnTasks() {
                             <td class="text-center">
                                 ${(t.status_id != 0 && t.editor_url.trim().length > 0) ?
                             '<a href="' + t.editor_url + '" target="_blank"><i class="fa-solid fa-link text-info"></i></a>' :
-                            '-'}
+                            ''}
                             </td>
-                            <td class="text-center">${t.qa ? t.qa : '-'}</td>
-                            <td class="text-center">${t.dc ? t.dc : '-'}</td>
+                            <td class="text-center">${t.qa ? t.qa : ''}</td>
+                            <td class="text-center">${t.dc ? t.dc : ''}</td>
                             <td class="text-end">
                             <div class="dropdown action-label">
                                 <a class="btn btn-outline-primary btn-sm dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">

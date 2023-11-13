@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 12, 2023 lúc 03:21 PM
--- Phiên bản máy phục vụ: 10.4.28-MariaDB
--- Phiên bản PHP: 8.0.28
+-- Thời gian đã tạo: Th10 13, 2023 lúc 03:47 AM
+-- Phiên bản máy phục vụ: 10.4.27-MariaDB
+-- Phiên bản PHP: 8.2.0
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -1152,6 +1152,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `TaskSubmited` (IN `p_id` BIGINT, IN
         END,
         editor_url = CASE
             WHEN p_role = 6 AND p_content LIKE 'http%' THEN p_content
+            WHEN p_role = 5 AND p_content LIKE 'http%' THEN p_content
             ELSE editor_url
         END,
         tla_content = CASE
@@ -2243,7 +2244,89 @@ INSERT INTO `project_logs` (`id`, `project_id`, `task_id`, `cc_id`, `timestamp`,
 (25, 1, 4, 0, '2023-11-12 21:19:53', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
 (26, 1, 4, 0, '2023-11-12 21:20:00', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
 (27, 1, 5, 0, '2023-11-12 21:20:21', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
-(28, 1, 5, 0, '2023-11-12 21:20:25', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', '');
+(28, 1, 5, 0, '2023-11-12 21:20:25', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(29, 1, 7, 0, '2023-11-13 08:09:33', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] with quantity: [3]', ''),
+(30, 1, 7, 0, '2023-11-13 08:09:38', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(31, 1, 7, 0, '2023-11-13 08:11:13', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">Editor OK</span>] with <a href=\"https://www.youtube.com/\" target=\"_blank\">Link</a>', ''),
+(32, 1, 8, 0, '2023-11-13 08:21:31', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] with quantity: [4]', ''),
+(33, 1, 7, 0, '2023-11-13 08:23:54', 'UPDATED TASK [<span GOT TASK AS A QA', ''),
+(34, 1, 9, 0, '2023-11-13 08:24:50', 'TLA [<span class=\"fw-bold text-info\">Binh.nh</span>] <span class=\"text-success\">INSERT NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] with quantity: [2]', ''),
+(35, 1, 7, 0, '2023-11-13 08:51:08', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">Editor OK</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(36, 1, 8, 0, '2023-11-13 08:51:10', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(37, 1, 8, 0, '2023-11-13 08:57:33', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=Jo-1gZrG0QM&list=RDaavYpmtGeEU&', ''),
+(38, 1, 9, 0, '2023-11-13 08:57:56', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(39, 1, 9, 0, '2023-11-13 08:58:07', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(40, 1, 9, 0, '2023-11-13 09:00:05', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(41, 1, 8, 0, '2023-11-13 09:00:14', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(42, 1, 7, 0, '2023-11-13 09:00:21', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(43, 1, 6, 0, '2023-11-13 09:00:30', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(44, 1, 5, 0, '2023-11-13 09:00:41', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(45, 1, 5, 0, '2023-11-13 09:00:41', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(46, 1, 4, 0, '2023-11-13 09:00:50', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(47, 1, 4, 0, '2023-11-13 09:00:50', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(48, 1, 3, 0, '2023-11-13 09:00:58', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(49, 1, 3, 0, '2023-11-13 09:00:58', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(50, 1, 2, 0, '2023-11-13 09:01:06', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(51, 1, 2, 0, '2023-11-13 09:01:06', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(52, 1, 1, 0, '2023-11-13 09:01:14', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(53, 1, 1, 0, '2023-11-13 09:01:14', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(54, 1, 7, 0, '2023-11-13 09:01:24', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">thien.pd</span>]', ''),
+(55, 1, 7, 0, '2023-11-13 09:01:24', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED QA</span> [<span class=\"fw-bold text-secondary\">binh.pn</span>]', ''),
+(56, 1, 6, 0, '2023-11-13 09:01:31', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">thien.pd</span>]', ''),
+(57, 1, 6, 0, '2023-11-13 09:01:31', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED QA</span> [<span class=\"fw-bold text-secondary\">binh.pn</span>]', ''),
+(58, 1, 9, 0, '2023-11-13 09:01:43', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(59, 1, 8, 0, '2023-11-13 09:01:48', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(60, 1, 3, 0, '2023-11-13 09:02:09', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(61, 1, 3, 0, '2023-11-13 09:02:15', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(62, 1, 4, 0, '2023-11-13 09:02:17', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(63, 1, 4, 0, '2023-11-13 09:02:23', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(64, 1, 2, 0, '2023-11-13 09:02:24', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(65, 1, 2, 0, '2023-11-13 09:02:29', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(66, 1, 5, 0, '2023-11-13 09:02:33', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(67, 1, 5, 0, '2023-11-13 09:02:40', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(68, 1, 6, 0, '2023-11-13 09:02:42', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(69, 1, 6, 0, '2023-11-13 09:02:48', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(70, 1, 7, 0, '2023-11-13 09:02:50', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(71, 1, 7, 0, '2023-11-13 09:02:56', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(72, 1, 8, 0, '2023-11-13 09:02:58', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(73, 1, 8, 0, '2023-11-13 09:03:05', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>] with <a href=\"https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0', ''),
+(74, 1, 9, 0, '2023-11-13 09:03:06', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(75, 1, 9, 0, '2023-11-13 09:03:10', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(76, 1, 1, 0, '2023-11-13 09:03:11', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', ''),
+(77, 1, 1, 0, '2023-11-13 09:03:16', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">STARTED</span>] TO [<span class=\"fw-bold text-info\">QA OK</span>]', ''),
+(78, 1, 9, 0, '2023-11-13 09:04:09', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(79, 1, 9, 0, '2023-11-13 09:04:09', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(80, 1, 8, 0, '2023-11-13 09:04:18', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(81, 1, 8, 0, '2023-11-13 09:04:18', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(82, 1, 7, 0, '2023-11-13 09:04:25', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(83, 1, 7, 0, '2023-11-13 09:04:25', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(84, 1, 6, 0, '2023-11-13 09:04:33', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(85, 1, 6, 0, '2023-11-13 09:04:33', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(86, 1, 5, 0, '2023-11-13 09:04:40', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(87, 1, 5, 0, '2023-11-13 09:04:40', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(88, 1, 4, 0, '2023-11-13 09:04:47', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(89, 1, 4, 0, '2023-11-13 09:04:47', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(90, 1, 3, 0, '2023-11-13 09:04:56', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(91, 1, 3, 0, '2023-11-13 09:04:56', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(92, 1, 2, 0, '2023-11-13 09:05:05', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(93, 1, 2, 0, '2023-11-13 09:05:05', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(94, 1, 1, 0, '2023-11-13 09:05:12', 'UPDATED TASK [<span <span class=\"text-warning\">CHANGED STATUS FROM</span> [<span class=\"fw-bold text-secondary\">QA OK</span>] TO [<span class=\"fw-bold text-info\">STARTED</span>]', ''),
+(95, 1, 1, 0, '2023-11-13 09:05:12', 'UPDATED TASK [<span <span class=\"text-danger\">UNASSIGNED EDITOR </span>[<span class=\"fw-bold\">binh.pn</span>]', ''),
+(96, 1, 9, 0, '2023-11-13 09:46:55', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]', ''),
+(97, 1, 8, 0, '2023-11-13 09:46:57', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]', ''),
+(98, 1, 7, 0, '2023-11-13 09:47:00', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]', ''),
+(99, 1, 6, 0, '2023-11-13 09:47:03', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]', ''),
+(100, 1, 5, 0, '2023-11-13 09:47:05', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-Basic]', ''),
+(101, 1, 4, 0, '2023-11-13 09:47:08', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[Re-Stand]', ''),
+(102, 1, 3, 0, '2023-11-13 09:47:10', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-Drone-Basic]', ''),
+(103, 1, 2, 0, '2023-11-13 09:47:14', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-BASIC]', ''),
+(104, 1, 1, 0, '2023-11-13 09:47:20', 'TLA [<span class=\"text-info fw-bold\">Binh.nh</span>] <span class=\"text-danger\">DELETE TASK </span>[PE-STAND]', ''),
+(105, 1, 10, 0, '2023-11-13 09:47:30', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-danger text-white\">PE-STAND</span>] FROM TEMPLATE with quantity: [1]', ''),
+(106, 1, 11, 0, '2023-11-13 09:47:30', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-success text-white\">PE-BASIC</span>] FROM TEMPLATE with quantity: [1]', ''),
+(107, 1, 12, 0, '2023-11-13 09:47:30', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold bg-warning text-white\">PE-Drone-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
+(108, 1, 13, 0, '2023-11-13 09:47:30', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold text-success\">Re-Stand</span>] FROM TEMPLATE with quantity: [1]', ''),
+(109, 1, 14, 0, '2023-11-13 09:47:30', 'CSS [<span class=\"fw-bold text-info\">binh.tt</span>] <span class=\"text-info\">CREATE NEW TASK</span> [<span class=\"fw-bold text-danger\">Re-Basic</span>] FROM TEMPLATE with quantity: [1]', ''),
+(110, 1, 10, 0, '2023-11-13 09:47:37', 'UPDATED TASK [<span GOT TASK AS AN EDITOR', '');
 
 -- --------------------------------------------------------
 
@@ -2332,12 +2415,11 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `project_id`, `description`, `status_id`, `editor_id`, `editor_timestamp`, `editor_assigned`, `editor_wage`, `editor_fix`, `editor_read_instructions`, `editor_url`, `qa_id`, `qa_timestamp`, `qa_assigned`, `qa_wage`, `qa_read_instructions`, `qa_reject_id`, `dc_id`, `dc_timestamp`, `dc_wage`, `dc_read_instructions`, `dc_reject_id`, `level_id`, `tla_id`, `tla_timestamp`, `tla_wage`, `tla_read_instructions`, `tla_reject_id`, `tla_content`, `auto_gen`, `cc_id`, `quantity`, `pay`, `unpaid_remark`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
-(1, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, 'https://www.youtube.com/watch?v=3YNxWivnlHI&ab_channel=Qu%C3%A0ngAT%C5%A9nLive', 0, NULL, 0, 1000, 1, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:18:34', 9, NULL, NULL),
-(2, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:19:23', 9, NULL, NULL),
-(3, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 200, 1, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:19:38', 9, NULL, NULL),
-(4, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 1200, 1, 0, 0, NULL, 0, 0, 0, 4, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:20:00', 9, NULL, NULL),
-(5, 1, NULL, 4, 9, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 600, 1, 0, 0, NULL, 0, 0, 0, 5, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-12 21:08:40', 6, '2023-11-12 14:20:25', 9, NULL, NULL),
-(6, 1, '<p>Normally created task</p>\n', 4, 4, '2023-11-12 14:09:36', 0, 0, 0, 0, '', 9, NULL, 0, 700, 1, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 0, 0, 5, 1, '', '2023-11-12 21:09:09', 3, '2023-11-12 14:19:15', 9, NULL, NULL);
+(10, 1, NULL, 0, 4, '2023-11-13 02:47:37', 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 1, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-13 09:47:30', 6, '2023-11-13 02:47:37', 4, NULL, NULL),
+(11, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 2, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-13 09:47:30', 6, '2023-11-13 02:47:30', 0, NULL, NULL),
+(12, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 3, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-13 09:47:30', 6, '2023-11-13 02:47:30', 0, NULL, NULL),
+(13, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 4, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-13 09:47:30', 6, '2023-11-13 02:47:30', 0, NULL, NULL),
+(14, 1, NULL, 0, 0, NULL, 0, 0, 0, 0, '', 0, NULL, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 5, 0, NULL, 0, 0, 0, '', 1, 0, 1, 1, '', '2023-11-13 09:47:30', 6, '2023-11-13 02:47:30', 0, NULL, NULL);
 
 --
 -- Bẫy `tasks`
@@ -3072,7 +3154,7 @@ ALTER TABLE `project_instructions`
 -- AUTO_INCREMENT cho bảng `project_logs`
 --
 ALTER TABLE `project_logs`
-  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` bigint(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=111;
 
 --
 -- AUTO_INCREMENT cho bảng `project_statuses`
@@ -3084,7 +3166,7 @@ ALTER TABLE `project_statuses`
 -- AUTO_INCREMENT cho bảng `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT cho bảng `task_rejectings`
