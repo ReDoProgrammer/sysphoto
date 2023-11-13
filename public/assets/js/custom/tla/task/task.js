@@ -3,8 +3,8 @@ var limit = 0;
 var taskId = 0;
 var roleId = 0;
 $(document).ready(function () {
-    FilterTasks();
     LoadTaskStatuses();
+    FilterTasks();
 })
 
 $('#btnSearch').click(function (e) {
@@ -12,7 +12,7 @@ $('#btnSearch').click(function (e) {
     FilterTasks();
 })
 $('#btnSubmitTask').click(function () {
-    let content = qTaskSubmitingRemark.getText();
+    let content = CKEDITOR.instances['txaSubmitContent'].getData();
     let read_instructions = $('#ckbReadInstruction').is(':checked') ? 1 : 0;
     $.ajax({
         url: 'task/submit',
@@ -43,7 +43,7 @@ $('#btnSubmitTask').click(function () {
     })
 })
 $('#btnSubmitRejectingTask').click(function () {
-    let remark = qTaskRejectingRemark.getText();
+    let remark = CKEDITOR.instances['txaRejectRemark'].getData();
     let read_instructions = $('#ckbRejectReadInstructions').is(':checked') ? 1 : 0;
 
     $.ajax({
@@ -85,17 +85,17 @@ $("#task_submit_modal").on('shown.bs.modal', function () {
 
 $("#task_submit_modal").on("hidden.bs.modal", function () {
     taskId = 0;
+    CKEDITOR.instances['txaSubmitContent'].setData('');
 });
 
 $("#task_reject_modal").on('shown.bs.modal', function () {
     $('#btnSubmitRejectingTask').prop('disabled', true);
     $('#ckbRejectReadInstructions').prop('checked', false);
-
-    qTaskRejectingRemark.setText('');
 });
 
 $("#task_reject_modal").on("hidden.bs.modal", function () {
     taskId = 0;
+    CKEDITOR.instances['txaRejectRemark'].setData('');
 });
 
 
@@ -232,7 +232,7 @@ function SubmitTask(id, role) {
     roleId = role;
 
     $('#SubmitingModalTitle').text(`Submiting task as ${role == 6 ? `Editor` : role == 7 ? `DC` : `QA`}`);
-    qTaskSubmitingRemark.setText('');
+    CKEDITOR.instances['txaSubmitContent'].setData('');
     $('#task_submit_modal').modal('show');
 
 }
@@ -246,10 +246,8 @@ function LoadTaskStatuses() {
                 let content = $.parseJSON(data);
                 if (content.code == 200) {
                     content.taskstatuses.forEach(t => {
-                        selectizeStatus.addOption({ value: `${t.id}`, text: `${t.name}` });
-                        if (t.id != 7) {
-                            $('#slRejectIntoStatus').append(`<option value="${t.id}">${t.name}</option>`);
-                        }
+                        selectizeStatus.addOption({ value: `${t.id}`, text: `${t.name}` });                       
+                        selectizeRejectStatus.addOption({ value: `${t.id}`, text: `${t.name}` });                       
                     })
                 }
             } catch (error) {
@@ -261,7 +259,7 @@ function LoadTaskStatuses() {
 function FilterTasks() {
     let from_date = $('#txtFromDate').val();
     let to_date = $('#txtToDate').val();
-    let status = selectizeTaskStatus.getValue() ? selectizeTaskStatus.getValue() : 0;
+    let status = selectizeStatus.getValue() ? selectizeStatus.getValue() : 0;
     let limit = $('#slPageSize option:selected').val();
 
     $('#tblTasks').empty();
@@ -348,12 +346,22 @@ function RejectTask(id) {
 }
 
 
-var $selectizeStatuseses = $('#slStatuses');
+CKEDITOR.replace('txaSubmitContent');
+CKEDITOR.replace('txaRejectRemark');
+
+var $selectizeStatuseses = $('#slTaskStatuses');
 $selectizeStatuseses.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản
     placeholder: 'Task Status'
 });
 var selectizeStatus = $selectizeStatuseses[0].selectize;
+
+var $selectizeRejectStatuseses = $('#slRejectIntoStatus');
+$selectizeRejectStatuseses.selectize({
+    sortField: 'text', // Sắp xếp mục theo văn bản
+    placeholder: 'Task Status'
+});
+var selectizeRejectStatus = $selectizeRejectStatuseses[0].selectize;
 
 
 

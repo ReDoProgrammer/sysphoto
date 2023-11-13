@@ -28,7 +28,7 @@ function LoadTaskStatuses() {
 function LoadOwnTasks() {
     let from_date = $('#txtFromDate').val();
     let to_date = $('#txtToDate').val();
-    let status = selectizeTaskStatus.getValue() ? selectizeTaskStatus.getValue() : 0;
+    let status = selectizeStatus.getValue() ? selectizeTaskStatus.getValue() : 0;
     let limit = $('#slPageSize option:selected').val();
 
     $('#tblTasks').empty();
@@ -91,8 +91,12 @@ function LoadOwnTasks() {
     })
 }
 
+CKEDITOR.replace('txaSubmitContent');
+
+
 var $selectizeTaskStatuses = $('#slTaskStatuses');
 $selectizeTaskStatuses.selectize({
     sortField: 'text', // Sắp xếp mục theo văn bản
     placeholder: 'Task Status'
 });
+var selectizeStatus = $selectizeTaskStatuses[0].selectize;

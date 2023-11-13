@@ -11,7 +11,7 @@
                     <div class="col-sm-12">
                         <div class="input-block mb-3">
                             <label class="col-form-label">Submit Remark</label>
-                            <div id="divTaskSubmitingRemark" style="min-height: 100px;"></div>
+                            <textarea name="" id="txaSubmitContent" class="form-control"></textarea>
                         </div>
                     </div>
                 </div>
