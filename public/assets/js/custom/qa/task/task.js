@@ -68,7 +68,7 @@ $('#btnSubmitTask').click(function () {
     })
 })
 $('#btnSubmitRejectingTask').click(function () {
-    let remark = qTaskRejectingRemark.getText();
+    let remark = CKEDITOR.instances['txaRejectRemark'].getData();
     let read_instructions = $('#ckbRejectReadInstructions').is(':checked') ? 1 : 0;
 
     $.ajax({
@@ -121,6 +121,7 @@ $("#task_reject_modal").on('shown.bs.modal', function () {
 
 $("#task_reject_modal").on("hidden.bs.modal", function () {
     taskId = 0;
+    CKEDITOR.instances['txaRejectRemark'].setData('');
 });
 
 
@@ -308,7 +309,7 @@ function LoadOwnTasks() {
                                 <i class="fas fa-cog"></i>								</a>	
                                 <div class="dropdown-menu dropdown-menu-right">
                                     <a class="dropdown-item" href="javascript:void(0)" onClick="ViewTaskDetail(${t.id})"><i class="fa fa-eye" aria-hidden="true"></i> Detail</a>                                    
-                                    ${(t.status_id == 1 || t.status_id == 3) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},5)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
+                                    ${(t.status_id == 1 || t.status_id == 3 || t.status_id == 5) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},5)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
                                     ${(t.status_id == 0) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="SubmitTask(${t.id},6)"><i class="fa-solid fa-cloud-arrow-up"></i>  Submit task</a>` : ``} 
                                     ${(t.status_id == 1 || t.status_id == 3 || t.status_id == 5) ? `<a class="dropdown-item" href="javascript:void(0)" onClick="RejectTask(${t.id})"><i class="fa-regular fa-circle-xmark text-danger"></i> Reject</a> ` : ``}
                                 </div> 
@@ -337,4 +338,6 @@ $selectizeTaskStatuses.selectize({
     placeholder: 'Task Status'
 });
 var selectizeTaskStatus = $selectizeTaskStatuses[0].selectize;
+
+CKEDITOR.replace('txaRejectRemark');
 
