@@ -83,7 +83,7 @@ $('#btnSubmitTask').click(function () {
     })
 })
 $('#btnSubmitRejectingTask').click(function () {
-    let remark = qTaskRejectingRemark.getText();
+    let remark = CKEDITOR.instances['txaRejectRemark'].getData();
     let read_instructions = $('#ckbRejectReadInstructions').is(':checked') ? 1 : 0;
 
     $.ajax({
@@ -130,8 +130,7 @@ $("#task_submit_modal").on("hidden.bs.modal", function () {
 $("#task_reject_modal").on('shown.bs.modal', function () {
     $('#btnSubmitRejectingTask').prop('disabled', true);
     $('#ckbRejectReadInstructions').prop('checked', false);
-
-    qTaskRejectingRemark.setText('');
+    CKEDITOR.instances['txaRejectRemark'].setData('');
 });
 
 $("#task_reject_modal").on("hidden.bs.modal", function () {
@@ -384,20 +383,4 @@ $selectizeTaskStatuses.selectize({
 });
 var selectizeTaskStatus = $selectizeTaskStatuses[0].selectize;
 
-var qTaskRejectingRemark = new Quill('#divTaskRejectingRemark', {
-    theme: 'snow', // Chọn giao diện "snow"
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            ['link'], // Thêm nút chèn liên kết
-            [{ 'color': ['#F00', '#0F0', '#00F', '#000', '#FFF', 'color-picker'] }], // Thêm nút chọn màu
-        ]
-    },
-    placeholder: "Enter Rejecting Remark here...",
-    // Đặt chiều cao cho trình soạn thảo
-    // Ví dụ: Chiều cao 300px
-    height: '300px'
-    // Hoặc chiều cao 5 dòng
-    // height: '10em'
-});
+CKEDITOR.replace('txaRejectRemark');

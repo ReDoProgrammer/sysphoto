@@ -11,7 +11,7 @@
                     <div class="col-sm-12">
                         <div class="input-block mb-3">
                             <label class="col-form-label">Rejecting Remark</label>
-                            <div id="divTaskRejectingRemark" style="min-height: 100px;"></div>
+                            <textarea name="" id="txaRejectRemark"  rows="3"></textarea>
                         </div>
                     </div>
                 </div>
